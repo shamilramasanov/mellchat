@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import './App.css';
 
@@ -72,7 +72,7 @@ function App() {
         console.error('Error loading saved streams:', error);
       }
     }
-  }, [startKickMessagePolling, startTwitchMessagePolling]);
+  }, []);
 
   // Save streams to localStorage when they change
   useEffect(() => {
@@ -374,7 +374,7 @@ function App() {
   };
 
   // Poll for new messages from Twitch Chat
-  const startTwitchMessagePolling = (streamId, connectionId) => {
+  const startTwitchMessagePolling = useCallback((streamId, connectionId) => {
     console.log('startTwitchMessagePolling called with:', streamId, connectionId);
     // clear old interval if exists
     const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
@@ -424,10 +424,10 @@ function App() {
       }
       return s;
     }));
-  };
+  }, [connectedStreams]);
 
   // Poll for new messages from Kick Chat
-  const startKickMessagePolling = (streamId, connectionId) => {
+  const startKickMessagePolling = useCallback((streamId, connectionId) => {
     console.log('startKickMessagePolling called with:', streamId, connectionId);
     const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
     if (existing) { try { clearInterval(existing); } catch {} }
@@ -466,7 +466,7 @@ function App() {
       }
       return s;
     }));
-  };
+  }, [connectedStreams]);
 
   // Reconnect helpers: refresh connectionId on backend restart
   const reconnectTwitch = async (stream) => {

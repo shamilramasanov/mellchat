@@ -25,6 +25,13 @@ export function useWebSocket() {
     handlers.forEach(fn => { try { fn(payload); } catch (e) { console.error('WS handler error:', e); } });
   }, []);
 
+  const stopPing = useCallback(() => {
+    if (pingTimerRef.current) {
+      clearInterval(pingTimerRef.current);
+      pingTimerRef.current = null;
+    }
+  }, []);
+
   const startPing = useCallback(() => {
     stopPing();
     pingTimerRef.current = setInterval(() => {
@@ -34,13 +41,6 @@ export function useWebSocket() {
     }, PING_INTERVAL);
     pingTimerRef.current.unref?.();
   }, [stopPing]);
-
-  const stopPing = useCallback(() => {
-    if (pingTimerRef.current) {
-      clearInterval(pingTimerRef.current);
-      pingTimerRef.current = null;
-    }
-  }, []);
 
   const handleMessage = useCallback((data) => {
     setLastMessage(data);
