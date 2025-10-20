@@ -36,6 +36,7 @@ function App() {
   }, [activeStreamId, connectedStreams, ws]);
 
   // Load saved streams on app start
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const savedStreams = localStorage.getItem('mellchat-streams');
     if (savedStreams) {
@@ -72,7 +73,7 @@ function App() {
         console.error('Error loading saved streams:', error);
       }
     }
-  }, [startKickMessagePolling, startTwitchMessagePolling]);
+  }, []);
 
   // Save streams to localStorage when they change
   useEffect(() => {
@@ -374,6 +375,7 @@ function App() {
   };
 
   // Poll for new messages from Twitch Chat
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const startTwitchMessagePolling = useCallback((streamId, connectionId) => {
     console.log('startTwitchMessagePolling called with:', streamId, connectionId);
     // clear old interval if exists
@@ -427,6 +429,7 @@ function App() {
   }, [connectedStreams]);
 
   // Poll for new messages from Kick Chat
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const startKickMessagePolling = useCallback((streamId, connectionId) => {
     console.log('startKickMessagePolling called with:', streamId, connectionId);
     const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
