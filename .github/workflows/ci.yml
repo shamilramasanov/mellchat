@@ -1,0 +1,139 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mellchat_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Install dependencies
+      run: |
+        cd backend/api-gateway && npm ci
+        cd ../sync-worker && npm ci
+        cd ../../frontend/pwa && npm ci
+    
+    - name: Run API Gateway tests
+      run: |
+        cd backend/api-gateway
+        npm test
+      env:
+        POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/mellchat_test
+        REDIS_URL: redis://localhost:6379
+    
+    - name: Run Sync Worker tests
+      run: |
+        cd backend/sync-worker
+        npm test
+      env:
+        POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/mellchat_test
+        REDIS_URL: redis://localhost:6379
+    
+    - name: Run Frontend tests
+      run: |
+        cd frontend/pwa
+        npm test -- --coverage --watchAll=false
+    
+    - name: Run Go tests
+      run: |
+        cd backend/websocket-proxy && go test ./...
+        cd ../../collectors/twitch && go test ./...
+        cd ../youtube && go test ./...
+        cd ../shared && go test ./...
+    
+    - name: Build Docker images
+      run: |
+        docker-compose build
+    
+    - name: Run integration tests
+      run: |
+        docker-compose up -d
+        sleep 30
+        ./scripts/test.sh
+        docker-compose down
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  deploy-staging:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+
+  deploy-production:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
