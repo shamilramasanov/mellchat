@@ -56,10 +56,9 @@ class WsHub {
   }
 }
 
-function createWsServer(port = 8080) {
-  const server = http.createServer();
-  const hub = new WsHub(server);
-  server.listen(port, () => logger.info(`WebSocket server listening on ws://localhost:${port}`));
+function createWsServer(httpServer) {
+  const hub = new WsHub(httpServer);
+  logger.info(`WebSocket server attached to HTTP server`);
   return hub;
 }
 
