@@ -15,7 +15,7 @@ const youtube = google.youtube({
 const activeConnections = new Map();
 
 // Connect to YouTube Live chat
-router.post('/youtube', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { videoId } = req.body;
     

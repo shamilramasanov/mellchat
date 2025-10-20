@@ -10,11 +10,49 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [questions, setQuestions] = useState([]);
 
+  // Load saved streams on app start
+  useEffect(() => {
+    const savedStreams = localStorage.getItem('mellchat-streams');
+    if (savedStreams) {
+      try {
+        const parsed = JSON.parse(savedStreams);
+        setConnectedStreams(parsed);
+        if (parsed.length > 0) {
+          setActiveStreamId(parsed[0].id);
+                // Restart polling for saved streams
+                parsed.forEach(stream => {
+                  if (stream.connectionId) {
+                    console.log('Restarting polling for saved stream:', stream.id, stream.connectionId);
+                    if (stream.platform === 'youtube') {
+                      startMessagePolling(stream.id, stream.connectionId);
+                    } else if (stream.platform === 'twitch') {
+                      startTwitchMessagePolling(stream.id, stream.connectionId);
+                    }
+                  }
+                });
+        }
+        console.log('Loaded saved streams:', parsed.length);
+      } catch (error) {
+        console.error('Error loading saved streams:', error);
+      }
+    }
+  }, []);
+
+  // Save streams to localStorage when they change
+  useEffect(() => {
+    if (connectedStreams.length > 0) {
+      localStorage.setItem('mellchat-streams', JSON.stringify(connectedStreams));
+      console.log('Saved streams to localStorage:', connectedStreams.length);
+    }
+  }, [connectedStreams]);
+
   // Update messages and questions when active stream changes
   useEffect(() => {
+    console.log('useEffect triggered - activeStreamId:', activeStreamId, 'connectedStreams:', connectedStreams.length);
     if (activeStreamId) {
       const activeStream = connectedStreams.find(stream => stream.id === activeStreamId);
       if (activeStream) {
+        console.log('Active stream found:', activeStream.title, 'messages:', activeStream.messages?.length || 0);
         setMessages(activeStream.messages || []);
         setQuestions(activeStream.questions || []);
       }
@@ -135,7 +173,10 @@ function App() {
             }));
             
             // Start polling for messages
+            console.log('Starting message polling for:', newStream.id, data.connectionId);
+            console.log('About to call startMessagePolling...');
             startMessagePolling(newStream.id, data.connectionId);
+            console.log('startMessagePolling called successfully');
           } else {
             console.error('Failed to connect to YouTube Live Chat:', data.message);
             alert(`Помилка підключення: ${data.message}`);
@@ -145,26 +186,51 @@ function App() {
           console.error('YouTube API error:', error);
           alert('Помилка підключення до YouTube Live Chat');
         });
+      } else if (detectedPlatform === 'twitch') {
+        // Connect to real Twitch API
+        console.log('Connecting to real Twitch chat for:', streamTitle);
+        
+        fetch('http://localhost:3001/api/v1/twitch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ channelName: channelName })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            console.log('Twitch chat connected:', data);
+            
+            // Update stream with connection info
+            setConnectedStreams(prev => prev.map(stream => {
+              if (stream.id === newStream.id) {
+                return {
+                  ...stream,
+                  connectionId: data.connectionId,
+                  title: data.data.title,
+                  channelTitle: data.data.channelName,
+                  messages: [],
+                  questions: []
+                };
+              }
+              return stream;
+            }));
+            
+            // Start polling for messages
+            console.log('Starting Twitch message polling for:', newStream.id, data.connectionId);
+            startTwitchMessagePolling(newStream.id, data.connectionId);
+          } else {
+            console.error('Failed to connect to Twitch chat:', data.message);
+            alert(`Помилка підключення до Twitch: ${data.message}`);
+          }
+        })
+        .catch(error => {
+          console.error('Twitch API error:', error);
+          alert('Помилка підключення до Twitch чату');
+        });
       } else {
-        // For Twitch, use simulation for now
-        setTimeout(() => {
-          setConnectedStreams(prev => prev.map(stream => {
-            if (stream.id === newStream.id) {
-              return {
-                ...stream,
-                messages: [
-                  { id: 1, username: 'viewer1', message: 'Привіт з Twitch чату!', timestamp: new Date() },
-                  { id: 2, username: 'viewer2', message: 'Крута трансляція!', timestamp: new Date() },
-                ],
-                questions: [
-                  { id: 1, username: 'viewer1', question: 'Як почати стрімити?', upvotes: 5, answered: false },
-                  { id: 2, username: 'viewer2', question: 'Що таке MellChat?', upvotes: 3, answered: false },
-                ]
-              };
-            }
-            return stream;
-          }));
-        }, 1000);
+        alert('Непідтримувана платформа. Підтримуються тільки YouTube та Twitch.');
       }
     } else {
       alert('Не вдалося розпізнати платформу або канал. Перевірте посилання.');
@@ -172,7 +238,33 @@ function App() {
   };
 
   const handleDisconnect = (streamId) => {
+    const streamToDisconnect = connectedStreams.find(s => s.id === streamId);
+    
+    // Call backend disconnect API if connectionId exists
+    if (streamToDisconnect && streamToDisconnect.connectionId) {
+      const apiUrl = streamToDisconnect.platform === 'twitch' 
+        ? `http://localhost:3001/api/v1/twitch/${streamToDisconnect.connectionId}`
+        : `http://localhost:3001/api/v1/youtube/disconnect/${streamToDisconnect.connectionId}`;
+      
+      fetch(apiUrl, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Backend disconnect response:', data);
+        })
+        .catch(error => {
+          console.error('Backend disconnect error:', error);
+        });
+    }
+    
     setConnectedStreams(prev => {
+      const streamToDisconnect = prev.find(s => s.id === streamId);
+      
+      // Clear polling interval if exists
+      if (streamToDisconnect && streamToDisconnect.pollInterval) {
+        clearInterval(streamToDisconnect.pollInterval);
+        console.log('Cleared polling interval for:', streamId);
+      }
+      
       const updated = prev.filter(stream => stream.id !== streamId);
       
       // If disconnecting active stream, switch to another or clear
@@ -192,28 +284,74 @@ function App() {
     setActiveStreamId(streamId);
   };
 
+  // Poll for new messages from Twitch Chat
+  const startTwitchMessagePolling = (streamId, connectionId) => {
+    console.log('startTwitchMessagePolling called with:', streamId, connectionId);
+    const pollInterval = setInterval(() => {
+      console.log('Twitch polling interval triggered');
+
+      console.log('Making Twitch API request to:', `http://localhost:3001/api/v1/twitch/messages/${connectionId}`);
+      // Poll for new messages
+      fetch(`http://localhost:3001/api/v1/twitch/messages/${connectionId}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Twitch polling response:', data);
+          if (data.success && data.messages && data.messages.length > 0) {
+            console.log(`Received ${data.messages.length} messages from Twitch API`);
+            // Add new messages to stream
+            setConnectedStreams(prev => prev.map(s => {
+              if (s.id === streamId) {
+                const existingMessageIds = new Set(s.messages?.map(m => m.id) || []);
+                const newMessages = data.messages.filter(msg => !existingMessageIds.has(msg.id));
+                console.log(`Adding ${newMessages.length} new Twitch messages to stream`);
+                const updatedMessages = [...(s.messages || []), ...newMessages];
+                return {
+                  ...s,
+                  messages: updatedMessages.slice(-100) // Keep last 100 messages
+                };
+              }
+              return s;
+            }));
+          }
+        })
+        .catch(error => {
+          console.error('Twitch message polling error:', error);
+        });
+    }, 30000); // Poll every 30 seconds
+
+    // Store interval ID for cleanup
+    setConnectedStreams(prev => prev.map(s => {
+      if (s.id === streamId) {
+        return { ...s, pollInterval };
+      }
+      return s;
+    }));
+  };
+
   // Poll for new messages from YouTube Live Chat
   const startMessagePolling = (streamId, connectionId) => {
+    console.log('startMessagePolling called with:', streamId, connectionId);
     const pollInterval = setInterval(() => {
-      // Check if stream is still connected
-      const stream = connectedStreams.find(s => s.id === streamId);
-      if (!stream) {
-        clearInterval(pollInterval);
-        return;
-      }
-
+      console.log('Polling interval triggered');
+      
+      console.log('Making API request to:', `http://localhost:3001/api/v1/youtube/messages/${connectionId}`);
       // Poll for new messages (simplified - in real app would use WebSocket)
       fetch(`http://localhost:3001/api/v1/youtube/messages/${connectionId}`)
         .then(response => response.json())
         .then(data => {
+          console.log('Polling response:', data);
           if (data.success && data.messages && data.messages.length > 0) {
+            console.log(`Received ${data.messages.length} messages from API`);
             // Add new messages to stream
             setConnectedStreams(prev => prev.map(s => {
               if (s.id === streamId) {
-                const newMessages = [...(s.messages || []), ...data.messages];
+                const existingMessageIds = new Set(s.messages?.map(m => m.id) || []);
+                const newMessages = data.messages.filter(msg => !existingMessageIds.has(msg.id));
+                console.log(`Adding ${newMessages.length} new messages to stream`);
+                const updatedMessages = [...(s.messages || []), ...newMessages];
                 return {
                   ...s,
-                  messages: newMessages.slice(-100) // Keep last 100 messages
+                  messages: updatedMessages.slice(-100) // Keep last 100 messages
                 };
               }
               return s;
@@ -223,7 +361,7 @@ function App() {
         .catch(error => {
           console.error('Message polling error:', error);
         });
-    }, 3000); // Poll every 3 seconds
+    }, 30000); // Poll every 30 seconds
 
     // Store interval ID for cleanup
     setConnectedStreams(prev => prev.map(s => {
@@ -285,30 +423,35 @@ function App() {
         )}
       </header>
 
-      {/* Stream Tabs */}
+      {/* Connected stream windows (mini-cards) */}
       {connectedStreams.length > 0 && (
-        <div className="stream-tabs">
+        <div className="connected-windows">
           {connectedStreams.map(stream => (
-            <div key={stream.id} className="stream-tab-container">
-              <button 
-                className={`stream-tab ${activeStreamId === stream.id ? 'active' : ''}`}
-                onClick={() => switchToStream(stream.id)}
-              >
-                <span className="platform-icon">
-                  {stream.platform === 'twitch' ? '📺' : '🎥'}
+            <div 
+              key={stream.id} 
+              className={`stream-card ${activeStreamId === stream.id ? 'active' : ''}`}
+              onClick={() => switchToStream(stream.id)}
+            >
+              <div className="stream-card-header">
+                <span className={`platform-badge ${stream.platform}`}>
+                  {stream.platform === 'twitch' ? 'Twitch' : 'YouTube'}
                 </span>
-                <span className="stream-title">{stream.channel}</span>
-                <span className="stream-count">
-                  {stream.messages?.length || 0}
-                </span>
-              </button>
-              <button 
-                className="disconnect-stream-btn"
-                onClick={() => handleDisconnect(stream.id)}
-                title="Відключитися"
-              >
-                ✕
-              </button>
+                <button 
+                  className="stream-card-close"
+                  onClick={(e) => { e.stopPropagation(); handleDisconnect(stream.id); }}
+                  aria-label="Відключитися"
+                  title="Відключитися"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="stream-card-title" title={stream.title || stream.channel}>
+                {stream.title || stream.channel}
+              </div>
+              <div className="stream-card-stats">
+                <span className="stat-pill">💬 {stream.messages?.length || 0}</span>
+                <span className="stat-pill">❓ {stream.questions?.length || 0}</span>
+              </div>
             </div>
           ))}
         </div>

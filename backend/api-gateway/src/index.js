@@ -15,6 +15,7 @@ const upvotesRoutes = require('./routes/upvotes');
 const healthRoutes = require('./routes/health');
 const connectRoutes = require('./routes/connect');
 const youtubeRoutes = require('./routes/youtube');
+const twitchRoutes = require('./routes/twitch');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,10 +29,10 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
+// Rate limiting - более мягкие лимиты для разработки
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 минута
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // 1000 запросов в минуту
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
@@ -63,6 +64,9 @@ app.use('/api/v1/connect', connectRoutes);
 
 // YouTube Live Chat routes
 app.use('/api/v1/youtube', youtubeRoutes);
+
+// Twitch Chat routes
+app.use('/api/v1/twitch', twitchRoutes);
 
 // API routes with authentication
 app.use('/api/v1/messages', auth, messagesRoutes);
