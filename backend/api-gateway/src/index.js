@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
+const { createRateLimiter } = require('./middleware/rateLimiterCustom');
 const auth = require('./middleware/auth');
 
 // Routes
@@ -14,10 +15,12 @@ const questionsRoutes = require('./routes/questions');
 const upvotesRoutes = require('./routes/upvotes');
 const healthRoutes = require('./routes/health');
 const connectRoutes = require('./routes/connect');
-const youtubeRoutes = require('./routes/youtube');
+let youtubeRoutesFactory = require('./routes/youtube');
 const twitchRoutes = require('./routes/twitch');
+let kickRoutesFactory = require('./routes/kick');
 
 const app = express();
+const { createWsServer } = require('./ws/server');
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
@@ -29,17 +32,8 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting - более мягкие лимиты для разработки
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 минута
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // 1000 запросов в минуту
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
+// Base global limiter (dev-friendly)
+app.use('/api/', createRateLimiter({ windowMs: 60_000, max: 1000 }));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -62,11 +56,16 @@ app.use('/api/v1/health', healthRoutes);
 // Connect route (no auth required for demo)
 app.use('/api/v1/connect', connectRoutes);
 
-// YouTube Live Chat routes
-app.use('/api/v1/youtube', youtubeRoutes);
+// YouTube Live Chat routes (tighter per-route guard)
+const youtubeRoutes = youtubeRoutesFactory(() => app.get('wsHub'));
+app.use('/api/v1/youtube', createRateLimiter({ windowMs: 10_000, max: 200 }), youtubeRoutes);
 
-// Twitch Chat routes
-app.use('/api/v1/twitch', twitchRoutes);
+// Twitch Chat routes (tighter per-route guard)
+app.use('/api/v1/twitch', createRateLimiter({ windowMs: 10_000, max: 200 }), twitchRoutes);
+
+// Kick Chat routes (best-effort polling)
+const kickRoutes = kickRoutesFactory(() => app.get('wsHub'));
+app.use('/api/v1/kick', createRateLimiter({ windowMs: 10_000, max: 200 }), kickRoutes);
 
 // API routes with authentication
 app.use('/api/v1/messages', auth, messagesRoutes);
@@ -87,12 +86,16 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const httpServer = app.listen(PORT, () => {
   logger.info(`API Gateway started on port ${PORT}`, {
     port: PORT,
     environment: process.env.NODE_ENV,
   });
 });
+
+// Start WebSocket server (8080)
+const wsHub = createWsServer(8080);
+app.set('wsHub', wsHub);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

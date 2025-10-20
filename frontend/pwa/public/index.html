@@ -35,17 +35,43 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration (instant updates, disable in localhost) -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+        window.addEventListener('load', async () => {
+          try {
+            // In dev/localhost: ensure no SW to avoid cache sticking in Safari
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(location.hostname);
+            if (isLocalhost) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              for (const r of regs) { try { await r.unregister(); } catch(e) {} }
+              console.log('SW disabled on localhost');
+              return;
+            }
+
+            const reg = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('SW registered:', reg);
+
+            // Force activate updated SW immediately
+            reg.addEventListener('updatefound', () => {
+              const sw = reg.installing;
+              if (!sw) return;
+              sw.addEventListener('statechange', () => {
+                if (sw.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    sw.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                }
+              });
             });
+
+            // Reload when controller changes to the new SW
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              window.location.reload();
+            });
+          } catch (e) {
+            console.log('SW registration failed:', e);
+          }
         });
       }
     </script>

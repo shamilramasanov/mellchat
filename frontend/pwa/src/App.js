@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useWebSocket } from './hooks/useWebSocket';
 import './App.css';
 
 function App() {
+  const ws = useWebSocket();
   const [connectedStreams, setConnectedStreams] = useState([]);
   const [activeStreamId, setActiveStreamId] = useState(null);
   const [streamUrl, setStreamUrl] = useState('');
@@ -10,28 +12,62 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [questions, setQuestions] = useState([]);
 
+  // Subscribe to active stream via WS (after state is defined)
+  useEffect(() => {
+    if (!activeStreamId) return;
+    const activeStream = connectedStreams.find(s => s.id === activeStreamId);
+    if (!activeStream || !activeStream.connectionId) return;
+    ws.subscribe(activeStream.connectionId);
+    const off = ws.on('message', (evt) => {
+      if (evt.connectionId !== activeStream.connectionId) return;
+      if (evt.type !== 'message') return;
+      setConnectedStreams(prev => prev.map(s => {
+        if (s.id !== activeStreamId) return s;
+        const existing = new Set((s.messages||[]).map(m => m.id));
+        const list = Array.isArray(evt.payload) ? evt.payload : [evt.payload];
+        const add = list.filter(m => !existing.has(m.id));
+        return { ...s, messages: [...(s.messages||[]), ...add].slice(-100) };
+      }));
+    });
+    return () => {
+      ws.unsubscribe(activeStream.connectionId);
+      off && off();
+    };
+  }, [activeStreamId, connectedStreams]);
+
   // Load saved streams on app start
   useEffect(() => {
     const savedStreams = localStorage.getItem('mellchat-streams');
     if (savedStreams) {
       try {
-        const parsed = JSON.parse(savedStreams);
-        setConnectedStreams(parsed);
-        if (parsed.length > 0) {
-          setActiveStreamId(parsed[0].id);
-                // Restart polling for saved streams
-                parsed.forEach(stream => {
-                  if (stream.connectionId) {
-                    console.log('Restarting polling for saved stream:', stream.id, stream.connectionId);
-                    if (stream.platform === 'youtube') {
-                      startMessagePolling(stream.id, stream.connectionId);
-                    } else if (stream.platform === 'twitch') {
-                      startTwitchMessagePolling(stream.id, stream.connectionId);
-                    }
-                  }
-                });
+        const parsed = JSON.parse(savedStreams) || [];
+        // Migrate legacy saved entries: ensure connectionId for YouTube = `youtube-<videoId>`
+        const migrated = parsed.map((s) => {
+          if (s.platform === 'youtube' && !s.connectionId && s.channel) {
+            return { ...s, connectionId: `youtube-${s.channel}` };
+          }
+          return s;
+        });
+        setConnectedStreams(migrated);
+        if (migrated.length > 0) {
+          // Prefer first with connectionId
+          const firstWithConn = migrated.find(s => !!s.connectionId) || migrated[0];
+          setActiveStreamId(firstWithConn.id);
+          // Restart polling for saved streams that have connectionId
+          migrated.forEach(stream => {
+            if (stream.connectionId) {
+              console.log('Restarting polling for saved stream:', stream.id, stream.connectionId);
+              if (stream.platform === 'youtube') {
+                startMessagePolling(stream.id, stream.connectionId);
+              } else if (stream.platform === 'twitch') {
+                startTwitchMessagePolling(stream.id, stream.connectionId);
+              } else if (stream.platform === 'kick') {
+                startKickMessagePolling(stream.id, stream.connectionId);
+              }
+            }
+          });
         }
-        console.log('Loaded saved streams:', parsed.length);
+        console.log('Loaded saved streams:', migrated.length);
       } catch (error) {
         console.error('Error loading saved streams:', error);
       }
@@ -72,31 +108,43 @@ function App() {
     let channelName = '';
     let streamTitle = '';
 
-    if (streamUrl.includes('twitch.tv')) {
+    // Normalize input (trim, drop leading @, ensure scheme)
+    let normalized = (streamUrl || '').trim();
+    if (normalized.startsWith('@')) normalized = normalized.slice(1);
+    if (!/^https?:\/\//i.test(normalized)) {
+      normalized = `https://${normalized}`;
+    }
+    let parsed;
+    try { parsed = new URL(normalized); } catch { parsed = null; }
+
+    if (parsed && /twitch\.tv$/i.test(parsed.hostname)) {
       detectedPlatform = 'twitch';
-      const match = streamUrl.match(/twitch\.tv\/([^/?]+)/);
-      channelName = match ? match[1] : '';
+      channelName = parsed.pathname.replace(/^\//, '').split('/')[0] || '';
       streamTitle = `Twitch: ${channelName}`;
-    } else if (streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be')) {
+    } else if (parsed && /kick\.com$/i.test(parsed.hostname)) {
+      detectedPlatform = 'kick';
+      channelName = parsed.pathname.replace(/^\//, '').split('/')[0] || '';
+      streamTitle = `Kick: ${channelName}`;
+    } else if (parsed && (/youtube\.com$/i.test(parsed.hostname) || /youtu\.be$/i.test(parsed.hostname))) {
       detectedPlatform = 'youtube';
       // Support multiple YouTube URL formats
-      let match = streamUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+      let match = normalized.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
       if (!match) {
         // Try YouTube Live format: youtube.com/live/VIDEO_ID
-        match = streamUrl.match(/youtube\.com\/live\/([^&?]+)/);
+        match = normalized.match(/youtube\.com\/live\/([^&?]+)/);
         console.log('Trying YouTube Live format:', match);
       }
       if (!match) {
         // Try YouTube channel format: youtube.com/channel/CHANNEL_ID
-        match = streamUrl.match(/youtube\.com\/channel\/([^&?]+)/);
+        match = normalized.match(/youtube\.com\/channel\/([^&?]+)/);
       }
       if (!match) {
         // Try YouTube user format: youtube.com/user/USERNAME
-        match = streamUrl.match(/youtube\.com\/user\/([^&?]+)/);
+        match = normalized.match(/youtube\.com\/user\/([^&?]+)/);
       }
       if (!match) {
         // Try YouTube @ format: youtube.com/@([^&?]+)
-        match = streamUrl.match(/youtube\.com\/@([^&?]+)/);
+        match = normalized.match(/youtube\.com\/@([^&?]+)/);
       }
       channelName = match ? match[1] : '';
       console.log('YouTube detected:', channelName);
@@ -229,6 +277,42 @@ function App() {
           console.error('Twitch API error:', error);
           alert('Помилка підключення до Twitch чату');
         });
+      } else if (detectedPlatform === 'kick') {
+        // Connect to Kick (best-effort polling)
+        console.log('Connecting to Kick chat for:', streamTitle);
+        fetch('http://localhost:3001/api/v1/kick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channelName: channelName })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            console.log('Kick chat connected:', data);
+            setConnectedStreams(prev => prev.map(stream => {
+              if (stream.id === newStream.id) {
+                return {
+                  ...stream,
+                  connectionId: data.connectionId,
+                  title: data.data.title || streamTitle,
+                  channelTitle: data.data.channelName || channelName,
+                  messages: [],
+                  questions: []
+                };
+              }
+              return stream;
+            }));
+            console.log('Starting Kick message polling for:', newStream.id, data.connectionId);
+            startKickMessagePolling(newStream.id, data.connectionId);
+          } else {
+            console.error('Failed to connect to Kick chat:', data.message);
+            alert(`Помилка підключення до Kick: ${data.message}`);
+          }
+        })
+        .catch(error => {
+          console.error('Kick API error:', error);
+          alert('Помилка підключення до Kick чату');
+        });
       } else {
         alert('Непідтримувана платформа. Підтримуються тільки YouTube та Twitch.');
       }
@@ -242,9 +326,14 @@ function App() {
     
     // Call backend disconnect API if connectionId exists
     if (streamToDisconnect && streamToDisconnect.connectionId) {
-      const apiUrl = streamToDisconnect.platform === 'twitch' 
-        ? `http://localhost:3001/api/v1/twitch/${streamToDisconnect.connectionId}`
-        : `http://localhost:3001/api/v1/youtube/disconnect/${streamToDisconnect.connectionId}`;
+      let apiUrl = '';
+      if (streamToDisconnect.platform === 'twitch') {
+        apiUrl = `http://localhost:3001/api/v1/twitch/${streamToDisconnect.connectionId}`;
+      } else if (streamToDisconnect.platform === 'youtube') {
+        apiUrl = `http://localhost:3001/api/v1/youtube/${streamToDisconnect.connectionId}`;
+      } else if (streamToDisconnect.platform === 'kick') {
+        apiUrl = `http://localhost:3001/api/v1/kick/${streamToDisconnect.connectionId}`;
+      }
       
       fetch(apiUrl, { method: 'DELETE' })
         .then(response => response.json())
@@ -287,6 +376,9 @@ function App() {
   // Poll for new messages from Twitch Chat
   const startTwitchMessagePolling = (streamId, connectionId) => {
     console.log('startTwitchMessagePolling called with:', streamId, connectionId);
+    // clear old interval if exists
+    const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
+    if (existing) { try { clearInterval(existing); } catch {} }
     const pollInterval = setInterval(() => {
       console.log('Twitch polling interval triggered');
 
@@ -296,6 +388,12 @@ function App() {
         .then(response => response.json())
         .then(data => {
           console.log('Twitch polling response:', data);
+          if (!data.success && data.message === 'Connection not found') {
+            console.log('Twitch connection lost, attempting reconnect');
+            const s = connectedStreams.find(s => s.id === streamId);
+            if (s) reconnectTwitch(s);
+            return;
+          }
           if (data.success && data.messages && data.messages.length > 0) {
             console.log(`Received ${data.messages.length} messages from Twitch API`);
             // Add new messages to stream
@@ -326,6 +424,77 @@ function App() {
       }
       return s;
     }));
+  };
+
+  // Poll for new messages from Kick Chat
+  const startKickMessagePolling = (streamId, connectionId) => {
+    console.log('startKickMessagePolling called with:', streamId, connectionId);
+    const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
+    if (existing) { try { clearInterval(existing); } catch {} }
+    const pollInterval = setInterval(() => {
+      console.log('Kick polling interval triggered');
+      fetch(`http://localhost:3001/api/v1/kick/messages/${connectionId}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Kick polling response:', data);
+          if (!data.success && data.message === 'Connection not found') {
+            console.log('Kick connection lost, attempting reconnect');
+            const s = connectedStreams.find(s => s.id === streamId);
+            if (s) reconnectKick(s);
+            return;
+          }
+          if (data.success && data.messages && data.messages.length > 0) {
+            setConnectedStreams(prev => prev.map(s => {
+              if (s.id === streamId) {
+                const existingMessageIds = new Set(s.messages?.map(m => m.id) || []);
+                const newMessages = data.messages.filter(msg => !existingMessageIds.has(msg.id));
+                const updatedMessages = [...(s.messages || []), ...newMessages];
+                return { ...s, messages: updatedMessages.slice(-100) };
+              }
+              return s;
+            }));
+          }
+        })
+        .catch(error => {
+          console.error('Kick message polling error:', error);
+        });
+    }, 30000);
+
+    setConnectedStreams(prev => prev.map(s => {
+      if (s.id === streamId) {
+        return { ...s, pollInterval };
+      }
+      return s;
+    }));
+  };
+
+  // Reconnect helpers: refresh connectionId on backend restart
+  const reconnectTwitch = async (stream) => {
+    try {
+      const resp = await fetch('http://localhost:3001/api/v1/twitch', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelName: stream.channel })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setConnectedStreams(prev => prev.map(s => s.id === stream.id ? { ...s, connectionId: data.connectionId, title: data.data.title } : s));
+        startTwitchMessagePolling(stream.id, data.connectionId);
+      }
+    } catch (e) { console.error('reconnectTwitch error', e); }
+  };
+
+  const reconnectKick = async (stream) => {
+    try {
+      const resp = await fetch('http://localhost:3001/api/v1/kick', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelName: stream.channel })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setConnectedStreams(prev => prev.map(s => s.id === stream.id ? { ...s, connectionId: data.connectionId, title: data.data.title || s.title } : s));
+        startKickMessagePolling(stream.id, data.connectionId);
+      }
+    } catch (e) { console.error('reconnectKick error', e); }
   };
 
   // Poll for new messages from YouTube Live Chat
@@ -434,7 +603,7 @@ function App() {
             >
               <div className="stream-card-header">
                 <span className={`platform-badge ${stream.platform}`}>
-                  {stream.platform === 'twitch' ? 'Twitch' : 'YouTube'}
+                  {stream.platform === 'twitch' ? 'Twitch' : (stream.platform === 'youtube' ? 'YouTube' : 'Kick')}
                 </span>
                 <button 
                   className="stream-card-close"

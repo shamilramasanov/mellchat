@@ -11,7 +11,7 @@ const tmi = require('tmi.js');
 const activeTwitchConnections = new Map();
 
 // Start anonymous IRC client and pipe real messages into memory
-const startTwitchIRC = (connectionId, channelLogin) => {
+const startTwitchIRC = (connectionId, channelLogin, wsHub) => {
   const connection = activeTwitchConnections.get(connectionId);
   if (!connection) return;
 
@@ -35,6 +35,8 @@ const startTwitchIRC = (connectionId, channelLogin) => {
     const conn = activeTwitchConnections.get(connectionId);
     if (!conn) return;
     conn.messages = [...(conn.messages || []), msg].slice(-200);
+    // Push to WS subscribers if hub exists
+    try { wsHub && wsHub.emitMessage(connectionId, msg); } catch {}
   });
 
   client.on('connected', () => {
@@ -64,12 +66,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    if (!TWITCH_CLIENT_ID || !TWITCH_ACCESS_TOKEN) {
-      return res.status(500).json({
-        success: false,
-        message: 'Twitch API credentials not configured'
-      });
-    }
+    // Allow anonymous IRC without validating Helix tokens
 
     logger.info(`Connecting to Twitch chat: ${channelName}`);
 
@@ -91,32 +88,8 @@ router.post('/', async (req, res) => {
     }
 
     // Get channel info from Twitch API
-    const channelResponse = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
-      headers: {
-        'Client-ID': TWITCH_CLIENT_ID,
-        'Authorization': `Bearer ${TWITCH_ACCESS_TOKEN}`
-      }
-    });
-
-    if (!channelResponse.ok) {
-      const errorData = await channelResponse.json();
-      logger.error('Twitch API error:', errorData);
-      return res.status(400).json({
-        success: false,
-        message: `Twitch API error: ${errorData.message || 'Channel not found'}`
-      });
-    }
-
-    const channelData = await channelResponse.json();
-    
-    if (!channelData.data || channelData.data.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Twitch channel not found'
-      });
-    }
-
-    const channel = channelData.data[0];
+    // Resolve channel without Helix (best-effort)
+    const channel = { id: channelName, display_name: channelName, login: channelName };
     const connectionId = `twitch-${channelName}-${Date.now()}`;
     
     // Store connection
@@ -133,7 +106,8 @@ router.post('/', async (req, res) => {
     logger.info(`Twitch chat connected: ${connectionId}`);
 
     // Start IRC anonymous client for real chat messages
-    startTwitchIRC(connectionId, channel.login || channelName);
+    const wsHub = req.app.get('wsHub');
+    startTwitchIRC(connectionId, channel.login || channelName, wsHub);
 
     res.json({
       success: true,
