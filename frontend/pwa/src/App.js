@@ -33,7 +33,7 @@ function App() {
       ws.unsubscribe(activeStream.connectionId);
       off && off();
     };
-  }, [activeStreamId, connectedStreams]);
+  }, [activeStreamId, connectedStreams, ws]);
 
   // Load saved streams on app start
   useEffect(() => {
@@ -72,7 +72,7 @@ function App() {
         console.error('Error loading saved streams:', error);
       }
     }
-  }, []);
+  }, [startKickMessagePolling, startTwitchMessagePolling]);
 
   // Save streams to localStorage when they change
   useEffect(() => {

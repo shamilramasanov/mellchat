@@ -33,7 +33,7 @@ export function useWebSocket() {
       }
     }, PING_INTERVAL);
     pingTimerRef.current.unref?.();
-  }, []);
+  }, [stopPing]);
 
   const stopPing = useCallback(() => {
     if (pingTimerRef.current) {
@@ -92,7 +92,7 @@ export function useWebSocket() {
       const backoff = Math.min(RECONNECT_INTERVAL * Math.pow(2, reconnectAttemptsRef.current), 30000);
       reconnectTimerRef.current = setTimeout(() => { reconnectAttemptsRef.current++; connect(); }, backoff);
     }
-  }, [emitEvent, handleMessage, startPing]);
+  }, [emitEvent, handleMessage, startPing, stopPing]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
