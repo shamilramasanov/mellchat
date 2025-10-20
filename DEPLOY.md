@@ -31,6 +31,8 @@
    - `YOUTUBE_API_KEY` = твой YouTube API ключ
    - `KICK_PUSHER_APP_KEY` = `32cbd69e4b950bf97679`
    - `KICK_PUSHER_CLUSTER` = `us2`
+   - `TWITCH_CLIENT_ID` = твой Twitch Client ID (опционально - IRC работает без него)
+   - `TWITCH_CLIENT_SECRET` = твой Twitch Client Secret (опционально - IRC работает без него)
 8. Нажми "Deploy"
 
 ### 3. Обновить URL фронтенда
@@ -71,3 +73,11 @@
 ### Redis ошибки
 - Убедись что Redis добавлен в Railway проект
 - Проверь переменную `REDIS_URL`
+
+### Twitch не работает
+- **Без Twitch API ключей**: Twitch IRC работает анонимно, но с ограничениями
+- **С Twitch API ключами**: Получи на [dev.twitch.tv](https://dev.twitch.tv):
+  1. Создай приложение
+  2. Скопируй Client ID и Client Secret
+  3. Добавь в Railway переменные окружения
+- **Ограничения**: Без API ключей может быть rate limit на некоторые каналы
