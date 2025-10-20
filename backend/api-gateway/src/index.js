@@ -94,7 +94,7 @@ const httpServer = app.listen(PORT, () => {
 });
 
 // Start WebSocket server on the same port as HTTP
-const wsHub = createWsServer(server);
+const wsHub = createWsServer(httpServer);
 app.set('wsHub', wsHub);
 
 // Graceful shutdown
