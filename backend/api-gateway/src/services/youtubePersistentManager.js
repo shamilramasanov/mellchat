@@ -11,6 +11,17 @@ class YouTubePersistentManager extends EventEmitter {
     this.pollingTimers = new Map(); // videoId -> timerId
     this.messagesCache = new Map(); // videoId -> last N messages
 
+    // API Keys rotation
+    this.apiKeys = [
+      process.env.YOUTUBE_API_KEY,
+      process.env.YOUTUBE_API_KEY_1,
+      process.env.YOUTUBE_API_KEY_2,
+      process.env.YOUTUBE_API_KEY_3
+    ].filter(Boolean);
+    
+    this.currentKeyIndex = 0;
+    this.keyUsageStats = new Map(); // key -> { calls: number, lastUsed: timestamp, quotaExceeded: boolean }
+
     // API Usage Tracking
     this.apiCallCount = 0;
     this.apiCallStartTime = Date.now();
@@ -25,6 +36,40 @@ class YouTubePersistentManager extends EventEmitter {
 
     // Restore connections on startup
     this.restoreConnections();
+  }
+
+  // Get current API key
+  getCurrentApiKey() {
+    if (this.apiKeys.length === 0) {
+      throw new Error('No YouTube API keys configured');
+    }
+    return this.apiKeys[this.currentKeyIndex];
+  }
+
+  // Switch to next API key
+  switchToNextKey() {
+    const oldKey = this.getCurrentApiKey();
+    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    const newKey = this.getCurrentApiKey();
+    
+    logger.warn(`Switching YouTube API key from ${oldKey.substring(0, 10)}... to ${newKey.substring(0, 10)}...`);
+    return newKey;
+  }
+
+  // Mark current key as quota exceeded
+  markKeyQuotaExceeded() {
+    const currentKey = this.getCurrentApiKey();
+    const stats = this.keyUsageStats.get(currentKey) || { calls: 0, lastUsed: Date.now(), quotaExceeded: false };
+    stats.quotaExceeded = true;
+    stats.lastUsed = Date.now();
+    this.keyUsageStats.set(currentKey, stats);
+    
+    logger.error(`YouTube API key quota exceeded: ${currentKey.substring(0, 10)}...`);
+    
+    // Try to switch to next key
+    if (this.apiKeys.length > 1) {
+      this.switchToNextKey();
+    }
   }
 
   // Track API calls and get usage statistics
@@ -59,9 +104,17 @@ class YouTubePersistentManager extends EventEmitter {
       timeElapsedMinutes: Math.round(timeElapsed),
       callsPerMinute: Math.round(callsPerMinute),
       estimatedDailyCalls: Math.round(estimatedDailyCalls),
-      quotaLimit: 10000,
-      quotaUsedPercent: Math.round((estimatedDailyCalls / 10000) * 100),
-      lastApiCallTime: this.lastApiCallTime
+      quotaLimit: 10000 * this.apiKeys.length, // Total quota across all keys
+      quotaUsedPercent: Math.round((estimatedDailyCalls / (10000 * this.apiKeys.length)) * 100),
+      lastApiCallTime: this.lastApiCallTime,
+      currentKeyIndex: this.currentKeyIndex,
+      totalKeys: this.apiKeys.length,
+      keyStats: Array.from(this.keyUsageStats.entries()).map(([key, stats]) => ({
+        key: key.substring(0, 10) + '...',
+        calls: stats.calls,
+        quotaExceeded: stats.quotaExceeded,
+        lastUsed: stats.lastUsed
+      }))
     };
   }
 
@@ -172,25 +225,37 @@ class YouTubePersistentManager extends EventEmitter {
   }
 
   async getVideoInfo(videoId) {
-    this.trackApiCall();
-    const response = await this.youtube.videos.list({
-      key: process.env.YOUTUBE_API_KEY,
-      part: 'snippet,liveStreamingDetails',
-      id: videoId
-    });
-    if (!response.data.items || response.data.items.length === 0) {
-      throw new Error('Video not found');
+    try {
+      this.trackApiCall();
+      const response = await this.youtube.videos.list({
+        key: this.getCurrentApiKey(),
+        part: 'snippet,liveStreamingDetails',
+        id: videoId
+      });
+      if (!response.data.items || response.data.items.length === 0) {
+        throw new Error('Video not found');
+      }
+      const video = response.data.items[0];
+      const liveChatId = video.liveStreamingDetails?.activeLiveChatId;
+      if (!liveChatId) throw new Error('No active live chat found');
+      return {
+        videoId,
+        liveChatId,
+        title: video.snippet.title,
+        channelName: video.snippet.channelTitle,
+        isLive: video.snippet.liveBroadcastContent === 'live'
+      };
+    } catch (error) {
+      if (error.message && error.message.includes('quota')) {
+        this.markKeyQuotaExceeded();
+        // Retry with next key if available
+        if (this.apiKeys.length > 1) {
+          logger.info(`Retrying with next API key for video: ${videoId}`);
+          return this.getVideoInfo(videoId);
+        }
+      }
+      throw error;
     }
-    const video = response.data.items[0];
-    const liveChatId = video.liveStreamingDetails?.activeLiveChatId;
-    if (!liveChatId) throw new Error('No active live chat found');
-    return {
-      videoId,
-      liveChatId,
-      title: video.snippet.title,
-      channelName: video.snippet.channelTitle,
-      isLive: video.snippet.liveBroadcastContent === 'live'
-    };
   }
 
   startPolling(videoId) {
@@ -223,13 +288,15 @@ class YouTubePersistentManager extends EventEmitter {
   async pollMessages(videoId) {
     const connection = this.connections.get(videoId);
     if (!connection) return;
-    this.trackApiCall();
-    const response = await this.youtube.liveChatMessages.list({
-      key: process.env.YOUTUBE_API_KEY,
-      liveChatId: connection.liveChatId,
-      part: 'snippet,authorDetails',
-      pageToken: connection.nextPageToken
-    });
+    
+    try {
+      this.trackApiCall();
+      const response = await this.youtube.liveChatMessages.list({
+        key: this.getCurrentApiKey(),
+        liveChatId: connection.liveChatId,
+        part: 'snippet,authorDetails',
+        pageToken: connection.nextPageToken
+      });
     connection.nextPageToken = response.data.nextPageToken;
     connection.pollingInterval = response.data.pollingIntervalMillis || this.POLL_INTERVAL;
     const items = response.data.items || [];
@@ -257,6 +324,15 @@ class YouTubePersistentManager extends EventEmitter {
     this.messagesCache.set(videoId, buffer);
     if (items.length > 0) {
       connection.lastMessageId = items[items.length - 1].id;
+    }
+    } catch (error) {
+      if (error.message && error.message.includes('quota')) {
+        this.markKeyQuotaExceeded();
+        logger.warn(`YouTube API quota exceeded for polling ${videoId}, will retry with next key`);
+        // Don't throw error, just log and continue with next polling cycle
+      } else {
+        logger.error(`Error polling messages for ${videoId}:`, error);
+      }
     }
   }
 
