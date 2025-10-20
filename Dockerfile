@@ -2,14 +2,14 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from backend/api-gateway
+COPY backend/api-gateway/package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
-# Copy source code
-COPY . .
+# Copy source code from backend/api-gateway
+COPY backend/api-gateway/ .
 
 # Expose port
 EXPOSE 3001
