@@ -27,8 +27,29 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://mellchat-v5y7.vercel.app',
+  'https://mellchat-v5y7-5oxlvx0a6-shamils-projects-6a5060d0.vercel.app',
+  process.env.CORS_ORIGIN
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Allow any Vercel preview URL
+    if (origin && origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
