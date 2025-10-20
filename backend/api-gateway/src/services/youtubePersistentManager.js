@@ -11,6 +11,11 @@ class YouTubePersistentManager extends EventEmitter {
     this.pollingTimers = new Map(); // videoId -> timerId
     this.messagesCache = new Map(); // videoId -> last N messages
 
+    // API Usage Tracking
+    this.apiCallCount = 0;
+    this.apiCallStartTime = Date.now();
+    this.lastApiCallTime = null;
+
     // Config
     this.POLL_INTERVAL = 5000; // 5 seconds
     this.RETRY_INTERVAL = 10000; // 10 seconds
@@ -20,6 +25,44 @@ class YouTubePersistentManager extends EventEmitter {
 
     // Restore connections on startup
     this.restoreConnections();
+  }
+
+  // Track API calls and get usage statistics
+  trackApiCall() {
+    this.apiCallCount++;
+    this.lastApiCallTime = Date.now();
+    
+    // Log every 10 calls
+    if (this.apiCallCount % 10 === 0) {
+      const timeElapsed = (Date.now() - this.apiCallStartTime) / 1000 / 60; // minutes
+      const callsPerMinute = this.apiCallCount / timeElapsed;
+      const estimatedDailyCalls = callsPerMinute * 60 * 24;
+      
+      logger.info(`YouTube API Usage Stats`, {
+        totalCalls: this.apiCallCount,
+        timeElapsedMinutes: Math.round(timeElapsed),
+        callsPerMinute: Math.round(callsPerMinute),
+        estimatedDailyCalls: Math.round(estimatedDailyCalls),
+        quotaLimit: 10000,
+        quotaUsedPercent: Math.round((estimatedDailyCalls / 10000) * 100)
+      });
+    }
+  }
+
+  getApiUsageStats() {
+    const timeElapsed = (Date.now() - this.apiCallStartTime) / 1000 / 60; // minutes
+    const callsPerMinute = timeElapsed > 0 ? this.apiCallCount / timeElapsed : 0;
+    const estimatedDailyCalls = callsPerMinute * 60 * 24;
+    
+    return {
+      totalCalls: this.apiCallCount,
+      timeElapsedMinutes: Math.round(timeElapsed),
+      callsPerMinute: Math.round(callsPerMinute),
+      estimatedDailyCalls: Math.round(estimatedDailyCalls),
+      quotaLimit: 10000,
+      quotaUsedPercent: Math.round((estimatedDailyCalls / 10000) * 100),
+      lastApiCallTime: this.lastApiCallTime
+    };
   }
 
   async saveConnectionState(videoId, state) {
@@ -129,6 +172,7 @@ class YouTubePersistentManager extends EventEmitter {
   }
 
   async getVideoInfo(videoId) {
+    this.trackApiCall();
     const response = await this.youtube.videos.list({
       key: process.env.YOUTUBE_API_KEY,
       part: 'snippet,liveStreamingDetails',
@@ -179,6 +223,7 @@ class YouTubePersistentManager extends EventEmitter {
   async pollMessages(videoId) {
     const connection = this.connections.get(videoId);
     if (!connection) return;
+    this.trackApiCall();
     const response = await this.youtube.liveChatMessages.list({
       key: process.env.YOUTUBE_API_KEY,
       liveChatId: connection.liveChatId,

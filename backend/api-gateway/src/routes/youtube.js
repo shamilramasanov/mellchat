@@ -88,6 +88,40 @@ router.get('/active', (req, res) => {
   res.json({ success: true, connections: conns });
 });
 
+// Get active connections
+router.get('/active', async (req, res) => {
+  try {
+    const connections = youtubeManager.getActiveConnections();
+    res.json({
+      success: true,
+      connections: Array.from(connections.values())
+    });
+  } catch (error) {
+    logger.error('Failed to get active connections:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get active connections'
+    });
+  }
+});
+
+// Get API usage statistics
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = youtubeManager.getApiUsageStats();
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    logger.error('Failed to get API stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get API stats'
+    });
+  }
+});
+
 module.exports = (wsHubProvider) => {
   // allow wsHub access inside events
   router.wsHubRef = wsHubProvider;
