@@ -11,6 +11,9 @@
     }
   ],
   "routes": [
+    { "src": "/service-worker.js", "dest": "/service-worker.js" },
+    { "src": "/manifest.json", "dest": "/manifest.json" },
+    { "src": "/favicon.ico", "dest": "/favicon.ico" },
     {
       "src": "/static/(.*)",
       "headers": {
