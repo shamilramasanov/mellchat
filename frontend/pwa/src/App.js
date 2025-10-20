@@ -72,7 +72,7 @@ function App() {
         console.error('Error loading saved streams:', error);
       }
     }
-  }, []);
+  }, [startKickMessagePolling, startTwitchMessagePolling]);
 
   // Save streams to localStorage when they change
   useEffect(() => {
@@ -469,7 +469,7 @@ function App() {
   }, [connectedStreams]);
 
   // Reconnect helpers: refresh connectionId on backend restart
-  const reconnectTwitch = async (stream) => {
+  const reconnectTwitch = useCallback(async (stream) => {
     try {
       const resp = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -481,9 +481,9 @@ function App() {
         startTwitchMessagePolling(stream.id, data.connectionId);
       }
     } catch (e) { console.error('reconnectTwitch error', e); }
-  };
+  }, [startTwitchMessagePolling]);
 
-  const reconnectKick = async (stream) => {
+  const reconnectKick = useCallback(async (stream) => {
     try {
       const resp = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -495,7 +495,7 @@ function App() {
         startKickMessagePolling(stream.id, data.connectionId);
       }
     } catch (e) { console.error('reconnectKick error', e); }
-  };
+  }, [startKickMessagePolling]);
 
   // Poll for new messages from YouTube Live Chat
   const startMessagePolling = (streamId, connectionId) => {
