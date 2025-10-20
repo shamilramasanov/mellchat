@@ -193,7 +193,7 @@ function App() {
       
       if (detectedPlatform === 'youtube') {
         // Connect to YouTube Live Chat API
-        fetch('http://localhost:3001/api/v1/youtube', {
+        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -238,7 +238,7 @@ function App() {
         // Connect to real Twitch API
         console.log('Connecting to real Twitch chat for:', streamTitle);
         
-        fetch('http://localhost:3001/api/v1/twitch', {
+        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -280,7 +280,7 @@ function App() {
       } else if (detectedPlatform === 'kick') {
         // Connect to Kick (best-effort polling)
         console.log('Connecting to Kick chat for:', streamTitle);
-        fetch('http://localhost:3001/api/v1/kick', {
+        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ channelName: channelName })
@@ -328,11 +328,11 @@ function App() {
     if (streamToDisconnect && streamToDisconnect.connectionId) {
       let apiUrl = '';
       if (streamToDisconnect.platform === 'twitch') {
-        apiUrl = `http://localhost:3001/api/v1/twitch/${streamToDisconnect.connectionId}`;
+        apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch/${streamToDisconnect.connectionId}`;
       } else if (streamToDisconnect.platform === 'youtube') {
-        apiUrl = `http://localhost:3001/api/v1/youtube/${streamToDisconnect.connectionId}`;
+        apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube/${streamToDisconnect.connectionId}`;
       } else if (streamToDisconnect.platform === 'kick') {
-        apiUrl = `http://localhost:3001/api/v1/kick/${streamToDisconnect.connectionId}`;
+        apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick/${streamToDisconnect.connectionId}`;
       }
       
       fetch(apiUrl, { method: 'DELETE' })
@@ -384,7 +384,7 @@ function App() {
 
       console.log('Making Twitch API request to:', `http://localhost:3001/api/v1/twitch/messages/${connectionId}`);
       // Poll for new messages
-      fetch(`http://localhost:3001/api/v1/twitch/messages/${connectionId}`)
+      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch/messages/${connectionId}`)
         .then(response => response.json())
         .then(data => {
           console.log('Twitch polling response:', data);
@@ -433,7 +433,7 @@ function App() {
     if (existing) { try { clearInterval(existing); } catch {} }
     const pollInterval = setInterval(() => {
       console.log('Kick polling interval triggered');
-      fetch(`http://localhost:3001/api/v1/kick/messages/${connectionId}`)
+      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick/messages/${connectionId}`)
         .then(response => response.json())
         .then(data => {
           console.log('Kick polling response:', data);
@@ -471,7 +471,7 @@ function App() {
   // Reconnect helpers: refresh connectionId on backend restart
   const reconnectTwitch = async (stream) => {
     try {
-      const resp = await fetch('http://localhost:3001/api/v1/twitch', {
+      const resp = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channelName: stream.channel })
       });
@@ -485,7 +485,7 @@ function App() {
 
   const reconnectKick = async (stream) => {
     try {
-      const resp = await fetch('http://localhost:3001/api/v1/kick', {
+      const resp = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channelName: stream.channel })
       });
@@ -505,7 +505,7 @@ function App() {
       
       console.log('Making API request to:', `http://localhost:3001/api/v1/youtube/messages/${connectionId}`);
       // Poll for new messages (simplified - in real app would use WebSocket)
-      fetch(`http://localhost:3001/api/v1/youtube/messages/${connectionId}`)
+      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube/messages/${connectionId}`)
         .then(response => response.json())
         .then(data => {
           console.log('Polling response:', data);
