@@ -1,15 +1,10 @@
 const CACHE_NAME = 'mellchat-v1.0.0';
 const RUNTIME_CACHE = 'mellchat-runtime';
 
-// Assets to cache on install
+// Assets to cache on install (only essential files)
 const PRECACHE_URLS = [
   '/',
-  '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/manifest.json'
 ];
 
 // Install - cache core assets
@@ -18,9 +13,24 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('📦 Precaching app shell');
-        return cache.addAll(PRECACHE_URLS);
+        // Cache files individually to handle failures gracefully
+        return Promise.allSettled(
+          PRECACHE_URLS.map(url => 
+            cache.add(url).catch(error => {
+              console.warn(`Failed to cache ${url}:`, error);
+              return null; // Continue with other files
+            })
+          )
+        );
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('✅ App shell precached');
+        return self.skipWaiting();
+      })
+      .catch(error => {
+        console.error('Service Worker install failed:', error);
+        return self.skipWaiting(); // Still activate even if caching fails
+      })
   );
 });
 
