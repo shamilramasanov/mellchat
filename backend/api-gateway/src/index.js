@@ -2,16 +2,19 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const { createRateLimiter } = require('./middleware/rateLimiterCustom');
 const auth = require('./middleware/auth');
+const passport = require('./config/passport');
 
 // Routes
 const healthRoutes = require('./routes/health');
 const connectRoutes = require('./routes/connect');
+const authRoutes = require('./routes/auth');
 let youtubeRoutesFactory = require('./routes/youtube');
 const twitchRoutes = require('./routes/twitch');
 let kickRoutesFactory = require('./routes/kick');
@@ -64,6 +67,10 @@ app.use('/api/', createRateLimiter({ windowMs: 60_000, max: 1000 }));
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Request logging
 app.use((req, res, next) => {
@@ -78,6 +85,9 @@ app.use((req, res, next) => {
 
 // Health check route (no auth required)
 app.use('/api/v1/health', healthRoutes);
+
+// Auth routes (OAuth)
+app.use('/api/v1/auth', authRoutes);
 
 // Connect route (no auth required for demo)
 app.use('/api/v1/connect', connectRoutes);

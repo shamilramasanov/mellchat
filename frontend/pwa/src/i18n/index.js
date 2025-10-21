@@ -46,6 +46,12 @@ const resources = {
       'theme.language.uk': 'Українська',
       'theme.close': 'Закрыть',
       
+      // Auth
+      'auth.account': 'Аккаунт',
+      'auth.login': 'Войти через Google',
+      'auth.logout': 'Выйти',
+      'auth.loading': 'Загрузка...',
+      
       // Errors
       'error.connection.failed': 'Не удалось подключиться',
       'error.invalid.url': 'Неверный URL трансляции',
@@ -98,6 +104,12 @@ const resources = {
       'theme.language.uk': 'Українська',
       'theme.close': 'Close',
       
+      // Auth
+      'auth.account': 'Account',
+      'auth.login': 'Sign in with Google',
+      'auth.logout': 'Logout',
+      'auth.loading': 'Loading...',
+      
       // Errors
       'error.connection.failed': 'Failed to connect',
       'error.invalid.url': 'Invalid stream URL',
@@ -149,6 +161,12 @@ const resources = {
       'theme.language.en': 'English',
       'theme.language.uk': 'Українська',
       'theme.close': 'Закрити',
+      
+      // Auth
+      'auth.account': 'Акаунт',
+      'auth.login': 'Увійти через Google',
+      'auth.logout': 'Вийти',
+      'auth.loading': 'Завантаження...',
       
       // Errors
       'error.connection.failed': 'Не вдалося підключитися',

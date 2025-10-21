@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import './ThemeSettings.css';
 
 const ThemeSettings = ({ isOpen, onClose }) => {
@@ -12,6 +13,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
     updateLanguage, 
     resetToDefaults 
   } = useTheme();
+  const { user, isAuthenticated, login, logout, loading } = useAuth();
 
   if (!isOpen) return null;
 
@@ -42,6 +44,39 @@ const ThemeSettings = ({ isOpen, onClose }) => {
         </div>
         
         <div className="modal-content">
+          {/* User Profile / Login */}
+          <div className="setting-group">
+            <label className="setting-label">
+              <span className="setting-icon">👤</span>
+              {t('auth.account') || 'Аккаунт'}
+            </label>
+            {loading ? (
+              <div className="auth-loading">
+                <span>⏳</span> {t('auth.loading') || 'Загрузка...'}
+              </div>
+            ) : isAuthenticated && user ? (
+              <div className="user-profile">
+                <div className="user-info">
+                  {user.avatar && (
+                    <img src={user.avatar} alt={user.name} className="user-avatar" />
+                  )}
+                  <div className="user-details">
+                    <div className="user-name">{user.name}</div>
+                    <div className="user-email">{user.email}</div>
+                  </div>
+                </div>
+                <button className="btn-logout" onClick={logout}>
+                  {t('auth.logout') || 'Выйти'}
+                </button>
+              </div>
+            ) : (
+              <button className="btn-login" onClick={login}>
+                <span className="google-icon">🔐</span>
+                {t('auth.login') || 'Войти через Google'}
+              </button>
+            )}
+          </div>
+
           {/* Theme Selection */}
           <div className="setting-group">
             <label className="setting-label">
