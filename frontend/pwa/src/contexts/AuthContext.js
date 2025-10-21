@@ -17,6 +17,38 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Verify token function
+  const verifyToken = async (tokenToVerify) => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokenToVerify}`
+        },
+        body: JSON.stringify({ token: tokenToVerify }),
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        // Token invalid, clear it
+        localStorage.removeItem('mellchat-token');
+        setUser(null);
+        setToken(null);
+      }
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      localStorage.removeItem('mellchat-token');
+      setUser(null);
+      setToken(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Check for token in URL (from OAuth redirect)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -39,34 +71,8 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const verifyToken = async (tokenToVerify) => {
-    try {
-      const response = await fetch(`${API_URL}/api/v1/auth/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokenToVerify}`
-        },
-        body: JSON.stringify({ token: tokenToVerify }),
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        // Token invalid, clear it
-        logout();
-      }
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const login = () => {
     // Redirect to Google OAuth

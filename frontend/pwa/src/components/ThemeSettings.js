@@ -10,8 +10,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
     theme, 
     language, 
     updateTheme, 
-    updateLanguage, 
-    resetToDefaults 
+    updateLanguage
   } = useTheme();
   const { user, isAuthenticated, login, logout, loading } = useAuth();
 
