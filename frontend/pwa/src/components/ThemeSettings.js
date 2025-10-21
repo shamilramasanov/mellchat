@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import './ThemeSettings.css';
 
 const ThemeSettings = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const { 
     theme, 
     language, 
@@ -14,15 +16,15 @@ const ThemeSettings = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const languages = [
-    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-    { code: 'en', name: 'English', flag: '🇺🇸' },
-    { code: 'uk', name: 'Українська', flag: '🇺🇦' }
+    { code: 'ru', name: t('theme.language.ru'), flag: '🇷🇺' },
+    { code: 'en', name: t('theme.language.en'), flag: '🇺🇸' },
+    { code: 'uk', name: t('theme.language.uk'), flag: '🇺🇦' }
   ];
 
   const themes = [
-    { code: 'light', name: 'Светлая', icon: '☀️' },
-    { code: 'dark', name: 'Темная', icon: '🌙' },
-    { code: 'auto', name: 'Авто', icon: '🔄' }
+    { code: 'light', name: t('theme.theme.light'), icon: '☀️' },
+    { code: 'dark', name: t('theme.theme.dark'), icon: '🌙' },
+    { code: 'auto', name: t('theme.theme.auto'), icon: '🔄' }
   ];
 
   const handleThemeChange = (newTheme) => {
@@ -37,7 +39,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal theme-settings" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Настройки интерфейса</h3>
+          <h3>{t('theme.title')}</h3>
           <button className="modal-close" onClick={onClose}>
             ✕
           </button>

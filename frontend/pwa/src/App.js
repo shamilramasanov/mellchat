@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import ThemeSettings from './components/ThemeSettings';
@@ -9,6 +10,7 @@ import './styles/themes.css';
 function App() {
   const ws = useWebSocket();
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const [connectedStreams, setConnectedStreams] = useState([]);
   const [activeStreamId, setActiveStreamId] = useState(null);
   const [streamUrl, setStreamUrl] = useState('');
@@ -632,11 +634,11 @@ function App() {
           <div className="stats-grid">
             <div className="stat">
               <div className="stat-value">{questions.length}</div>
-              <div className="stat-label">Питання</div>
+              <div className="stat-label">{t('nav.questions')}</div>
             </div>
             <div className="stat">
               <div className="stat-value">{messages.length}</div>
-              <div className="stat-label">Повідомлення</div>
+              <div className="stat-label">{t('nav.messages')}</div>
             </div>
             <div className="stat">
               <div className="stat-value">{questions.reduce((sum, q) => sum + q.upvotes, 0)}</div>
@@ -744,13 +746,13 @@ function App() {
               className={`tab ${activeTab === 'questions' ? 'active' : ''}`}
               onClick={() => setActiveTab('questions')}
             >
-              ❓ Питання <span className="badge">{questions.length}</span>
+              ❓ {t('nav.questions')} <span className="badge">{questions.length}</span>
             </button>
             <button 
               className={`tab ${activeTab === 'messages' ? 'active' : ''}`}
               onClick={() => setActiveTab('messages')}
             >
-              💬 Чат <span className="badge">{messages.length}</span>
+              💬 {t('nav.messages')} <span className="badge">{messages.length}</span>
             </button>
           </div>
 
@@ -783,8 +785,8 @@ function App() {
                 ) : (
                   <div className="empty">
                     <div className="empty-icon">❓</div>
-                    <h2>Питання відсутні</h2>
-                    <p>Очікуйте питання від глядачів</p>
+                    <h2>{t('questions.empty.title')}</h2>
+                    <p>{t('questions.empty.description')}</p>
                   </div>
                 )}
               </div>
@@ -809,8 +811,8 @@ function App() {
                 ) : (
                   <div className="empty">
                     <div className="empty-icon">💬</div>
-                    <h2>Повідомлення відсутні</h2>
-                    <p>Очікуйте повідомлення від глядачів</p>
+                    <h2>{t('messages.empty.title')}</h2>
+                    <p>{t('messages.empty.description')}</p>
                   </div>
                 )}
               </div>

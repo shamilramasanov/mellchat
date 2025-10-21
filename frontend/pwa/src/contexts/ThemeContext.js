@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import i18n from '../i18n';
 
 // Theme Context
 const ThemeContext = createContext();
@@ -89,6 +90,8 @@ export const ThemeProvider = ({ children }) => {
   const updateLanguage = (newLanguage) => {
     setLanguage(newLanguage);
     localStorage.setItem('mellchat-language', newLanguage);
+    // Update i18n language
+    i18n.changeLanguage(newLanguage);
   };
 
   // Reset to system preferences
