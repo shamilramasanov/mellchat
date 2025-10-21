@@ -16,15 +16,15 @@ const ThemeSettings = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const languages = [
-    { code: 'ru', name: t('theme.language.ru'), flag: '🇷🇺' },
-    { code: 'en', name: t('theme.language.en'), flag: '🇺🇸' },
-    { code: 'uk', name: t('theme.language.uk'), flag: '🇺🇦' }
+    { code: 'ru', name: t('theme.language.ru') || 'Русский', flag: '🇷🇺' },
+    { code: 'en', name: t('theme.language.en') || 'English', flag: '🇺🇸' },
+    { code: 'uk', name: t('theme.language.uk') || 'Українська', flag: '🇺🇦' }
   ];
 
   const themes = [
-    { code: 'light', name: t('theme.theme.light'), icon: '☀️' },
-    { code: 'dark', name: t('theme.theme.dark'), icon: '🌙' },
-    { code: 'auto', name: t('theme.theme.auto'), icon: '🔄' }
+    { code: 'light', name: t('theme.theme.light') || 'Светлая', icon: '☀️' },
+    { code: 'dark', name: t('theme.theme.dark') || 'Темная', icon: '🌙' },
+    { code: 'auto', name: t('theme.theme.auto') || 'Авто', icon: '🔄' }
   ];
 
   const handleThemeChange = (newTheme) => {
@@ -39,7 +39,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal theme-settings" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>{t('theme.title')}</h3>
+          <h3>{t('theme.title') || 'Настройки интерфейса'}</h3>
           <button className="modal-close" onClick={onClose}>
             ✕
           </button>

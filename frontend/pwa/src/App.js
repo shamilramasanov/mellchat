@@ -413,6 +413,16 @@ function App() {
         // Clear messages and questions
         setMessages([]);
         setQuestions([]);
+        
+        // Force localStorage update to empty array
+        const STORAGE_VERSION = '1.0';
+        const dataToSave = {
+          version: STORAGE_VERSION,
+          streams: [],
+          lastUpdated: Date.now()
+        };
+        localStorage.setItem('mellchat-streams', JSON.stringify(dataToSave));
+        console.log('Forced localStorage update with empty streams');
       }
       
       return updated;
@@ -555,7 +565,7 @@ function App() {
     const pollInterval = setInterval(() => {
       console.log('Polling interval triggered');
       
-      console.log('Making API request to:', `http://localhost:3001/api/v1/youtube/messages/${connectionId}`);
+      console.log('Making API request to:', `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube/messages/${connectionId}`);
       // Poll for new messages (simplified - in real app would use WebSocket)
       fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube/messages/${connectionId}`)
         .then(response => response.json())
