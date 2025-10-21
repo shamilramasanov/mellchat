@@ -1,6 +1,135 @@
 // Side panel script
-let filterMode = 'all'; // 'all' or 'questions'
+const API_URL = 'http://localhost:3001';
+const WS_URL = 'ws://localhost:3001';
+
+let filterMode = 'all';
+let ws = null;
+let connectionId = null;
+let currentPlatform = null;
 const chatContainer = document.getElementById('chatContainer');
+const messages = [];
+
+// Connect to stream
+document.getElementById('connectBtn').addEventListener('click', async () => {
+  const url = document.getElementById('streamUrl').value.trim();
+  if (!url) return;
+  
+  // Parse platform
+  let platform, channelName, videoId;
+  
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    platform = 'youtube';
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([^&?]+)/);
+    videoId = match ? match[1] : '';
+  } else if (url.includes('twitch.tv')) {
+    platform = 'twitch';
+    channelName = url.split('/').pop();
+  } else if (url.includes('kick.com')) {
+    platform = 'kick';
+    channelName = url.split('/').pop();
+  }
+  
+  if (!platform) {
+    alert('Unsupported platform');
+    return;
+  }
+  
+  try {
+    // Connect to backend
+    let response;
+    if (platform === 'youtube') {
+      response = await fetch(`${API_URL}/api/v1/youtube`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId })
+      });
+    } else if (platform === 'twitch') {
+      response = await fetch(`${API_URL}/api/v1/twitch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelName })
+      });
+    } else if (platform === 'kick') {
+      response = await fetch(`${API_URL}/api/v1/kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelName })
+      });
+    }
+    
+    const data = await response.json();
+    if (data.success) {
+      connectionId = data.connectionId;
+      currentPlatform = platform;
+      connectWebSocket();
+      document.getElementById('connectBtn').style.display = 'none';
+      document.getElementById('disconnectBtn').style.display = 'block';
+      chatContainer.innerHTML = '<div class="empty-state"><p>✅ Connected! Waiting for messages...</p></div>';
+    } else {
+      alert('Connection failed: ' + data.message);
+    }
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+});
+
+// Disconnect
+document.getElementById('disconnectBtn').addEventListener('click', async () => {
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+  
+  if (connectionId) {
+    try {
+      await fetch(`${API_URL}/api/v1/${currentPlatform}/${connectionId}`, { method: 'DELETE' });
+    } catch (error) {
+      console.error('Disconnect error:', error);
+    }
+  }
+  
+  connectionId = null;
+  currentPlatform = null;
+  messages.length = 0;
+  document.getElementById('connectBtn').style.display = 'block';
+  document.getElementById('disconnectBtn').style.display = 'none';
+  chatContainer.innerHTML = '<div class="empty-state"><p>📺 Disconnected</p></div>';
+});
+
+// WebSocket connection
+function connectWebSocket() {
+  ws = new WebSocket(WS_URL);
+  
+  ws.onopen = () => {
+    console.log('WebSocket connected');
+    ws.send(JSON.stringify({ type: 'subscribe', connectionId }));
+  };
+  
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'message' && data.connectionId === connectionId) {
+        const msg = Array.isArray(data.payload) ? data.payload : [data.payload];
+        msg.forEach(m => addMessage({
+          author: m.username,
+          text: m.message,
+          isQuestion: m.message?.trim().endsWith('?'),
+          platform: currentPlatform
+        }));
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+    }
+  };
+  
+  ws.onclose = () => {
+    console.log('WebSocket disconnected');
+  };
+  
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+}
 
 // Filter buttons
 document.getElementById('filterQuestions').addEventListener('click', () => {

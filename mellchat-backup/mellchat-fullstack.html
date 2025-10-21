@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MellChat - Live Chat Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #151a35;
+            --bg-tertiary: #1e2642;
+            --bg-card: #252d4f;
+            --text-primary: #e4e7f7;
+            --text-secondary: #9ca3c5;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: rgba(99, 102, 241, 0.2);
+            --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.05em;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.connected {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-badge.connected::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .icon-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: var(--gradient);
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .platform-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .platform-tab {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .platform-tab:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .platform-tab.active {
+            background: var(--gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--accent-glow);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--gradient);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 450px);
+            min-height: 500px;
+        }
+
+        .panel-header {
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .count-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            background: var(--gradient);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        /* Questions */
+        .question-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .question-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .question-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .rank {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .username {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .timestamp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .category-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: white;
+        }
+
+        .question-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .question-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .upvote-btn {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upvote-btn:hover {
+            background: var(--gradient);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.05);
+        }
+
+        .answered-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: var(--success);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Messages */
+        .message {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .message-text {
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Scrollbar */
+        .panel-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .panel-content::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        .panel-content::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-top">
+                    <div class="logo">
+                        <h1>🎮 MellChat</h1>
+                        <span class="status-badge disconnected" id="status">Відключено</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="icon-btn" id="themeBtn" title="Змінити тему">🌙</button>
+                        <button class="icon-btn" onclick="location.reload()" title="Оновити">🔄</button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">❓</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalQuestions">0</div>
+                            <div class="stat-label">Питань</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalMessages">0</div>
+                            <div class="stat-label">Повідомлень</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="answered">0</div>
+                            <div class="stat-label">Відповіли</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❤️</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalUpvotes">0</div>
+                            <div class="stat-label">Голосів</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connection-panel">
+                    <div class="platform-tabs">
+                        <button class="platform-tab active" data-platform="twitch">
+                            🎮 Twitch
+                        </button>
+                        <button class="platform-tab" data-platform="youtube">
+                            📺 YouTube
+                        </button>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="input-field" id="channelInput" 
+                               placeholder="Введіть назву каналу або URL...">
+                        <button class="btn btn-primary" id="connectBtn">
+                            🔗 Підключити
+                        </button>
+                        <button class="btn btn-danger hidden" id="disconnectBtn">
+                            ❌ Відключити
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <button class="filter-btn active" data-category="all">💬 Всі</button>
+                    <button class="filter-btn" data-category="question">❓ Питання</button>
+                    <button class="filter-btn" data-category="gratitude">❤️ Подяки</button>
+                    <button class="filter-btn" data-category="negative">⚠️ Негатив</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        📋 Топ питання
+                        <span class="count-badge" id="questionsCount">0</span>
+                    </div>
+                </div>
+                <div class="panel-content" id="questionsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">💭</div>
+                        <div>Підключіться до каналу<br>для перегляду питань</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        💬 Живий чат
+                        <span class="count-badge" id="messagesCount">0</span>
+                    </div>
+                </div>
+                <div class="panel-content" id="messagesList">
+                    <div class="empty-state">
+                        <div class="empty-icon">🗨️</div>
+                        <div>Підключіться до каналу<br>для перегляду повідомлень</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        class MellChat {
+            constructor() {
+                this.platform = 'twitch';
+                this.channel = '';
+                this.connected = false;
+                this.category = 'all';
+                this.messages = [];
+                this.questions = [];
+                
+                // Mock data
+                this.mockChannels = {
+                    twitch: {
+                        'mellstroy': this.generateMockData('mellstroy', 'twitch'),
+                        'xqc': this.generateMockData('xqc', 'twitch')
+                    },
+                    youtube: {
+                        'test': this.generateMockData('test', 'youtube')
+                    }
+                };
+                
+                this.init();
+            }
+            
+            generateMockData(channel, platform) {
+                const users = ['Олег', 'Марія', 'Іван', 'Катерина', 'Андрій', 'Софія'];
+                const questionTexts = [
+                    'Яка твоя улюблена гра?',
+                    'Коли наступний стрім?',
+                    'Можеш показати налаштування?',
+                    'Як почати стрімити?',
+                    'Яке обладнання використовуєш?'
+                ];
+                const gratitudeTexts = [
+                    'Дякую за стрім!',
+                    'Відмінний контент!',
+                    'Підписався!',
+                    'Круто!',
+                    'Лайк!'
+                ];
+                const negativeTexts = [
+                    'Це нудно',
+                    'Погана якість звуку',
+                    'Не подобається'
+                ];
+                
+                const messages = [];
+                const questions = [];
+                
+                for (let i = 0; i < 15; i++) {
+                    const user = users[Math.floor(Math.random() * users.length)];
+                    const type = Math.random();
+                    let text, category;
+                    
+                    if (type < 0.3) {
+                        text = questionTexts[Math.floor(Math.random() * questionTexts.length)];
+                        category = 'question';
+                        questions.push({
+                            id: Date.now() + i,
+                            username: user,
+                            text: text,
+                            timestamp: Date.now() - (i * 60000),
+                            category: category,
+                            upvotes: Math.floor(Math.random() * 20),
+                            answered: Math.random() > 0.7
+                        });
+                    } else if (type < 0.7) {
+                        text = gratitudeTexts[Math.floor(Math.random() * gratitudeTexts.length)];
+                        category = 'gratitude';
+                    } else {
+                        text = negativeTexts[Math.floor(Math.random() * negativeTexts.length)];
+                        category = 'negative';
+                    }
+                    
+                    messages.push({
+                        id: Date.now() + i + 1000,
+                        username: user,
+                        text: text,
+                        timestamp: Date.now() - (i * 30000),
+                        category: category
+                    });
+                }
+                
+                return { messages, questions };
+            }
+            
+            init() {
+                // Platform tabs
+                document.querySelectorAll('.platform-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        this.platform = tab.dataset.platform;
+                    });
+                });
+                
+                // Connect
+                document.getElementById('connectBtn').addEventListener('click', () => this.connect());
+                document.getElementById('disconnectBtn').addEventListener('click', () => this.disconnect());
+                document.getElementById('channelInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.connect();
+                });
+                
+                // Filters
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.category = btn.dataset.category;
+                        this.render();
+                    });
+                });
+                
+                // Theme
+                document.getElementById('themeBtn').addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+                });
+            }
+            
+             connect() {
+                 const input = document.getElementById('channelInput').value.trim();
+                 if (!input) return alert('Введіть назву каналу!');
+                 
+                 console.log('Connecting to:', input);
+                 
+                 // Извлекаем канал и автоматически переключаем платформу
+                 this.channel = this.extractChannel(input);
+                 
+                 console.log(`Platform: ${this.platform}, Channel: ${this.channel}`);
+                 
+                 // Проверяем существующие данные
+                 const data = this.mockChannels[this.platform]?.[this.channel];
+                 
+                 if (data) {
+                     console.log('Using existing data for channel:', this.channel);
+                     this.messages = data.messages;
+                     this.questions = data.questions.sort((a, b) => b.upvotes - a.upvotes);
+                 } else {
+                     console.log('Creating new mock data for channel:', this.channel);
+                     // Создаем новые данные для канала
+                     const newData = this.generateMockData(this.channel, this.platform);
+                     if (!this.mockChannels[this.platform]) {
+                         this.mockChannels[this.platform] = {};
+                     }
+                     this.mockChannels[this.platform][this.channel] = newData;
+                     this.messages = newData.messages;
+                     this.questions = newData.questions.sort((a, b) => b.upvotes - a.upvotes);
+                 }
+                 
+                 this.connected = true;
+                 this.render();
+                 this.startUpdates();
+                 
+                 console.log('Successfully connected!');
+             }
+            
+            disconnect() {
+                this.connected = false;
+                this.channel = '';
+                this.messages = [];
+                this.questions = [];
+                this.stopUpdates();
+                this.render();
+            }
+            
+             extractChannel(input) {
+                 console.log('Extracting channel from:', input);
+                 
+                 // Twitch URLs
+                 if (input.includes('twitch.tv/')) {
+                     const channel = input.split('twitch.tv/')[1].split(/[/?]/)[0];
+                     console.log('Twitch channel detected:', channel);
+                     return channel;
+                 }
+                 
+                 // YouTube Live URLs
+                 if (input.includes('youtube.com/live/')) {
+                     const match = input.match(/youtube\.com\/live\/([^\/\?]+)/);
+                     if (match) {
+                         console.log('YouTube Live detected, video ID:', match[1]);
+                         // Автоматически переключаем на YouTube
+                         document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+                         document.querySelector('[data-platform="youtube"]').classList.add('active');
+                         this.platform = 'youtube';
+                         return match[1];
+                     }
+                 }
+                 
+                 // YouTube regular URLs
+                 if (input.includes('youtube.com')) {
+                     // Channel URLs
+                     const channelMatch = input.match(/youtube\.com\/(?:channel\/|c\/|user\/|@)([^\/\?]+)/);
+                     if (channelMatch) {
+                         console.log('YouTube channel detected:', channelMatch[1]);
+                         document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+                         document.querySelector('[data-platform="youtube"]').classList.add('active');
+                         this.platform = 'youtube';
+                         return channelMatch[1];
+                     }
+                     
+                     // Video URLs
+                     const videoMatch = input.match(/[?&]v=([^&]+)/);
+                     if (videoMatch) {
+                         console.log('YouTube video detected:', videoMatch[1]);
+                         document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+                         document.querySelector('[data-platform="youtube"]').classList.add('active');
+                         this.platform = 'youtube';
+                         return videoMatch[1];
+                     }
+                 }
+                 
+                 console.log('Simple channel name:', input);
+                 return input;
+             }
+            
+            startUpdates() {
+                this.updateInterval = setInterval(() => {
+                    if (this.connected && this.messages.length > 0) {
+                        const randomMsg = this.messages[Math.floor(Math.random() * this.messages.length)];
+                        this.messages.unshift({
+                            ...randomMsg,
+                            id: Date.now(),
+                            timestamp: Date.now()
+                        });
+                        this.messages = this.messages.slice(0, 50);
+                        this.render();
+                    }
+                }, 3000);
+            }
+            
+            stopUpdates() {
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+            }
+            
+            upvote(id) {
+                const q = this.questions.find(q => q.id === id);
+                if (q) {
+                    q.upvotes++;
+                    this.questions.sort((a, b) => b.upvotes - a.upvotes);
+                    this.render();
+                }
+            }
+            
+            render() {
+                // Status
+                const status = document.getElementById('status');
+                if (this.connected) {
+                    status.className = 'status-badge connected';
+                    status.textContent = 'Підключено';
+                } else {
+                    status.className = 'status-badge disconnected';
+                    status.textContent = 'Відключено';
+                }
+                
+                // Buttons
+                document.getElementById('connectBtn').classList.toggle('hidden', this.connected);
+                document.getElementById('disconnectBtn').classList.toggle('hidden', !this.connected);
+                
+                // Stats
+                const filtered = this.filterItems();
+                document.getElementById('totalQuestions').textContent = this.questions.length;
+                document.getElementById('totalMessages').textContent = this.messages.length;
+                document.getElementById('answered').textContent = this.questions.filter(q => q.answered).length;
+                document.getElementById('totalUpvotes').textContent = this.questions.reduce((sum, q) => sum + q.upvotes, 0);
+                
+                // Counts
+                document.getElementById('questionsCount').textContent = filtered.questions.length;
+                document.getElementById('messagesCount').textContent = filtered.messages.length;
+                
+                // Questions
+                this.renderQuestions(filtered.questions);
+                
+                // Messages
+                this.renderMessages(filtered.messages);
+            }
+            
+            filterItems() {
+                const filterFn = item => this.category === 'all' || item.category === this.category;
+                return {
+                    questions: this.questions.filter(filterFn),
+                    messages: this.messages.filter(filterFn)
+                };
+            }
+            
+            renderQuestions(questions) {
+                const container = document.getElementById('questionsList');
+                
+                if (questions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">💭</div>
+                            <div>${this.connected ? 'Немає питань у цій категорії' : 'Підключіться до каналу<br>для перегляду питань'}</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = questions.map((q, i) => `
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div class="question-meta">
+                                <span class="rank">#${i + 1}</span>
+                                <span>${this.platform === 'twitch' ? '🎮' : '📺'}</span>
+                                <span class="username">${q.username}</span>
+                                <span class="timestamp">${this.formatTime(q.timestamp)}</span>
+                            </div>
+                            <span class="category-badge" style="background: ${this.getCategoryColor(q.category)}">
+                                ${this.getCategoryName(q.category)}
+                            </span>
+                        </div>
+                        <div class="question-text">${q.text}</div>
+                        <div class="question-footer">
+                            <button class="upvote-btn" onclick="app.upvote(${q.id})">
+                                ❤️ ${q.upvotes}
+                            </button>
+                            ${q.answered ? '<span class="answered-badge">✅ Відповіли</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            renderMessages(messages) {
+                const container = document.getElementById('messagesList');
+                
+                if (messages.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🗨️</div>
+                            <div>${this.connected ? 'Немає повідомлень у цій категорії' : 'Підключіться до каналу<br>для перегляду повідомлень'}</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = messages.map(m => `
+                    <div class="message">
+                        <div class="message-header">
+                            <span>${this.platform === 'twitch' ? '🎮' : '📺'}</span>
+                            <span class="username">${m.username}</span>
+                            <span class="timestamp">${this.formatTime(m.timestamp)}</span>
+                            ${m.category !== 'all' ? `
+                                <span class="category-badge" style="background: ${this.getCategoryColor(m.category)}">
+                                    ${this.getCategoryName(m.category)}
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div class="message-text">${m.text}</div>
+                    </div>
+                `).join('');
+                
+                // Auto-scroll to bottom
+                container.scrollTop = container.scrollHeight;
+            }
+            
+            getCategoryName(cat) {
+                return {
+                    question: 'Питання',
+                    gratitude: 'Подяка',
+                    negative: 'Негатив',
+                    all: 'Всі'
+                }[cat] || cat;
+            }
+            
+            getCategoryColor(cat) {
+                return {
+                    question: '#8b5cf6',
+                    gratitude: '#10b981',
+                    negative: '#ef4444',
+                    all: '#6366f1'
+                }[cat] || '#6366f1';
+            }
+            
+            formatTime(timestamp) {
+                const diff = Date.now() - timestamp;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                
+                if (minutes < 1) return 'щойно';
+                if (minutes < 60) return `${minutes} хв тому`;
+                return `${hours} год тому`;
+            }
+        }
+        
+        const app = new MellChat();
+        window.app = app;
+        
+        console.log('🎉 MellChat завантажено!');
+        console.log('💡 Спробуйте: mellstroy, xqc, або будь-який інший канал');
+    </script>
+</body>
+</html>
