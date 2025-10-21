@@ -171,9 +171,8 @@ i18n
     debug: process.env.NODE_ENV === 'development',
     
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],
-      lookupLocalStorage: 'mellchat-language'
+      order: ['navigator', 'htmlTag'],
+      caches: []
     },
     
     interpolation: {

@@ -22,13 +22,7 @@ export const ThemeProvider = ({ children }) => {
   });
 
   const [language, setLanguage] = useState(() => {
-    // Check localStorage first
-    const savedLanguage = localStorage.getItem('mellchat-language');
-    if (savedLanguage) {
-      return savedLanguage;
-    }
-    
-    // Fallback to system language
+    // Always use system language first
     const systemLanguage = navigator.language || navigator.languages?.[0] || 'en';
     const supportedLanguages = ['ru', 'en', 'uk'];
     
@@ -39,7 +33,7 @@ export const ThemeProvider = ({ children }) => {
       }
     }
     
-    return 'ru'; // Default fallback
+    return 'uk'; // Default fallback
   });
 
   // Listen for system theme changes
@@ -58,20 +52,22 @@ export const ThemeProvider = ({ children }) => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  // Sync language with i18n on mount
+  useEffect(() => {
+    i18n.changeLanguage(language);
+  }, [language]);
+
   // Listen for system language changes
   useEffect(() => {
     const handleLanguageChange = () => {
-      // Only auto-switch if user hasn't manually set a preference
-      const savedLanguage = localStorage.getItem('mellchat-language');
-      if (!savedLanguage) {
-        const systemLanguage = navigator.language || 'en';
-        const supportedLanguages = ['ru', 'en', 'uk'];
-        
-        for (const lang of supportedLanguages) {
-          if (systemLanguage.startsWith(lang)) {
-            setLanguage(lang);
-            break;
-          }
+      const systemLanguage = navigator.language || 'en';
+      const supportedLanguages = ['ru', 'en', 'uk'];
+      
+      for (const lang of supportedLanguages) {
+        if (systemLanguage.startsWith(lang)) {
+          setLanguage(lang);
+          i18n.changeLanguage(lang);
+          break;
         }
       }
     };
@@ -86,11 +82,9 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem('mellchat-theme', newTheme);
   };
 
-  // Save language preference
+  // Save language preference (optional - can be removed if always using system)
   const updateLanguage = (newLanguage) => {
     setLanguage(newLanguage);
-    localStorage.setItem('mellchat-language', newLanguage);
-    // Update i18n language
     i18n.changeLanguage(newLanguage);
   };
 

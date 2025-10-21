@@ -1,0 +1,241 @@
+/* Windows 95 Retro Theme */
+
+:root {
+  --win95-gray: #c0c0c0;
+  --win95-teal: #008080;
+  --win95-navy: #000080;
+  --win95-white: #ffffff;
+  --win95-black: #000000;
+  --win95-dark-gray: #808080;
+  --win95-light-gray: #dfdfdf;
+}
+
+* {
+  image-rendering: pixelated;
+}
+
+body {
+  font-family: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+  background: var(--win95-teal) !important;
+  color: var(--win95-black) !important;
+}
+
+.app {
+  background: var(--win95-teal) !important;
+  padding: 4px !important;
+}
+
+/* Window chrome */
+.header {
+  background: var(--win95-gray) !important;
+  border: 2px solid;
+  border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 2px !important;
+}
+
+.logo {
+  font-size: 11px !important;
+  font-weight: bold !important;
+  color: var(--win95-black) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  text-transform: uppercase;
+}
+
+/* Buttons */
+.btn-primary,
+.icon-btn,
+.upvote-btn,
+.tab,
+.disconnect-btn {
+  background: var(--win95-gray) !important;
+  color: var(--win95-black) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
+  border-radius: 0 !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+  box-shadow: none !important;
+  min-height: 23px !important;
+}
+
+.btn-primary:active,
+.icon-btn:active,
+.upvote-btn:active,
+.tab:active {
+  border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
+  padding: 5px 7px 3px 9px !important;
+}
+
+.upvote-btn.upvoted {
+  background: var(--win95-navy) !important;
+  color: var(--win95-white) !important;
+}
+
+/* Cards */
+.question-card,
+.message,
+.stream-card,
+.connection-panel,
+.modal {
+  background: var(--win95-gray) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--win95-black) !important;
+}
+
+/* Status */
+.status {
+  background: var(--win95-gray) !important;
+  color: var(--win95-black) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
+  border-radius: 0 !important;
+  padding: 2px 4px !important;
+  font-size: 11px !important;
+}
+
+/* Inputs */
+.input,
+input[type="text"] {
+  background: var(--win95-white) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
+  border-radius: 0 !important;
+  padding: 2px 4px !important;
+  font-size: 11px !important;
+  color: var(--win95-black) !important;
+}
+
+/* Tabs */
+.tabs {
+  background: var(--win95-gray) !important;
+  border-bottom: 2px solid var(--win95-black) !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.tab.active {
+  background: var(--win95-white) !important;
+  border-bottom-color: var(--win95-white) !important;
+  margin-bottom: -2px !important;
+  z-index: 1;
+}
+
+/* Stats */
+.stat {
+  background: var(--win95-gray) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
+  border-radius: 0 !important;
+  padding: 4px !important;
+}
+
+.stat-value {
+  font-size: 16px !important;
+  font-weight: bold !important;
+  color: var(--win95-navy) !important;
+}
+
+.stat-label {
+  font-size: 10px !important;
+  color: var(--win95-black) !important;
+}
+
+/* Connected windows */
+.connected-windows {
+  background: var(--win95-gray) !important;
+  padding: 4px !important;
+  gap: 4px !important;
+}
+
+.stream-card.active {
+  background: var(--win95-navy) !important;
+  color: var(--win95-white) !important;
+  border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
+}
+
+/* Platform badges */
+.platform-badge {
+  background: var(--win95-navy) !important;
+  color: var(--win95-white) !important;
+  border: 1px solid var(--win95-black) !important;
+  border-radius: 0 !important;
+  padding: 1px 4px !important;
+  font-size: 9px !important;
+  font-weight: bold !important;
+}
+
+/* Content areas */
+.content {
+  background: var(--win95-white) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
+  border-radius: 0 !important;
+}
+
+.questions-list,
+.messages-list {
+  background: var(--win95-white) !important;
+}
+
+/* Modal */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal-header {
+  background: var(--win95-navy) !important;
+  color: var(--win95-white) !important;
+  padding: 2px 4px !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+}
+
+.close-btn {
+  background: var(--win95-gray) !important;
+  border: 2px solid !important;
+  border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 11px !important;
+  padding: 0 !important;
+}
+
+/* Empty states */
+.empty-icon {
+  font-size: 32px !important;
+  filter: grayscale(1);
+}
+
+/* Badges */
+.badge {
+  background: var(--win95-navy) !important;
+  color: var(--win95-white) !important;
+  border-radius: 0 !important;
+  padding: 0 4px !important;
+  font-size: 10px !important;
+}
+
+.stat-pill {
+  background: var(--win95-gray) !important;
+  border: 1px solid var(--win95-black) !important;
+  border-radius: 0 !important;
+  padding: 1px 3px !important;
+  font-size: 9px !important;
+}
+
+/* Remove modern effects */
+* {
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
