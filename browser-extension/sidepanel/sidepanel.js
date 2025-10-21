@@ -51,30 +51,46 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
   }
   
   try {
+    chatContainer.innerHTML = '<div class="empty-state"><p>⏳ Connecting...</p></div>';
+    
     // Connect to backend
     let response;
+    const apiEndpoint = `${API_URL}/api/v1/${platform}`;
+    
+    console.log(`Connecting to ${platform}:`, { apiEndpoint, channelName, videoId });
+    
     if (platform === 'youtube') {
-      response = await fetch(`${API_URL}/api/v1/youtube`, {
+      response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId })
+        body: JSON.stringify({ videoId, url })
       });
     } else if (platform === 'twitch') {
-      response = await fetch(`${API_URL}/api/v1/twitch`, {
+      response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelName })
+        body: JSON.stringify({ channelName, url })
       });
     } else if (platform === 'kick') {
-      response = await fetch(`${API_URL}/api/v1/kick`, {
+      response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelName })
+        body: JSON.stringify({ channelName, url })
       });
     }
     
+    console.log('API Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error(`API returned ${response.status}: ${errorText}`);
+    }
+    
     const data = await response.json();
-    if (data.success) {
+    console.log('API Response data:', data);
+    
+    if (data.success || data.connectionId) {
       connectionId = data.connectionId;
       currentPlatform = platform;
       connectWebSocket();
@@ -82,10 +98,12 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
       document.getElementById('disconnectBtn').style.display = 'block';
       chatContainer.innerHTML = '<div class="empty-state"><p>✅ Connected! Waiting for messages...</p></div>';
     } else {
-      alert('Connection failed: ' + data.message);
+      throw new Error(data.message || 'Connection failed');
     }
   } catch (error) {
-    alert('Error: ' + error.message);
+    console.error('Connection error:', error);
+    chatContainer.innerHTML = `<div class="empty-state"><p>❌ Error: ${error.message}</p><p style="font-size: 10px;">Check console (F12) for details</p></div>`;
+    alert('Failed to connect:\n\n' + error.message + '\n\nCheck:\n1. Backend is running\n2. CORS is enabled\n3. Console (F12) for details');
   }
 });
 
