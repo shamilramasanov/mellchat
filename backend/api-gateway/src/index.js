@@ -46,6 +46,13 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow browser extensions (Chrome, Firefox, Edge, etc.)
+    if (origin && (origin.startsWith('chrome-extension://') || 
+                   origin.startsWith('moz-extension://') || 
+                   origin.startsWith('safari-web-extension://'))) {
+      return callback(null, true);
+    }
+    
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
