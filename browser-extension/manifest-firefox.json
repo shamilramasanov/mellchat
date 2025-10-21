@@ -6,6 +6,7 @@
   "permissions": [
     "storage",
     "activeTab",
+    "tabs",
     "https://www.youtube.com/*",
     "https://www.twitch.tv/*",
     "https://kick.com/*"

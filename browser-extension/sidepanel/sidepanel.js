@@ -1,6 +1,6 @@
 // Side panel script
-const API_URL = 'http://localhost:3001';
-const WS_URL = 'ws://localhost:3001';
+const API_URL = 'https://mellchat-production.up.railway.app';
+const WS_URL = 'wss://mellchat-production.up.railway.app';
 
 let filterMode = 'all';
 let ws = null;
@@ -8,6 +8,22 @@ let connectionId = null;
 let currentPlatform = null;
 const chatContainer = document.getElementById('chatContainer');
 const messages = [];
+
+// Auto-detect current tab URL on load
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.url) {
+      const url = tab.url;
+      if (url.includes('youtube.com') || url.includes('twitch.tv') || url.includes('kick.com')) {
+        document.getElementById('streamUrl').value = url;
+        document.getElementById('streamUrl').placeholder = 'Auto-detected: ' + url;
+      }
+    }
+  } catch (error) {
+    console.log('Could not auto-detect URL:', error);
+  }
+});
 
 // Connect to stream
 document.getElementById('connectBtn').addEventListener('click', async () => {
