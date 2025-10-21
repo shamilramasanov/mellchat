@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import ThemeSettings from './components/ThemeSettings';
+import { EmojiText } from './components/Emoji';
 import './App.css';
 import './styles/themes.css';
 
@@ -764,7 +765,13 @@ function App() {
                         <div className="username">{question.username}</div>
                         <div className="time">щойно</div>
                       </div>
-                      <div className="question-text">{question.question}</div>
+                      <div className="question-text">
+                        <EmojiText 
+                          text={question.question} 
+                          emojis={question.emojis || []}
+                          platform={question.platform || 'universal'}
+                        />
+                      </div>
                       <div className="question-footer">
                         <button className="upvote-btn">
                           👍 {question.upvotes}
@@ -790,7 +797,13 @@ function App() {
                         <span className="username">{message.username}</span>
                         <span className="time">щойно</span>
                       </div>
-                      <div className="message-text">{message.message}</div>
+                      <div className="message-text">
+                        <EmojiText 
+                          text={message.message} 
+                          emojis={message.emojis || []}
+                          platform={message.platform || 'universal'}
+                        />
+                      </div>
                     </div>
                   ))
                 ) : (

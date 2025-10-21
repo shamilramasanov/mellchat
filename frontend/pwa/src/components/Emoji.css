@@ -1,0 +1,157 @@
+/* Emoji Styles */
+.emoji {
+  display: inline-block;
+  vertical-align: middle;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+}
+
+/* Unicode emojis */
+.emoji-unicode {
+  font-size: 1.2em;
+  margin: 0 0.1em;
+}
+
+/* Custom platform emojis */
+.emoji-bttv,
+.emoji-ffz,
+.emoji-7tv,
+.emoji-youtube,
+.emoji-kick {
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0 0.1em;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+/* Animated emojis */
+.emoji-animated {
+  animation: emoji-bounce 0.5s ease-in-out;
+}
+
+@keyframes emoji-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Inline emojis in text */
+.emoji-inline {
+  margin: 0 0.05em;
+}
+
+/* Text around emojis */
+.emoji-text {
+  display: inline;
+}
+
+/* Fallback for failed emoji images */
+.emoji-fallback {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: monospace;
+  color: #666;
+}
+
+/* Unknown emojis */
+.emoji-unknown {
+  background: rgba(255, 0, 0, 0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: monospace;
+  color: #cc0000;
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .emoji-fallback {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+[data-theme='dark'] .emoji-unknown {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff6666;
+}
+
+/* Hover effects */
+.emoji:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Platform-specific styling */
+.emoji-bttv {
+  border: 1px solid rgba(145, 70, 255, 0.3);
+}
+
+.emoji-ffz {
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.emoji-7tv {
+  border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.emoji-youtube {
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.emoji-kick {
+  border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+/* Loading state for emojis */
+.emoji-loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: emoji-loading 1.5s infinite;
+}
+
+@keyframes emoji-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Responsive emoji sizing */
+@media (max-width: 768px) {
+  .emoji-bttv,
+  .emoji-ffz,
+  .emoji-7tv,
+  .emoji-youtube,
+  .emoji-kick {
+    width: 1em;
+    height: 1em;
+  }
+  
+  .emoji-unicode {
+    font-size: 1em;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .emoji-bttv,
+  .emoji-ffz,
+  .emoji-7tv,
+  .emoji-youtube,
+  .emoji-kick {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .emoji-animated {
+    animation: none;
+  }
+  
+  .emoji:hover {
+    transform: none;
+    transition: none;
+  }
+}

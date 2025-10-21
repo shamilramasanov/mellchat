@@ -18,6 +18,7 @@ const connectRoutes = require('./routes/connect');
 let youtubeRoutesFactory = require('./routes/youtube');
 const twitchRoutes = require('./routes/twitch');
 let kickRoutesFactory = require('./routes/kick');
+const emojiRoutes = require('./routes/emoji');
 
 const app = express();
 const { createWsServer } = require('./ws/server');
@@ -87,6 +88,9 @@ app.use('/api/v1/twitch', createRateLimiter({ windowMs: 10_000, max: 200 }), twi
 // Kick Chat routes (best-effort polling)
 const kickRoutes = kickRoutesFactory(() => app.get('wsHub'));
 app.use('/api/v1/kick', createRateLimiter({ windowMs: 10_000, max: 200 }), kickRoutes);
+
+// Emoji processing routes (no auth required for demo)
+app.use('/api/v1/emoji', createRateLimiter({ windowMs: 10_000, max: 100 }), emojiRoutes);
 
 // API routes with authentication
 app.use('/api/v1/messages', auth, messagesRoutes);

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 const youtubeManager = require('../services/youtubePersistentManager');
+const emojiService = require('../services/emojiService');
 
 // Connect to YouTube Live chat
 router.post('/', async (req, res) => {
@@ -44,12 +45,24 @@ router.post('/', async (req, res) => {
 });
 
 // Push messages to WS hub on manager events
-youtubeManager.on('message', (msg) => {
+youtubeManager.on('message', async (msg) => {
   try {
     const connectionId = `youtube-${msg.channel}`;
     const wsHub = router.wsHubRef && router.wsHubRef();
-    if (wsHub) wsHub.emitMessage(connectionId, msg);
-  } catch {}
+    
+    if (wsHub) {
+      // Process emojis before sending to WebSocket
+      try {
+        const processedMsg = await emojiService.processMessage(msg, 'youtube');
+        wsHub.emitMessage(connectionId, processedMsg);
+      } catch (error) {
+        logger.error('Failed to process emojis for WS message:', error);
+        wsHub.emitMessage(connectionId, msg); // Send original message
+      }
+    }
+  } catch (error) {
+    logger.error('Error in YouTube message event:', error);
+  }
 });
 
 // Disconnect from YouTube Live chat
@@ -64,28 +77,35 @@ router.delete('/:connectionId', async (req, res) => {
 });
 
 // Get messages for a specific connection
-router.get('/messages/:connectionId', (req, res) => {
-  const { connectionId } = req.params;
-  const match = connectionId.match(/^youtube-(.+)$/);
-  if (!match) return res.status(400).json({ success: false, message: 'Invalid connectionId' });
-  const videoId = match[1];
-  const messages = youtubeManager.getMessages(videoId);
-  res.json({ success: true, messages, connectionId });
-});
-
-// Get active connections
-router.get('/active', (req, res) => {
-  const conns = youtubeManager.getAllConnections().map((c) => ({
-    id: `youtube-${c.videoId}`,
-    platform: 'youtube',
-    videoId: c.videoId,
-    liveChatId: c.liveChatId,
-    title: c.title,
-    channelTitle: c.channelName,
-    connectedAt: new Date(c.connectedAt),
-    lastMessageId: c.lastMessageId
-  }));
-  res.json({ success: true, connections: conns });
+router.get('/messages/:connectionId', async (req, res) => {
+  try {
+    const { connectionId } = req.params;
+    const match = connectionId.match(/^youtube-(.+)$/);
+    if (!match) return res.status(400).json({ success: false, message: 'Invalid connectionId' });
+    
+    const videoId = match[1];
+    const messages = youtubeManager.getMessages(videoId);
+    
+    // Process emojis for each message
+    const processedMessages = await Promise.all(
+      messages.map(async (message) => {
+        try {
+          return await emojiService.processMessage(message, 'youtube');
+        } catch (error) {
+          logger.error('Failed to process emojis for message:', error);
+          return message; // Return original message if emoji processing fails
+        }
+      })
+    );
+    
+    res.json({ success: true, messages: processedMessages, connectionId });
+  } catch (error) {
+    logger.error('Failed to get messages:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get messages'
+    });
+  }
 });
 
 // Get active connections
