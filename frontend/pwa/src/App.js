@@ -1,16 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import ThemeSettings from './components/ThemeSettings';
 import './App.css';
+import './styles/themes.css';
 
 function App() {
   const ws = useWebSocket();
+  const { theme } = useTheme();
   const [connectedStreams, setConnectedStreams] = useState([]);
   const [activeStreamId, setActiveStreamId] = useState(null);
   const [streamUrl, setStreamUrl] = useState('');
   const [activeTab, setActiveTab] = useState('questions');
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showThemeSettings, setShowThemeSettings] = useState(false);
   const [messages, setMessages] = useState([]);
   const [questions, setQuestions] = useState([]);
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Subscribe to active stream via WS (after state is defined)
   useEffect(() => {
@@ -596,7 +606,11 @@ function App() {
             >
               ➕
             </button>
-            <button className="icon-btn" aria-label="Settings">
+            <button 
+              className="icon-btn" 
+              aria-label="Settings"
+              onClick={() => setShowThemeSettings(true)}
+            >
               ⚙️
             </button>
             <button className="icon-btn" aria-label="Notifications">
@@ -791,6 +805,12 @@ function App() {
           </main>
         </>
       )}
+      
+      {/* Theme Settings Modal */}
+      <ThemeSettings 
+        isOpen={showThemeSettings} 
+        onClose={() => setShowThemeSettings(false)} 
+      />
     </div>
   );
 }
