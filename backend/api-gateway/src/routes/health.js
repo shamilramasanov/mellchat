@@ -9,21 +9,25 @@ const router = express.Router();
  */
 router.get('/', async (req, res) => {
   try {
-    const health = {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      services: {},
-    };
+    let isHealthy = true;
+    const services = {};
     
     // Check Redis connection
     try {
       await redisService.ping();
-      health.services.redis = 'connected';
+      services.redis = 'connected';
     } catch (error) {
-      health.services.redis = 'disconnected';
+      services.redis = 'disconnected';
+      isHealthy = false;
     }
     
-    res.status(200).json(health);
+    const health = {
+      status: isHealthy ? 'healthy' : 'unhealthy',
+      timestamp: new Date().toISOString(),
+      services,
+    };
+    
+    res.status(isHealthy ? 200 : 503).json(health);
   } catch (error) {
     res.status(503).json({
       status: 'unhealthy',
