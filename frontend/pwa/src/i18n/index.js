@@ -35,15 +35,14 @@ const resources = {
       'questions.answered': 'Отвечено',
       
       // Theme settings
-      'theme.title': 'Настройки интерфейса',
-      'theme.theme.label': 'Стиль',
-      'theme.theme.retro': 'Ретро (Win95)',
-      'theme.theme.win11': 'Windows 11',
-      'theme.theme.macos': 'macOS',
+      'theme.title': 'Настройки',
       'theme.language.label': 'Язык',
       'theme.language.ru': 'Русский',
       'theme.language.en': 'English',
       'theme.language.uk': 'Українська',
+      'theme.system': 'Система',
+      'theme.system.language': 'Системный язык',
+      'theme.system.design': 'Дизайн',
       'theme.close': 'Закрыть',
       
       // Auth
@@ -93,15 +92,14 @@ const resources = {
       'questions.answered': 'Answered',
       
       // Theme settings
-      'theme.title': 'Interface Settings',
-      'theme.theme.label': 'Style',
-      'theme.theme.retro': 'Retro (Win95)',
-      'theme.theme.win11': 'Windows 11',
-      'theme.theme.macos': 'macOS',
+      'theme.title': 'Settings',
       'theme.language.label': 'Language',
       'theme.language.ru': 'Русский',
       'theme.language.en': 'English',
       'theme.language.uk': 'Українська',
+      'theme.system': 'System',
+      'theme.system.language': 'System language',
+      'theme.system.design': 'Design',
       'theme.close': 'Close',
       
       // Auth
@@ -151,15 +149,14 @@ const resources = {
       'questions.answered': 'Відповіли',
       
       // Theme settings
-      'theme.title': 'Налаштування інтерфейсу',
-      'theme.theme.label': 'Стиль',
-      'theme.theme.retro': 'Ретро (Win95)',
-      'theme.theme.win11': 'Windows 11',
-      'theme.theme.macos': 'macOS',
+      'theme.title': 'Налаштування',
       'theme.language.label': 'Мова',
       'theme.language.ru': 'Русский',
       'theme.language.en': 'English',
       'theme.language.uk': 'Українська',
+      'theme.system': 'Система',
+      'theme.system.language': 'Системна мова',
+      'theme.system.design': 'Дизайн',
       'theme.close': 'Закрити',
       
       // Auth

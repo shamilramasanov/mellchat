@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useTheme } from './contexts/ThemeContext';
 import ThemeSettings from './components/ThemeSettings';
 import { EmojiText } from './components/Emoji';
 import './App.css';
-import './styles/themes.css';
-import './styles/retro90s.css';
-import './styles/win11.css';
-import './styles/macos.css';
 
 function App() {
   const ws = useWebSocket();
-  const { theme } = useTheme();
   const { t } = useTranslation();
   const [connectedStreams, setConnectedStreams] = useState([]);
   const [activeStreamId, setActiveStreamId] = useState(null);
@@ -23,11 +17,6 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [upvotedQuestions, setUpvotedQuestions] = useState(new Set());
-
-  // Apply theme to document
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
 
   // Load upvoted questions from localStorage
   useEffect(() => {

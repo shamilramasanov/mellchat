@@ -1,22 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import i18n from '../i18n';
 
-// Theme Context
+// Theme Context (simplified - Material Design only)
 const ThemeContext = createContext();
 
 // Theme Provider Component
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    // Check localStorage first
-    const savedTheme = localStorage.getItem('mellchat-theme');
-    if (savedTheme && ['retro', 'win11', 'macos'].includes(savedTheme)) {
-      return savedTheme;
-    }
-    
-    // Default to retro (Windows 95 style)
-    return 'retro';
-  });
-
   const [language, setLanguage] = useState(() => {
     // Always use system language first
     const systemLanguage = navigator.language || navigator.languages?.[0] || 'en';
@@ -31,8 +20,6 @@ export const ThemeProvider = ({ children }) => {
     
     return 'uk'; // Default fallback
   });
-
-  // No need to listen for system theme changes - we use style themes, not dark/light
 
   // Sync language with i18n on mount
   useEffect(() => {
@@ -58,24 +45,14 @@ export const ThemeProvider = ({ children }) => {
     return () => window.removeEventListener('languagechange', handleLanguageChange);
   }, []);
 
-  // Save theme preference
-  const updateTheme = (newTheme) => {
-    setTheme(newTheme);
-    localStorage.setItem('mellchat-theme', newTheme);
-  };
-
-  // Save language preference (optional - can be removed if always using system)
+  // Update language preference
   const updateLanguage = (newLanguage) => {
     setLanguage(newLanguage);
     i18n.changeLanguage(newLanguage);
   };
 
-  // Reset to defaults
+  // Reset to system language
   const resetToDefaults = () => {
-    localStorage.removeItem('mellchat-theme');
-    setTheme('retro'); // Default to Retro theme
-    
-    // Reset to system language
     const systemLanguage = navigator.language || 'en';
     const supportedLanguages = ['ru', 'en', 'uk'];
     
@@ -89,14 +66,9 @@ export const ThemeProvider = ({ children }) => {
   };
 
   const value = {
-    theme,
     language,
-    updateTheme,
     updateLanguage,
-    resetToDefaults,
-    isRetro: theme === 'retro',
-    isWin11: theme === 'win11',
-    isMacOS: theme === 'macos'
+    resetToDefaults
   };
 
   return (
