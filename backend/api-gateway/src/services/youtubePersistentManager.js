@@ -28,7 +28,8 @@ class YouTubePersistentManager extends EventEmitter {
     this.lastApiCallTime = null;
 
     // Config
-    this.POLL_INTERVAL = 5000; // 5 seconds
+    this.POLL_INTERVAL = 60000; // 60 seconds (was 5s - caused quota issues)
+    this.MIN_POLL_INTERVAL = 30000; // 30 seconds minimum
     this.RETRY_INTERVAL = 10000; // 10 seconds
     this.MAX_RETRIES = 5;
     this.STATE_KEY_PREFIX = 'youtube:connection:';
@@ -298,7 +299,9 @@ class YouTubePersistentManager extends EventEmitter {
         pageToken: connection.nextPageToken
       });
     connection.nextPageToken = response.data.nextPageToken;
-    connection.pollingInterval = response.data.pollingIntervalMillis || this.POLL_INTERVAL;
+    // Use API-provided interval, but enforce minimum to avoid quota issues
+    const apiInterval = response.data.pollingIntervalMillis || this.POLL_INTERVAL;
+    connection.pollingInterval = Math.max(apiInterval, this.MIN_POLL_INTERVAL);
     const items = response.data.items || [];
     const buffer = this.messagesCache.get(videoId) || [];
     for (const item of items) {
