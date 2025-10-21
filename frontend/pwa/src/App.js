@@ -511,9 +511,20 @@ function App() {
               onClick={() => switchToStream(stream.id)}
             >
               <div className="stream-card-header">
-                <span className={`platform-badge ${stream.platform}`}>
-                  {stream.platform === 'twitch' ? 'Twitch' : (stream.platform === 'youtube' ? 'YouTube' : 'Kick')}
-                </span>
+                <div className="platform-icon">
+                  {stream.platform === 'youtube' && '📺'}
+                  {stream.platform === 'twitch' && '🎮'}
+                  {stream.platform === 'kick' && '⚡'}
+                </div>
+                <div className="stream-card-info">
+                  <div className="stream-card-title" title={stream.title || stream.channel}>
+                    {stream.title || stream.channel}
+                  </div>
+                  <div className="stream-card-stats">
+                    <span className="stat-pill">💬 {stream.messages?.length || 0}</span>
+                    <span className="stat-pill">❓ {stream.questions?.length || 0}</span>
+                  </div>
+                </div>
                 <button 
                   className="stream-card-close"
                   onClick={(e) => { e.stopPropagation(); handleDisconnect(stream.id); }}
@@ -522,13 +533,6 @@ function App() {
                 >
                   ✕
                 </button>
-              </div>
-              <div className="stream-card-title" title={stream.title || stream.channel}>
-                {stream.title || stream.channel}
-              </div>
-              <div className="stream-card-stats">
-                <span className="stat-pill">💬 {stream.messages?.length || 0}</span>
-                <span className="stat-pill">❓ {stream.questions?.length || 0}</span>
               </div>
             </div>
           ))}
