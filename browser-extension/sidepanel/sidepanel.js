@@ -1,13 +1,23 @@
-// Side panel script
+// Side panel script - Multiple streams support
 const API_URL = 'https://mellchat-production.up.railway.app';
 const WS_URL = 'wss://mellchat-production.up.railway.app';
 
 let filterMode = 'all';
 let ws = null;
-let connectionId = null;
-let currentPlatform = null;
+let streams = []; // Array of connected streams
+let activeStreamId = null;
+let allMessages = [];
+
+// DOM elements
+const streamsList = document.getElementById('streamsList');
 const chatContainer = document.getElementById('chatContainer');
-const messages = [];
+const addStreamBtn = document.getElementById('addStreamBtn');
+const addStreamForm = document.getElementById('addStreamForm');
+const streamUrlInput = document.getElementById('streamUrl');
+const connectBtn = document.getElementById('connectBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const filterAllBtn = document.getElementById('filterAll');
+const filterQuestionsBtn = document.getElementById('filterQuestions');
 
 // Auto-detect current tab URL on load
 window.addEventListener('DOMContentLoaded', async () => {
@@ -16,18 +26,31 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (tab && tab.url) {
       const url = tab.url;
       if (url.includes('youtube.com') || url.includes('twitch.tv') || url.includes('kick.com')) {
-        document.getElementById('streamUrl').value = url;
-        document.getElementById('streamUrl').placeholder = 'Auto-detected: ' + url;
+        streamUrlInput.value = url;
       }
     }
   } catch (error) {
     console.log('Could not auto-detect URL:', error);
   }
+  
+  // Load saved streams from storage
+  loadStreamsFromStorage();
+});
+
+// Show/hide add stream form
+addStreamBtn.addEventListener('click', () => {
+  addStreamForm.style.display = 'block';
+  streamUrlInput.focus();
+});
+
+cancelBtn.addEventListener('click', () => {
+  addStreamForm.style.display = 'none';
+  streamUrlInput.value = '';
 });
 
 // Connect to stream
-document.getElementById('connectBtn').addEventListener('click', async () => {
-  const url = document.getElementById('streamUrl').value.trim();
+connectBtn.addEventListener('click', async () => {
+  const url = streamUrlInput.value.trim();
   if (!url) return;
   
   // Parse platform
@@ -54,11 +77,11 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
     chatContainer.innerHTML = '<div class="empty-state"><p>⏳ Connecting...</p></div>';
     
     // Connect to backend
-    let response;
     const apiEndpoint = `${API_URL}/api/v1/${platform}`;
     
     console.log(`Connecting to ${platform}:`, { apiEndpoint, channelName, videoId });
     
+    let response;
     if (platform === 'youtube') {
       response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -91,11 +114,34 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
     console.log('API Response data:', data);
     
     if (data.success || data.connectionId) {
-      connectionId = data.connectionId;
-      currentPlatform = platform;
-      connectWebSocket();
-      document.getElementById('connectBtn').style.display = 'none';
-      document.getElementById('disconnectBtn').style.display = 'block';
+      // Add stream to list
+      const stream = {
+        id: data.connectionId,
+        platform,
+        channelName: channelName || videoId,
+        url,
+        title: data.title || channelName || videoId,
+        connectedAt: Date.now()
+      };
+      
+      streams.push(stream);
+      saveStreamsToStorage();
+      renderStreamsList();
+      
+      // Subscribe via WebSocket
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        connectWebSocket();
+      } else {
+        ws.send(JSON.stringify({ type: 'subscribe', connectionId: stream.id }));
+      }
+      
+      // Set as active stream
+      setActiveStream(stream.id);
+      
+      // Hide form
+      addStreamForm.style.display = 'none';
+      streamUrlInput.value = '';
+      
       chatContainer.innerHTML = '<div class="empty-state"><p>✅ Connected! Waiting for messages...</p></div>';
     } else {
       throw new Error(data.message || 'Connection failed');
@@ -103,53 +149,41 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
   } catch (error) {
     console.error('Connection error:', error);
     chatContainer.innerHTML = `<div class="empty-state"><p>❌ Error: ${error.message}</p><p style="font-size: 10px;">Check console (F12) for details</p></div>`;
-    alert('Failed to connect:\n\n' + error.message + '\n\nCheck:\n1. Backend is running\n2. CORS is enabled\n3. Console (F12) for details');
   }
-});
-
-// Disconnect
-document.getElementById('disconnectBtn').addEventListener('click', async () => {
-  if (ws) {
-    ws.close();
-    ws = null;
-  }
-  
-  if (connectionId) {
-    try {
-      await fetch(`${API_URL}/api/v1/${currentPlatform}/${connectionId}`, { method: 'DELETE' });
-    } catch (error) {
-      console.error('Disconnect error:', error);
-    }
-  }
-  
-  connectionId = null;
-  currentPlatform = null;
-  messages.length = 0;
-  document.getElementById('connectBtn').style.display = 'block';
-  document.getElementById('disconnectBtn').style.display = 'none';
-  chatContainer.innerHTML = '<div class="empty-state"><p>📺 Disconnected</p></div>';
 });
 
 // WebSocket connection
 function connectWebSocket() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+  
   ws = new WebSocket(WS_URL);
   
   ws.onopen = () => {
     console.log('WebSocket connected');
-    ws.send(JSON.stringify({ type: 'subscribe', connectionId }));
+    // Subscribe to all streams
+    streams.forEach(stream => {
+      ws.send(JSON.stringify({ type: 'subscribe', connectionId: stream.id }));
+    });
   };
   
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (data.type === 'message' && data.connectionId === connectionId) {
+      if (data.type === 'message') {
         const msg = Array.isArray(data.payload) ? data.payload : [data.payload];
-        msg.forEach(m => addMessage({
-          author: m.username,
-          text: m.message,
-          isQuestion: m.message?.trim().endsWith('?'),
-          platform: currentPlatform
-        }));
+        msg.forEach(m => {
+          const stream = streams.find(s => s.id === data.connectionId);
+          if (stream) {
+            addMessage({
+              streamId: data.connectionId,
+              platform: stream.platform,
+              author: m.username,
+              text: m.message,
+              isQuestion: m.message?.trim().endsWith('?'),
+              timestamp: Date.now()
+            });
+          }
+        });
       }
     } catch (error) {
       console.error('WebSocket message error:', error);
@@ -158,6 +192,7 @@ function connectWebSocket() {
   
   ws.onclose = () => {
     console.log('WebSocket disconnected');
+    setTimeout(connectWebSocket, 3000); // Reconnect
   };
   
   ws.onerror = (error) => {
@@ -165,39 +200,117 @@ function connectWebSocket() {
   };
 }
 
-// Filter buttons
-document.getElementById('filterQuestions').addEventListener('click', () => {
-  filterMode = 'questions';
-  updateDisplay();
-});
-
-document.getElementById('filterAll').addEventListener('click', () => {
-  filterMode = 'all';
-  updateDisplay();
-});
-
-// Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'chat_message') {
-    addMessage(request.data);
-  }
-});
-
-function addMessage(data) {
-  messages.push(data);
-  if (messages.length > 100) {
-    messages.shift(); // Keep last 100
+// Add message
+function addMessage(message) {
+  allMessages.push(message);
+  if (allMessages.length > 500) {
+    allMessages = allMessages.slice(-500); // Keep last 500
   }
   updateDisplay();
 }
 
+// Render streams list
+function renderStreamsList() {
+  if (streams.length === 0) {
+    streamsList.innerHTML = '<div class="empty-state-small">No streams connected</div>';
+    return;
+  }
+  
+  streamsList.innerHTML = streams.map(stream => `
+    <div class="stream-item ${stream.id === activeStreamId ? 'active' : ''}" data-stream-id="${stream.id}">
+      <div class="stream-info">
+        <span class="stream-platform">${stream.platform}</span>
+        <span>${stream.title}</span>
+      </div>
+      <button class="stream-remove" data-stream-id="${stream.id}">✕</button>
+    </div>
+  `).join('');
+  
+  // Add click handlers
+  streamsList.querySelectorAll('.stream-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('stream-remove')) {
+        setActiveStream(item.dataset.streamId);
+      }
+    });
+  });
+  
+  streamsList.querySelectorAll('.stream-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await removeStream(btn.dataset.streamId);
+    });
+  });
+}
+
+// Set active stream
+function setActiveStream(streamId) {
+  activeStreamId = streamId;
+  renderStreamsList();
+  updateDisplay();
+}
+
+// Remove stream
+async function removeStream(streamId) {
+  const stream = streams.find(s => s.id === streamId);
+  if (!stream) return;
+  
+  try {
+    // Disconnect from backend
+    await fetch(`${API_URL}/api/v1/${stream.platform}/${streamId}`, { method: 'DELETE' });
+    
+    // Unsubscribe from WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'unsubscribe', connectionId: streamId }));
+    }
+    
+    // Remove from list
+    streams = streams.filter(s => s.id !== streamId);
+    allMessages = allMessages.filter(m => m.streamId !== streamId);
+    
+    if (activeStreamId === streamId) {
+      activeStreamId = streams.length > 0 ? streams[0].id : null;
+    }
+    
+    saveStreamsToStorage();
+    renderStreamsList();
+    updateDisplay();
+  } catch (error) {
+    console.error('Remove stream error:', error);
+  }
+}
+
+// Filter buttons
+filterAllBtn.addEventListener('click', () => {
+  filterMode = 'all';
+  filterAllBtn.classList.add('active');
+  filterQuestionsBtn.classList.remove('active');
+  updateDisplay();
+});
+
+filterQuestionsBtn.addEventListener('click', () => {
+  filterMode = 'questions';
+  filterQuestionsBtn.classList.add('active');
+  filterAllBtn.classList.remove('active');
+  updateDisplay();
+});
+
+// Update display
 function updateDisplay() {
-  // Clear empty state
   chatContainer.innerHTML = '';
   
-  const filtered = filterMode === 'questions' 
-    ? messages.filter(m => m.isQuestion)
-    : messages;
+  // Filter messages
+  let filtered = allMessages;
+  
+  // Filter by active stream if one is selected
+  if (activeStreamId) {
+    filtered = filtered.filter(m => m.streamId === activeStreamId);
+  }
+  
+  // Filter by questions if needed
+  if (filterMode === 'questions') {
+    filtered = filtered.filter(m => m.isQuestion);
+  }
   
   if (filtered.length === 0) {
     chatContainer.innerHTML = `
@@ -213,7 +326,7 @@ function updateDisplay() {
     div.className = 'chat-message' + (msg.isQuestion ? ' question' : '');
     div.innerHTML = `
       <div class="message-platform">${msg.platform}</div>
-      <span class="message-author">${msg.author}</span>
+      <span class="message-author">${escapeHtml(msg.author)}</span>
       <span class="message-text">${escapeHtml(msg.text)}</span>
     `;
     chatContainer.appendChild(div);
@@ -229,10 +342,33 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Request current page messages on load
-chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-  if (tabs[0]) {
-    chrome.tabs.sendMessage(tabs[0].id, {type: 'get_messages'});
+// Storage
+function saveStreamsToStorage() {
+  try {
+    const data = streams.map(s => ({
+      id: s.id,
+      platform: s.platform,
+      channelName: s.channelName,
+      url: s.url,
+      title: s.title,
+      connectedAt: s.connectedAt
+    }));
+    chrome.storage.local.set({ streams: data });
+  } catch (error) {
+    console.error('Save error:', error);
   }
-});
+}
 
+async function loadStreamsFromStorage() {
+  try {
+    const result = await chrome.storage.local.get(['streams']);
+    if (result.streams && result.streams.length > 0) {
+      streams = result.streams;
+      activeStreamId = streams[0].id;
+      renderStreamsList();
+      connectWebSocket();
+    }
+  } catch (error) {
+    console.error('Load error:', error);
+  }
+}

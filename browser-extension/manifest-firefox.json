@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "MellChat Filter",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Filter and enhance chat experience on YouTube, Twitch, and Kick",
   "permissions": [
     "storage",
