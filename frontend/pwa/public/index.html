@@ -37,7 +37,7 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     
-    <!-- Service Worker Registration (instant updates, disable in localhost) -->
+    <!-- Service Worker Registration (improved error handling) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
@@ -52,7 +52,7 @@
             }
 
             const reg = await navigator.serviceWorker.register('/service-worker.js');
-            console.log('SW registered:', reg);
+            console.log('✅ SW registered:', reg.scope);
 
             // Force activate updated SW immediately
             reg.addEventListener('updatefound', () => {
@@ -72,7 +72,7 @@
               window.location.reload();
             });
           } catch (e) {
-            console.log('SW registration failed:', e);
+            console.error('❌ SW registration failed:', e);
           }
         });
       }

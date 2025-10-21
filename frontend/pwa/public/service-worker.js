@@ -1,207 +1,149 @@
-const CACHE_NAME = 'mellchat-v1.0.0';
-const RUNTIME_CACHE = 'mellchat-runtime';
+// MellChat Service Worker - v1.0.0
+const CACHE_NAME = 'mellchat-v1';
+const DEBUG = true;
 
-// Assets to cache on install (only essential files)
-const PRECACHE_URLS = [
+// Мінімальний список для кешування - тільки те, що точно існує
+const ESSENTIAL_CACHE = [
   '/',
+  '/index.html',
   '/manifest.json'
 ];
 
-// Install - cache core assets
+// Логування з префіксом
+const log = (...args) => DEBUG && console.log('[SW]', ...args);
+
+// Install - кешуємо тільки основні файли
 self.addEventListener('install', (event) => {
+  log('📦 Installing Service Worker');
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('📦 Precaching app shell');
-        // Cache files individually to handle failures gracefully
+        log('📦 Caching essential files');
+        // Кешуємо файли по одному для кращої обробки помилок
         return Promise.allSettled(
-          PRECACHE_URLS.map(url => 
+          ESSENTIAL_CACHE.map(url => 
             cache.add(url).catch(error => {
-              console.warn(`Failed to cache ${url}:`, error);
-              return null; // Continue with other files
+              log(`⚠️ Failed to cache ${url}:`, error);
+              return null; // Продовжуємо з іншими файлами
             })
           )
         );
       })
       .then(() => {
-        console.log('✅ App shell precached');
-        return self.skipWaiting();
+        log('✅ Essential files cached');
+        return self.skipWaiting(); // Негайна активація
       })
       .catch(error => {
-        console.error('Service Worker install failed:', error);
-        return self.skipWaiting(); // Still activate even if caching fails
+        log('❌ Install failed:', error);
+        return self.skipWaiting(); // Все одно активуємо
       })
   );
 });
 
-// Activate - cleanup old caches
+// Activate - очищаємо старі кеші
 self.addEventListener('activate', (event) => {
+  log('🚀 Activating Service Worker');
+  
   event.waitUntil(
     caches.keys()
       .then(cacheNames => {
         return Promise.all(
-          cacheNames
-            .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE)
-            .map(name => {
-              console.log('🗑️ Deleting old cache:', name);
-              return caches.delete(name);
-            })
+          cacheNames.map(cacheName => {
+            if (cacheName !== CACHE_NAME) {
+              log('🗑️ Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
         );
       })
-      .then(() => self.clients.claim())
+      .then(() => {
+        log('✅ Service Worker activated');
+        return self.clients.claim(); // Негайний контроль клієнтів
+      })
   );
 });
 
-// Fetch - network first, fallback to cache
+// Fetch - стратегія кешування
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
-  // Skip cross-origin requests
+  
+  // Тільки для нашого домену
   if (url.origin !== location.origin) {
-    return;
+    return; // Пропускаємо зовнішні запити
   }
-
-  // Skip API requests from caching
+  
+  // Стратегія: Cache First для статичних ресурсів
+  if (request.destination === 'document' || 
+      request.destination === 'manifest' ||
+      url.pathname === '/' ||
+      url.pathname === '/index.html' ||
+      url.pathname === '/manifest.json') {
+    
+    event.respondWith(
+      caches.match(request)
+        .then(response => {
+          if (response) {
+            log('📦 Serving from cache:', url.pathname);
+            return response;
+          }
+          
+          log('🌐 Fetching from network:', url.pathname);
+          return fetch(request)
+            .then(response => {
+              // Кешуємо тільки успішні відповіді
+              if (response.status === 200) {
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME)
+                  .then(cache => cache.put(request, responseClone));
+              }
+              return response;
+            })
+            .catch(error => {
+              log('❌ Network fetch failed:', error);
+              // Fallback для HTML
+              if (request.destination === 'document') {
+                return caches.match('/index.html');
+              }
+              throw error;
+            });
+        })
+    );
+  }
+  
+  // Для API запитів - Network First
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(request).catch(() => {
-        return new Response(
-          JSON.stringify({ error: 'Offline', offline: true }),
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-      })
-    );
-    return;
-  }
-
-  // Network first strategy for HTML
-  if (request.mode === 'navigate') {
-    event.respondWith(
       fetch(request)
-        .then(response => {
-          const clonedResponse = response.clone();
-          caches.open(RUNTIME_CACHE).then(cache => {
-            cache.put(request, clonedResponse);
-          });
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request)
-            .then(cachedResponse => {
-              return cachedResponse || caches.match('/index.html');
-            });
+        .catch(error => {
+          log('❌ API request failed:', error);
+          throw error;
         })
     );
-    return;
-  }
-
-  // Cache first for static assets
-  event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        return fetch(request)
-          .then(response => {
-            // Don't cache non-OK responses
-            if (!response || response.status !== 200) {
-              return response;
-            }
-
-            const clonedResponse = response.clone();
-            caches.open(RUNTIME_CACHE).then(cache => {
-              cache.put(request, clonedResponse);
-            });
-
-            return response;
-          });
-      })
-  );
-});
-
-// Background Sync
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-upvotes') {
-    event.waitUntil(syncUpvotes());
   }
 });
 
-async function syncUpvotes() {
-  // Sync queued upvotes when back online
-  const cache = await caches.open('upvote-queue');
-  const requests = await cache.keys();
-  
-  return Promise.all(
-    requests.map(async request => {
-      try {
-        await fetch(request.clone());
-        await cache.delete(request);
-      } catch (error) {
-        console.error('Sync failed:', error);
-      }
-    })
-  );
-}
-
-// Push Notifications
-self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : {};
-  
-  const options = {
-    body: data.body || 'Нове повідомлення від MellChat',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png',
-    vibrate: [200, 100, 200],
-    tag: data.tag || 'mellchat-notification',
-    requireInteraction: false,
-    actions: [
-      { action: 'open', title: 'Відкрити' },
-      { action: 'close', title: 'Закрити' }
-    ],
-    data: {
-      url: data.url || '/'
-    }
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'MellChat', options)
-  );
-});
-
-// Notification Click
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'close') {
-    return;
-  }
-
-  const urlToOpen = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(windowClients => {
-        // Focus existing window if available
-        for (const client of windowClients) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        
-        // Open new window
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
-  );
-});
-
-// Skip Waiting
+// Обробка повідомлень від основного потоку
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  const { type, payload } = event.data;
+  
+  switch (type) {
+    case 'SKIP_WAITING':
+      log('🔄 Skipping waiting...');
+      self.skipWaiting();
+      break;
+      
+    case 'CLEAR_CACHE':
+      log('🗑️ Clearing cache...');
+      caches.delete(CACHE_NAME).then(() => {
+        event.ports[0].postMessage({ success: true });
+      });
+      break;
+      
+    default:
+      log('❓ Unknown message type:', type);
   }
 });
+
+log('🎯 Service Worker script loaded');
