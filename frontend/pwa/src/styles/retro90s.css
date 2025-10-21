@@ -1,6 +1,6 @@
 /* Windows 95 Retro Theme */
 
-:root {
+[data-theme="retro"] {
   --win95-gray: #c0c0c0;
   --win95-teal: #008080;
   --win95-navy: #000080;
@@ -10,24 +10,24 @@
   --win95-light-gray: #dfdfdf;
 }
 
-* {
+[data-theme="retro"] * {
   image-rendering: pixelated;
 }
 
-body {
+[data-theme="retro"] body {
   font-family: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, sans-serif !important;
   font-size: 11px !important;
   background: var(--win95-teal) !important;
   color: var(--win95-black) !important;
 }
 
-.app {
+[data-theme="retro"] .app {
   background: var(--win95-teal) !important;
   padding: 4px !important;
 }
 
 /* Window chrome */
-.header {
+[data-theme="retro"] .header {
   background: var(--win95-gray) !important;
   border: 2px solid;
   border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
@@ -36,7 +36,7 @@ body {
   padding: 2px !important;
 }
 
-.logo {
+[data-theme="retro"] .logo {
   font-size: 11px !important;
   font-weight: bold !important;
   color: var(--win95-black) !important;
@@ -47,11 +47,11 @@ body {
 }
 
 /* Buttons */
-.btn-primary,
-.icon-btn,
-.upvote-btn,
-.tab,
-.disconnect-btn {
+[data-theme="retro"] .btn-primary,
+[data-theme="retro"] .icon-btn,
+[data-theme="retro"] .upvote-btn,
+[data-theme="retro"] .tab,
+[data-theme="retro"] .disconnect-btn {
   background: var(--win95-gray) !important;
   color: var(--win95-black) !important;
   border: 2px solid !important;
@@ -64,24 +64,24 @@ body {
   min-height: 23px !important;
 }
 
-.btn-primary:active,
-.icon-btn:active,
-.upvote-btn:active,
-.tab:active {
+[data-theme="retro"] .btn-primary:active,
+[data-theme="retro"] .icon-btn:active,
+[data-theme="retro"] .upvote-btn:active,
+[data-theme="retro"] .tab:active {
   border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
   padding: 5px 7px 3px 9px !important;
 }
 
-.upvote-btn.upvoted {
+[data-theme="retro"] .upvote-btn.upvoted {
   background: var(--win95-navy) !important;
   color: var(--win95-white) !important;
 }
 
 /* Cards */
-.question-card,
-.message,
-.connection-panel,
-.modal {
+[data-theme="retro"] .question-card,
+[data-theme="retro"] .message,
+[data-theme="retro"] .connection-panel,
+[data-theme="retro"] .modal {
   background: var(--win95-gray) !important;
   border: 2px solid !important;
   border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
@@ -93,13 +93,13 @@ body {
 }
 
 /* Message styling for better readability */
-.message-header {
+[data-theme="retro"] .message-header {
   margin-bottom: 8px !important;
   padding-bottom: 4px !important;
   border-bottom: 1px solid var(--win95-black) !important;
 }
 
-.username {
+[data-theme="retro"] .username {
   font-weight: bold !important;
   font-size: 13px !important;
   color: var(--win95-black) !important;
@@ -107,20 +107,20 @@ body {
   margin-bottom: 2px !important;
 }
 
-.message-text {
+[data-theme="retro"] .message-text {
   font-size: 14px !important;
   line-height: 1.6 !important;
   color: var(--win95-black) !important;
   margin-top: 4px !important;
 }
 
-.time {
+[data-theme="retro"] .time {
   font-size: 11px !important;
   color: #666 !important;
 }
 
 /* Stream card - Windows 95 style */
-.stream-card {
+[data-theme="retro"] .stream-card {
   background: var(--win95-gray) !important;
   border: 1px solid var(--win95-black) !important;
   border-radius: 0 !important;
@@ -130,23 +130,23 @@ body {
   transition: none !important;
 }
 
-.stream-card:hover {
+[data-theme="retro"] .stream-card:hover {
   background: var(--win95-navy) !important;
   color: var(--win95-white) !important;
   transform: none !important;
 }
 
-.stream-card:hover .stream-card-title,
-.stream-card:hover .stat-pill {
+[data-theme="retro"] .stream-card:hover .stream-card-title,
+[data-theme="retro"] .stream-card:hover .stat-pill {
   color: var(--win95-white) !important;
 }
 
-.stream-card:hover .platform-icon {
+[data-theme="retro"] .stream-card:hover .platform-icon {
   filter: brightness(0) invert(1);
 }
 
 /* Status */
-.status {
+[data-theme="retro"] .status {
   background: var(--win95-gray) !important;
   color: var(--win95-black) !important;
   border: 2px solid !important;
@@ -157,7 +157,7 @@ body {
 }
 
 /* Inputs */
-.input,
+[data-theme="retro"] .input,
 input[type="text"] {
   background: var(--win95-white) !important;
   border: 2px solid !important;
@@ -169,14 +169,14 @@ input[type="text"] {
 }
 
 /* Tabs */
-.tabs {
+[data-theme="retro"] .tabs {
   background: var(--win95-gray) !important;
   border-bottom: 2px solid var(--win95-black) !important;
   padding: 0 !important;
   gap: 0 !important;
 }
 
-.tab.active {
+[data-theme="retro"] .tab.active {
   background: var(--win95-white) !important;
   border-bottom-color: var(--win95-white) !important;
   margin-bottom: -2px !important;
@@ -184,7 +184,7 @@ input[type="text"] {
 }
 
 /* Stats */
-.stat {
+[data-theme="retro"] .stat {
   background: var(--win95-gray) !important;
   border: 2px solid !important;
   border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
@@ -192,47 +192,47 @@ input[type="text"] {
   padding: 4px !important;
 }
 
-.stat-value {
+[data-theme="retro"] .stat-value {
   font-size: 16px !important;
   font-weight: bold !important;
   color: var(--win95-navy) !important;
 }
 
-.stat-label {
+[data-theme="retro"] .stat-label {
   font-size: 10px !important;
   color: var(--win95-black) !important;
 }
 
 /* Connected windows */
-.connected-windows {
+[data-theme="retro"] .connected-windows {
   background: var(--win95-gray) !important;
   padding: 4px !important;
   gap: 4px !important;
 }
 
-.stream-card.active {
+[data-theme="retro"] .stream-card.active {
   background: var(--win95-navy) !important;
   color: var(--win95-white) !important;
   outline: 1px dotted var(--win95-white) !important;
   outline-offset: -4px;
 }
 
-.stream-card.active .stream-card-title,
-.stream-card.active .stat-pill {
+[data-theme="retro"] .stream-card.active .stream-card-title,
+[data-theme="retro"] .stream-card.active .stat-pill {
   color: var(--win95-white) !important;
 }
 
-.stream-card.active .platform-icon {
+[data-theme="retro"] .stream-card.active .platform-icon {
   filter: brightness(0) invert(1);
 }
 
 /* Platform badges */
-.platform-badge {
+[data-theme="retro"] .platform-badge {
   display: none !important;
 }
 
 /* Platform icon - large icon style */
-.platform-icon {
+[data-theme="retro"] .platform-icon {
   width: 32px !important;
   height: 32px !important;
   font-size: 24px !important;
@@ -242,29 +242,29 @@ input[type="text"] {
   margin-right: 8px !important;
 }
 
-.stream-card-header {
+[data-theme="retro"] .stream-card-header {
   display: flex !important;
   align-items: flex-start !important;
   gap: 8px !important;
 }
 
-.stream-card-info {
+[data-theme="retro"] .stream-card-info {
   flex: 1 !important;
   min-width: 0 !important;
 }
 
-.stream-card-title {
+[data-theme="retro"] .stream-card-title {
   font-weight: bold !important;
   margin-bottom: 4px !important;
   font-size: 11px !important;
 }
 
-.stream-card-stats {
+[data-theme="retro"] .stream-card-stats {
   gap: 8px !important;
   margin-top: 4px !important;
 }
 
-.stat-pill {
+[data-theme="retro"] .stat-pill {
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
@@ -273,7 +273,7 @@ input[type="text"] {
 }
 
 /* Content areas */
-.content {
+[data-theme="retro"] .content {
   background: var(--win95-white) !important;
   border: 2px solid !important;
   border-color: var(--win95-black) var(--win95-white) var(--win95-white) var(--win95-black) !important;
@@ -282,11 +282,11 @@ input[type="text"] {
 }
 
 /* Question cards - better contrast */
-.question-card {
+[data-theme="retro"] .question-card {
   margin-bottom: 8px !important;
 }
 
-.question-text {
+[data-theme="retro"] .question-text {
   font-size: 15px !important;
   line-height: 1.6 !important;
   font-weight: bold !important;
@@ -294,22 +294,22 @@ input[type="text"] {
   margin-bottom: 8px !important;
 }
 
-.question-header .username {
+[data-theme="retro"] .question-header .username {
   font-size: 13px !important;
   font-weight: bold !important;
 }
 
-.questions-list,
-.messages-list {
+[data-theme="retro"] .questions-list,
+[data-theme="retro"] .messages-list {
   background: var(--win95-white) !important;
 }
 
 /* Modal */
-.modal-overlay {
+[data-theme="retro"] .modal-overlay {
   background: rgba(0, 0, 0, 0.5) !important;
 }
 
-.modal-header {
+[data-theme="retro"] .modal-header {
   background: var(--win95-navy) !important;
   color: var(--win95-white) !important;
   padding: 2px 4px !important;
@@ -317,7 +317,7 @@ input[type="text"] {
   font-weight: bold !important;
 }
 
-.close-btn {
+[data-theme="retro"] .close-btn {
   background: var(--win95-gray) !important;
   border: 2px solid !important;
   border-color: var(--win95-white) var(--win95-black) var(--win95-black) var(--win95-white) !important;
@@ -328,13 +328,13 @@ input[type="text"] {
 }
 
 /* Empty states */
-.empty-icon {
+[data-theme="retro"] .empty-icon {
   font-size: 32px !important;
   filter: grayscale(1);
 }
 
 /* Badges */
-.badge {
+[data-theme="retro"] .badge {
   background: var(--win95-navy) !important;
   color: var(--win95-white) !important;
   border-radius: 0 !important;
@@ -342,7 +342,7 @@ input[type="text"] {
   font-size: 10px !important;
 }
 
-.stat-pill {
+[data-theme="retro"] .stat-pill {
   background: var(--win95-gray) !important;
   border: 1px solid var(--win95-black) !important;
   border-radius: 0 !important;
@@ -351,7 +351,7 @@ input[type="text"] {
 }
 
 /* Remove modern effects */
-* {
+[data-theme="retro"] * {
   transition: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
