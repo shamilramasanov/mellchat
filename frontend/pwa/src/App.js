@@ -19,11 +19,29 @@ function App() {
   const [showThemeSettings, setShowThemeSettings] = useState(false);
   const [messages, setMessages] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [upvotedQuestions, setUpvotedQuestions] = useState(new Set());
 
   // Apply theme to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Load upvoted questions from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('upvoted-questions');
+    if (saved) {
+      try {
+        setUpvotedQuestions(new Set(JSON.parse(saved)));
+      } catch (e) {
+        console.error('Failed to load upvoted questions:', e);
+      }
+    }
+  }, []);
+
+  // Save upvoted questions to localStorage
+  useEffect(() => {
+    localStorage.setItem('upvoted-questions', JSON.stringify([...upvotedQuestions]));
+  }, [upvotedQuestions]);
 
   // Subscribe to active stream via WS (after state is defined)
   useEffect(() => {
@@ -81,19 +99,7 @@ function App() {
           // Prefer first with connectionId
           const firstWithConn = migrated.find(s => !!s.connectionId) || migrated[0];
           setActiveStreamId(firstWithConn.id);
-          // Restart polling for saved streams that have connectionId
-          migrated.forEach(stream => {
-            if (stream.connectionId) {
-              console.log('Restarting polling for saved stream:', stream.id, stream.connectionId);
-              if (stream.platform === 'youtube') {
-                startMessagePolling(stream.id, stream.connectionId);
-              } else if (stream.platform === 'twitch') {
-                startTwitchMessagePolling(stream.id, stream.connectionId);
-              } else if (stream.platform === 'kick') {
-                startKickMessagePolling(stream.id, stream.connectionId);
-              }
-            }
-          });
+          // WebSocket will auto-subscribe on activeStreamId change
         }
         console.log('Loaded saved streams:', migrated.length);
       } catch (error) {
@@ -123,8 +129,21 @@ function App() {
       const activeStream = connectedStreams.find(stream => stream.id === activeStreamId);
       if (activeStream) {
         console.log('Active stream found:', activeStream.title, 'messages:', activeStream.messages?.length || 0);
-        setMessages(activeStream.messages || []);
-        setQuestions(activeStream.questions || []);
+        const allMessages = activeStream.messages || [];
+        setMessages(allMessages);
+        
+        // Filter questions automatically (messages ending with ?)
+        const filteredQuestions = allMessages.filter(msg => {
+          const text = msg.message?.trim() || '';
+          return text.endsWith('?');
+        }).map((msg, index) => ({
+          ...msg,
+          question: msg.message,
+          upvotes: msg.upvotes || 0,
+          answered: false
+        }));
+        setQuestions(filteredQuestions);
+        console.log('Filtered questions:', filteredQuestions.length);
       }
     } else {
       setMessages([]);
@@ -254,11 +273,8 @@ function App() {
               return stream;
             }));
             
-            // Start polling for messages
-            console.log('Starting message polling for:', newStream.id, data.connectionId);
-            console.log('About to call startMessagePolling...');
-            startMessagePolling(newStream.id, data.connectionId);
-            console.log('startMessagePolling called successfully');
+            // WebSocket will handle real-time messages automatically
+            console.log('YouTube connected, WebSocket will handle messages:', data.connectionId);
           } else {
             console.error('Failed to connect to YouTube Live Chat:', data.message);
             alert(`Помилка підключення: ${data.message}`);
@@ -299,9 +315,8 @@ function App() {
               return stream;
             }));
             
-            // Start polling for messages
-            console.log('Starting Twitch message polling for:', newStream.id, data.connectionId);
-            startTwitchMessagePolling(newStream.id, data.connectionId);
+            // WebSocket will handle real-time messages automatically
+            console.log('Twitch connected, WebSocket will handle messages:', data.connectionId);
           } else {
             console.error('Failed to connect to Twitch chat:', data.message);
             alert(`Помилка підключення до Twitch: ${data.message}`);
@@ -336,8 +351,8 @@ function App() {
               }
               return stream;
             }));
-            console.log('Starting Kick message polling for:', newStream.id, data.connectionId);
-            startKickMessagePolling(newStream.id, data.connectionId);
+            // WebSocket will handle real-time messages automatically
+            console.log('Kick connected, WebSocket will handle messages:', data.connectionId);
           } else {
             console.error('Failed to connect to Kick chat:', data.message);
             alert(`Помилка підключення до Kick: ${data.message}`);
@@ -380,14 +395,6 @@ function App() {
     }
     
     setConnectedStreams(prev => {
-      const streamToDisconnect = prev.find(s => s.id === streamId);
-      
-      // Clear polling interval if exists
-      if (streamToDisconnect && streamToDisconnect.pollInterval) {
-        clearInterval(streamToDisconnect.pollInterval);
-        console.log('Cleared polling interval for:', streamId);
-      }
-      
       const updated = prev.filter(stream => stream.id !== streamId);
       
       // If disconnecting active stream, switch to another or clear
@@ -402,15 +409,7 @@ function App() {
       // Cleanup: If this was the last stream, ensure complete cleanup
       if (updated.length === 0) {
         console.log('Last stream disconnected - performing cleanup');
-        // Clear all intervals
-        prev.forEach(stream => {
-          if (stream.pollInterval) {
-            clearInterval(stream.pollInterval);
-          }
-        });
-        // Clear active stream
         setActiveStreamId(null);
-        // Clear messages and questions
         setMessages([]);
         setQuestions([]);
         
@@ -433,175 +432,18 @@ function App() {
     setActiveStreamId(streamId);
   };
 
-  // Poll for new messages from Twitch Chat
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const startTwitchMessagePolling = useCallback((streamId, connectionId) => {
-    console.log('startTwitchMessagePolling called with:', streamId, connectionId);
-    // clear old interval if exists
-    const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
-    if (existing) { try { clearInterval(existing); } catch {} }
-    const pollInterval = setInterval(() => {
-      console.log('Twitch polling interval triggered');
-
-      console.log('Making Twitch API request to:', `http://localhost:3001/api/v1/twitch/messages/${connectionId}`);
-      // Poll for new messages
-      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch/messages/${connectionId}`)
-        .then(response => response.json())
-        .then(data => {
-          console.log('Twitch polling response:', data);
-          if (!data.success && data.message === 'Connection not found') {
-            console.log('Twitch connection lost, attempting reconnect');
-            const s = connectedStreams.find(s => s.id === streamId);
-            if (s) reconnectTwitch(s);
-            return;
-          }
-          if (data.success && data.messages && data.messages.length > 0) {
-            console.log(`Received ${data.messages.length} messages from Twitch API`);
-            // Add new messages to stream
-            setConnectedStreams(prev => prev.map(s => {
-              if (s.id === streamId) {
-                const existingMessageIds = new Set(s.messages?.map(m => m.id) || []);
-                const newMessages = data.messages.filter(msg => !existingMessageIds.has(msg.id));
-                console.log(`Adding ${newMessages.length} new Twitch messages to stream`);
-                const updatedMessages = [...(s.messages || []), ...newMessages];
-                return {
-                  ...s,
-                  messages: updatedMessages.slice(-100) // Keep last 100 messages
-                };
-              }
-              return s;
-            }));
-          }
-        })
-        .catch(error => {
-          console.error('Twitch message polling error:', error);
-        });
-    }, 30000); // Poll every 30 seconds
-
-    // Store interval ID for cleanup
-    setConnectedStreams(prev => prev.map(s => {
-      if (s.id === streamId) {
-        return { ...s, pollInterval };
+  const handleUpvote = (questionId) => {
+    setUpvotedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
       }
-      return s;
-    }));
-  }, [connectedStreams]);
-
-  // Poll for new messages from Kick Chat
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const startKickMessagePolling = useCallback((streamId, connectionId) => {
-    console.log('startKickMessagePolling called with:', streamId, connectionId);
-    const existing = connectedStreams.find(s => s.id === streamId)?.pollInterval;
-    if (existing) { try { clearInterval(existing); } catch {} }
-    const pollInterval = setInterval(() => {
-      console.log('Kick polling interval triggered');
-      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick/messages/${connectionId}`)
-        .then(response => response.json())
-        .then(data => {
-          console.log('Kick polling response:', data);
-          if (!data.success && data.message === 'Connection not found') {
-            console.log('Kick connection lost, attempting reconnect');
-            const s = connectedStreams.find(s => s.id === streamId);
-            if (s) reconnectKick(s);
-            return;
-          }
-          if (data.success && data.messages && data.messages.length > 0) {
-            setConnectedStreams(prev => prev.map(s => {
-              if (s.id === streamId) {
-                const existingMessageIds = new Set(s.messages?.map(m => m.id) || []);
-                const newMessages = data.messages.filter(msg => !existingMessageIds.has(msg.id));
-                const updatedMessages = [...(s.messages || []), ...newMessages];
-                return { ...s, messages: updatedMessages.slice(-100) };
-              }
-              return s;
-            }));
-          }
-        })
-        .catch(error => {
-          console.error('Kick message polling error:', error);
-        });
-    }, 30000);
-
-    setConnectedStreams(prev => prev.map(s => {
-      if (s.id === streamId) {
-        return { ...s, pollInterval };
-      }
-      return s;
-    }));
-  }, [connectedStreams]);
-
-  // Reconnect helpers: refresh connectionId on backend restart
-  const reconnectTwitch = useCallback(async (stream) => {
-    try {
-      const resp = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/twitch`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelName: stream.channel })
-      });
-      const data = await resp.json();
-      if (data.success) {
-        setConnectedStreams(prev => prev.map(s => s.id === stream.id ? { ...s, connectionId: data.connectionId, title: data.data.title } : s));
-        startTwitchMessagePolling(stream.id, data.connectionId);
-      }
-    } catch (e) { console.error('reconnectTwitch error', e); }
-  }, [startTwitchMessagePolling]);
-
-  const reconnectKick = useCallback(async (stream) => {
-    try {
-      const resp = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/kick`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelName: stream.channel })
-      });
-      const data = await resp.json();
-      if (data.success) {
-        setConnectedStreams(prev => prev.map(s => s.id === stream.id ? { ...s, connectionId: data.connectionId, title: data.data.title || s.title } : s));
-        startKickMessagePolling(stream.id, data.connectionId);
-      }
-    } catch (e) { console.error('reconnectKick error', e); }
-  }, [startKickMessagePolling]);
-
-  // Poll for new messages from YouTube Live Chat
-  const startMessagePolling = (streamId, connectionId) => {
-    console.log('startMessagePolling called with:', streamId, connectionId);
-    const pollInterval = setInterval(() => {
-      console.log('Polling interval triggered');
-      
-      console.log('Making API request to:', `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube/messages/${connectionId}`);
-      // Poll for new messages (simplified - in real app would use WebSocket)
-      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/v1/youtube/messages/${connectionId}`)
-        .then(response => response.json())
-        .then(data => {
-          console.log('Polling response:', data);
-          if (data.success && data.messages && data.messages.length > 0) {
-            console.log(`Received ${data.messages.length} messages from API`);
-            // Add new messages to stream
-            setConnectedStreams(prev => prev.map(s => {
-              if (s.id === streamId) {
-                const existingMessageIds = new Set(s.messages?.map(m => m.id) || []);
-                const newMessages = data.messages.filter(msg => !existingMessageIds.has(msg.id));
-                console.log(`Adding ${newMessages.length} new messages to stream`);
-                const updatedMessages = [...(s.messages || []), ...newMessages];
-                return {
-                  ...s,
-                  messages: updatedMessages.slice(-100) // Keep last 100 messages
-                };
-              }
-              return s;
-            }));
-          }
-        })
-        .catch(error => {
-          console.error('Message polling error:', error);
-        });
-    }, 30000); // Poll every 30 seconds
-
-    // Store interval ID for cleanup
-    setConnectedStreams(prev => prev.map(s => {
-      if (s.id === streamId) {
-        return { ...s, pollInterval };
-      }
-      return s;
-    }));
+      return newSet;
+    });
   };
+
 
   const currentStream = connectedStreams.find(stream => stream.id === activeStreamId);
   const isConnected = connectedStreams.length > 0;
@@ -785,8 +627,11 @@ function App() {
                         />
                       </div>
                       <div className="question-footer">
-                        <button className="upvote-btn">
-                          👍 {question.upvotes}
+                        <button 
+                          className={`upvote-btn ${upvotedQuestions.has(question.id) ? 'upvoted' : ''}`}
+                          onClick={() => handleUpvote(question.id)}
+                        >
+                          👍 {(question.upvotes || 0) + (upvotedQuestions.has(question.id) ? 1 : 0)}
                         </button>
                         {question.answered && <span className="answered">Відповіли</span>}
                       </div>

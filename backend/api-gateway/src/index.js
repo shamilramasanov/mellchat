@@ -10,9 +10,6 @@ const { createRateLimiter } = require('./middleware/rateLimiterCustom');
 const auth = require('./middleware/auth');
 
 // Routes
-const messagesRoutes = require('./routes/messages');
-const questionsRoutes = require('./routes/questions');
-const upvotesRoutes = require('./routes/upvotes');
 const healthRoutes = require('./routes/health');
 const connectRoutes = require('./routes/connect');
 let youtubeRoutesFactory = require('./routes/youtube');
@@ -91,11 +88,6 @@ app.use('/api/v1/kick', createRateLimiter({ windowMs: 10_000, max: 200 }), kickR
 
 // Emoji processing routes (no auth required for demo)
 app.use('/api/v1/emoji', createRateLimiter({ windowMs: 10_000, max: 100 }), emojiRoutes);
-
-// API routes with authentication
-app.use('/api/v1/messages', auth, messagesRoutes);
-app.use('/api/v1/questions', auth, questionsRoutes);
-app.use('/api/v1/upvotes', auth, upvotesRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
