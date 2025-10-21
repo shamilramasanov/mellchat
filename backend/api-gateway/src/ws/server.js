@@ -19,9 +19,14 @@ class WsHub {
             const set = this.subscribers.get(msg.connectionId) || new Set();
             set.add(ws);
             this.subscribers.set(msg.connectionId, set);
+            logger.info(`Client subscribed to ${msg.connectionId}, total subscribers: ${set.size}`);
           } else if (msg.type === 'unsubscribe' && msg.connectionId) {
             const set = this.subscribers.get(msg.connectionId);
-            if (set) { set.delete(ws); if (set.size === 0) this.subscribers.delete(msg.connectionId); }
+            if (set) { 
+              set.delete(ws); 
+              if (set.size === 0) this.subscribers.delete(msg.connectionId); 
+              logger.info(`Client unsubscribed from ${msg.connectionId}`);
+            }
           } else if (msg.type === 'ping') {
             // client keepalive
           }
@@ -48,10 +53,14 @@ class WsHub {
 
   emitMessage(connectionId, payload) {
     const set = this.subscribers.get(connectionId);
-    if (!set || set.size === 0) return;
+    if (!set || set.size === 0) {
+      logger.debug(`No subscribers for ${connectionId}, message not sent`);
+      return;
+    }
     const data = JSON.stringify({ type: 'message', connectionId, payload });
+    logger.debug(`Emitting message to ${set.size} subscribers of ${connectionId}`);
     for (const ws of set) {
-      try { ws.send(data); } catch {}
+      try { ws.send(data); } catch (e) { logger.error('WS send error:', e.message); }
     }
   }
 }
