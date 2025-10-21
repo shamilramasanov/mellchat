@@ -11,9 +11,24 @@
     }
   ],
   "routes": [
-    { "src": "/service-worker.js", "dest": "/service-worker.js" },
-    { "src": "/manifest.json", "dest": "/manifest.json" },
-    { "src": "/favicon.ico", "dest": "/favicon.ico" },
+    {
+      "src": "/service-worker.js",
+      "headers": { "cache-control": "no-cache" },
+      "dest": "/service-worker.js"
+    },
+    {
+      "src": "/manifest.json",
+      "headers": { 
+        "cache-control": "no-cache",
+        "content-type": "application/manifest+json"
+      },
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/favicon.ico",
+      "headers": { "cache-control": "no-cache" },
+      "dest": "/favicon.ico"
+    },
     {
       "src": "/static/(.*)",
       "headers": {
