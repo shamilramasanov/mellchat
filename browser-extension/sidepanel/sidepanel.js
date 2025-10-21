@@ -165,8 +165,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-const messages = [];
-
 function addMessage(data) {
   messages.push(data);
   if (messages.length > 100) {
