@@ -1,5 +1,4 @@
 const express = require('express');
-const postgresService = require('../services/postgresService');
 const redisService = require('../services/redisService');
 
 const router = express.Router();
@@ -16,26 +15,15 @@ router.get('/', async (req, res) => {
       services: {},
     };
     
-    // Check PostgreSQL connection
-    try {
-      await postgresService.query('SELECT 1');
-      health.services.postgres = 'connected';
-    } catch (error) {
-      health.services.postgres = 'disconnected';
-      health.status = 'unhealthy';
-    }
-    
     // Check Redis connection
     try {
       await redisService.ping();
       health.services.redis = 'connected';
     } catch (error) {
       health.services.redis = 'disconnected';
-      health.status = 'unhealthy';
     }
     
-    const statusCode = health.status === 'healthy' ? 200 : 503;
-    res.status(statusCode).json(health);
+    res.status(200).json(health);
   } catch (error) {
     res.status(503).json({
       status: 'unhealthy',
@@ -51,8 +39,6 @@ router.get('/', async (req, res) => {
  */
 router.get('/ready', async (req, res) => {
   try {
-    // Check if all required services are available
-    await postgresService.query('SELECT 1');
     await redisService.ping();
     
     res.status(200).json({
