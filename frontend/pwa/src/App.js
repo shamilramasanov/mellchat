@@ -35,21 +35,35 @@ function App() {
     };
   }, [activeStreamId, connectedStreams, ws]);
 
-  // Load saved streams on app start
+  // Load saved streams on app start with versioning
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const savedStreams = localStorage.getItem('mellchat-streams');
-    if (savedStreams) {
+    const STORAGE_VERSION = '1.0';
+    const savedData = localStorage.getItem('mellchat-streams');
+    
+    if (savedData) {
       try {
-        const parsed = JSON.parse(savedStreams) || [];
+        const parsed = JSON.parse(savedData);
+        
+        // Check version compatibility
+        if (parsed.version && parsed.version !== STORAGE_VERSION) {
+          console.log('Storage version mismatch, clearing old data');
+          localStorage.removeItem('mellchat-streams');
+          return;
+        }
+        
+        const savedStreams = parsed.streams || parsed || []; // Support both old and new format
+        
         // Migrate legacy saved entries: ensure connectionId for YouTube = `youtube-<videoId>`
-        const migrated = parsed.map((s) => {
+        const migrated = savedStreams.map((s) => {
           if (s.platform === 'youtube' && !s.connectionId && s.channel) {
             return { ...s, connectionId: `youtube-${s.channel}` };
           }
           return s;
         });
+        
         setConnectedStreams(migrated);
+        
         if (migrated.length > 0) {
           // Prefer first with connectionId
           const firstWithConn = migrated.find(s => !!s.connectionId) || migrated[0];
@@ -71,16 +85,22 @@ function App() {
         console.log('Loaded saved streams:', migrated.length);
       } catch (error) {
         console.error('Error loading saved streams:', error);
+        // Clear corrupted data
+        localStorage.removeItem('mellchat-streams');
       }
     }
   }, []);
 
-  // Save streams to localStorage when they change
+  // Save streams to localStorage when they change (including empty array) with versioning
   useEffect(() => {
-    if (connectedStreams.length > 0) {
-      localStorage.setItem('mellchat-streams', JSON.stringify(connectedStreams));
-      console.log('Saved streams to localStorage:', connectedStreams.length);
-    }
+    const STORAGE_VERSION = '1.0';
+    const dataToSave = {
+      version: STORAGE_VERSION,
+      streams: connectedStreams,
+      lastUpdated: Date.now()
+    };
+    localStorage.setItem('mellchat-streams', JSON.stringify(dataToSave));
+    console.log('Saved streams to localStorage:', connectedStreams.length);
   }, [connectedStreams]);
 
   // Update messages and questions when active stream changes
@@ -364,6 +384,22 @@ function App() {
         } else {
           setActiveStreamId(null);
         }
+      }
+      
+      // Cleanup: If this was the last stream, ensure complete cleanup
+      if (updated.length === 0) {
+        console.log('Last stream disconnected - performing cleanup');
+        // Clear all intervals
+        prev.forEach(stream => {
+          if (stream.pollInterval) {
+            clearInterval(stream.pollInterval);
+          }
+        });
+        // Clear active stream
+        setActiveStreamId(null);
+        // Clear messages and questions
+        setMessages([]);
+        setQuestions([]);
       }
       
       return updated;
