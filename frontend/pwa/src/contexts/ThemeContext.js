@@ -9,16 +9,12 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     // Check localStorage first
     const savedTheme = localStorage.getItem('mellchat-theme');
-    if (savedTheme) {
+    if (savedTheme && ['retro', 'win11', 'macos'].includes(savedTheme)) {
       return savedTheme;
     }
     
-    // Fallback to system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    
-    return 'light';
+    // Default to retro (Windows 95 style)
+    return 'retro';
   });
 
   const [language, setLanguage] = useState(() => {
@@ -36,21 +32,7 @@ export const ThemeProvider = ({ children }) => {
     return 'uk'; // Default fallback
   });
 
-  // Listen for system theme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e) => {
-      // Only auto-switch if user hasn't manually set a preference
-      const savedTheme = localStorage.getItem('mellchat-theme');
-      if (!savedTheme) {
-        setTheme(e.matches ? 'dark' : 'light');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  // No need to listen for system theme changes - we use style themes, not dark/light
 
   // Sync language with i18n on mount
   useEffect(() => {
@@ -88,17 +70,10 @@ export const ThemeProvider = ({ children }) => {
     i18n.changeLanguage(newLanguage);
   };
 
-  // Reset to system preferences
-  const resetToSystem = () => {
+  // Reset to defaults
+  const resetToDefaults = () => {
     localStorage.removeItem('mellchat-theme');
-    localStorage.removeItem('mellchat-language');
-    
-    // Reset to system theme
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-    } else {
-      setTheme('light');
-    }
+    setTheme('retro'); // Default to Retro theme
     
     // Reset to system language
     const systemLanguage = navigator.language || 'en';
@@ -107,6 +82,7 @@ export const ThemeProvider = ({ children }) => {
     for (const lang of supportedLanguages) {
       if (systemLanguage.startsWith(lang)) {
         setLanguage(lang);
+        i18n.changeLanguage(lang);
         break;
       }
     }
@@ -117,9 +93,10 @@ export const ThemeProvider = ({ children }) => {
     language,
     updateTheme,
     updateLanguage,
-    resetToSystem,
-    isDark: theme === 'dark',
-    isLight: theme === 'light'
+    resetToDefaults,
+    isRetro: theme === 'retro',
+    isWin11: theme === 'win11',
+    isMacOS: theme === 'macos'
   };
 
   return (

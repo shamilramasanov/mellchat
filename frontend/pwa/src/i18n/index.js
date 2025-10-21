@@ -7,53 +7,53 @@ const resources = {
   ru: {
     translation: {
       // Navigation
-      'nav.questions': 'Питання',
-      'nav.messages': 'Повідомлення',
-      'nav.settings': 'Налаштування',
+      'nav.questions': 'Вопросы',
+      'nav.messages': 'Сообщения',
+      'nav.settings': 'Настройки',
       
       // Connect modal
-      'connect.title': 'Підключити трансляцію',
-      'connect.input.placeholder': 'Введіть URL трансляції...',
-      'connect.button': 'Підключити',
-      'connect.close': 'Закрити',
+      'connect.title': 'Подключить трансляцию',
+      'connect.input.placeholder': 'Введите URL трансляции...',
+      'connect.button': 'Подключить',
+      'connect.close': 'Закрыть',
       
       // Stream info
       'stream.platform.youtube': 'YouTube',
       'stream.platform.twitch': 'Twitch',
       'stream.platform.kick': 'Kick',
-      'stream.disconnect': 'Відключити',
+      'stream.disconnect': 'Отключить',
       
       // Messages
-      'messages.empty.title': 'Повідомлення відсутні',
-      'messages.empty.description': 'Очікуйте повідомлення від глядачів',
-      'messages.time.now': 'щойно',
+      'messages.empty.title': 'Сообщений нет',
+      'messages.empty.description': 'Ожидайте сообщения от зрителей',
+      'messages.time.now': 'только что',
       
       // Questions
-      'questions.empty.title': 'Питання відсутні',
-      'questions.empty.description': 'Очікуйте питання від глядачів',
+      'questions.empty.title': 'Вопросов нет',
+      'questions.empty.description': 'Ожидайте вопросы от зрителей',
       'questions.upvote': '👍',
-      'questions.answered': 'Відповіли',
+      'questions.answered': 'Отвечено',
       
       // Theme settings
-      'theme.title': 'Налаштування інтерфейсу',
-      'theme.theme.label': 'Тема',
-      'theme.theme.light': 'Світла',
-      'theme.theme.dark': 'Темна',
-      'theme.theme.auto': 'Авто',
-      'theme.language.label': 'Мова',
+      'theme.title': 'Настройки интерфейса',
+      'theme.theme.label': 'Стиль',
+      'theme.theme.retro': 'Ретро (Win95)',
+      'theme.theme.win11': 'Windows 11',
+      'theme.theme.macos': 'macOS',
+      'theme.language.label': 'Язык',
       'theme.language.ru': 'Русский',
       'theme.language.en': 'English',
       'theme.language.uk': 'Українська',
-      'theme.close': 'Закрити',
+      'theme.close': 'Закрыть',
       
       // Errors
-      'error.connection.failed': 'Не вдалося підключитися',
-      'error.invalid.url': 'Невірний URL трансляції',
-      'error.network': 'Помилка мережі',
+      'error.connection.failed': 'Не удалось подключиться',
+      'error.invalid.url': 'Неверный URL трансляции',
+      'error.network': 'Ошибка сети',
       
       // Success
-      'success.connected': 'Підключено до трансляції',
-      'success.disconnected': 'Відключено від трансляції'
+      'success.connected': 'Подключено к трансляции',
+      'success.disconnected': 'Отключено от трансляции'
     }
   },
   en: {
@@ -88,10 +88,10 @@ const resources = {
       
       // Theme settings
       'theme.title': 'Interface Settings',
-      'theme.theme.label': 'Theme',
-      'theme.theme.light': 'Light',
-      'theme.theme.dark': 'Dark',
-      'theme.theme.auto': 'Auto',
+      'theme.theme.label': 'Style',
+      'theme.theme.retro': 'Retro (Win95)',
+      'theme.theme.win11': 'Windows 11',
+      'theme.theme.macos': 'macOS',
       'theme.language.label': 'Language',
       'theme.language.ru': 'Русский',
       'theme.language.en': 'English',
@@ -140,10 +140,10 @@ const resources = {
       
       // Theme settings
       'theme.title': 'Налаштування інтерфейсу',
-      'theme.theme.label': 'Тема',
-      'theme.theme.light': 'Світла',
-      'theme.theme.dark': 'Темна',
-      'theme.theme.auto': 'Авто',
+      'theme.theme.label': 'Стиль',
+      'theme.theme.retro': 'Ретро (Win95)',
+      'theme.theme.win11': 'Windows 11',
+      'theme.theme.macos': 'macOS',
       'theme.language.label': 'Мова',
       'theme.language.ru': 'Русский',
       'theme.language.en': 'English',

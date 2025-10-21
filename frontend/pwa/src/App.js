@@ -7,6 +7,8 @@ import { EmojiText } from './components/Emoji';
 import './App.css';
 import './styles/themes.css';
 import './styles/retro90s.css';
+import './styles/win11.css';
+import './styles/macos.css';
 
 function App() {
   const ws = useWebSocket();

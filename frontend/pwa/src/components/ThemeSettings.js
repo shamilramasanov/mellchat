@@ -10,7 +10,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
     language, 
     updateTheme, 
     updateLanguage, 
-    resetToSystem 
+    resetToDefaults 
   } = useTheme();
 
   if (!isOpen) return null;
@@ -22,17 +22,13 @@ const ThemeSettings = ({ isOpen, onClose }) => {
   ];
 
   const themes = [
-    { code: 'light', name: t('theme.theme.light') || 'Светлая', icon: '☀️' },
-    { code: 'dark', name: t('theme.theme.dark') || 'Темная', icon: '🌙' },
-    { code: 'auto', name: t('theme.theme.auto') || 'Авто', icon: '🔄' }
+    { code: 'retro', name: t('theme.theme.retro') || 'Ретро (Win95)', icon: '💾' },
+    { code: 'win11', name: t('theme.theme.win11') || 'Windows 11', icon: '🪟' },
+    { code: 'macos', name: t('theme.theme.macos') || 'macOS', icon: '🍎' }
   ];
 
   const handleThemeChange = (newTheme) => {
-    if (newTheme === 'auto') {
-      resetToSystem();
-    } else {
-      updateTheme(newTheme);
-    }
+    updateTheme(newTheme);
   };
 
   return (
@@ -50,7 +46,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
           <div className="setting-group">
             <label className="setting-label">
               <span className="setting-icon">🎨</span>
-              Тема оформления
+              {t('theme.theme.label') || 'Стиль'}
             </label>
             <div className="theme-options">
               {themes.map((themeOption) => (
@@ -70,7 +66,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
           <div className="setting-group">
             <label className="setting-label">
               <span className="setting-icon">🌍</span>
-              Язык интерфейса
+              {t('theme.language.label') || 'Язык'}
             </label>
             <div className="language-options">
               {languages.map((lang) => (
@@ -90,31 +86,14 @@ const ThemeSettings = ({ isOpen, onClose }) => {
           <div className="setting-group">
             <label className="setting-label">
               <span className="setting-icon">ℹ️</span>
-              Системные настройки
+              {t('theme.language.label') === 'Язык' ? 'Система' : 'System'}
             </label>
             <div className="system-info">
               <div className="info-item">
-                <span className="info-label">Системная тема:</span>
-                <span className="info-value">
-                  {window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Темная' : 'Светлая'}
-                </span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Системный язык:</span>
+                <span className="info-label">{t('theme.language.label') === 'Язык' ? 'Системный язык:' : 'System language:'}</span>
                 <span className="info-value">{navigator.language}</span>
               </div>
             </div>
-          </div>
-
-          {/* Reset Button */}
-          <div className="setting-group">
-            <button 
-              className="btn-reset"
-              onClick={resetToSystem}
-              title="Сбросить к системным настройкам"
-            >
-              🔄 Сбросить к системным настройкам
-            </button>
           </div>
         </div>
       </div>
