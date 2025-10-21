@@ -4,7 +4,7 @@
   "description": "MellChat - Live Chat Manager for Streamers",
   "scripts": {
     "start": "cd backend/api-gateway && npm start",
-    "install": "cd backend/api-gateway && npm install"
+    "postinstall": "cd backend/api-gateway && npm install"
   },
   "engines": {
     "node": ">=18.0.0",
