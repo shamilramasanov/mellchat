@@ -119,24 +119,25 @@ export const useWebSocket = () => {
       const response = await fetch(`${API_URL}/api/v1/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ streamUrl: url })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to connect to stream');
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        console.error('❌ Backend error:', error);
+        throw new Error(error.message || error.error || 'Failed to connect to stream');
       }
 
       const data = await response.json();
-      console.log('Stream connected:', data);
+      console.log('✅ Stream connected:', data);
 
       // Add stream to state
       const newStream = {
-        id: data.connectionId,
-        connectionId: data.connectionId,
-        platform: data.platform,
-        channel: data.channel || data.channelId,
-        title: data.title || `${data.platform} Stream`,
+        id: data.connection.id,
+        connectionId: data.connection.id,
+        platform: data.connection.platform,
+        channel: data.connection.channel,
+        title: data.connection.channel || `${data.connection.platform} Stream`,
         isLive: true,
         viewers: 0,
         messageCount: 0,
@@ -144,13 +145,13 @@ export const useWebSocket = () => {
       };
 
       setStreams(prev => [...prev, newStream]);
-      setMessages(prev => ({ ...prev, [data.connectionId]: [] }));
+      setMessages(prev => ({ ...prev, [data.connection.id]: [] }));
 
       // Subscribe to WebSocket updates
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
           type: 'subscribe',
-          connectionId: data.connectionId
+          connectionId: data.connection.id
         }));
       }
 
