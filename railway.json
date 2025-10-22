@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "cd backend/api-gateway && npm start",
+    "healthcheckPath": "/api/v1/health"
+  }
+}
