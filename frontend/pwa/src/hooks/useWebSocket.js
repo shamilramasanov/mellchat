@@ -26,16 +26,6 @@ export const useWebSocket = () => {
       console.log('✅ WebSocket connected');
       setIsConnected(true);
       reconnectAttempts.current = 0;
-
-      // Subscribe to all active streams
-      streams.forEach(stream => {
-        if (stream.connectionId) {
-          ws.send(JSON.stringify({
-            type: 'subscribe',
-            connectionId: stream.connectionId
-          }));
-        }
-      });
     };
 
     ws.onmessage = (event) => {
@@ -99,7 +89,7 @@ export const useWebSocket = () => {
     };
 
     wsRef.current = ws;
-  }, [streams]);
+  }, []);
 
   // Disconnect WebSocket
   const disconnect = useCallback(() => {
@@ -125,7 +115,8 @@ export const useWebSocket = () => {
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: response.statusText }));
         console.error('❌ Backend error:', error);
-        throw new Error(error.message || error.error || 'Failed to connect to stream');
+        const errorMessage = error.error?.message || error.message || error.error || 'Failed to connect to stream';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -164,15 +155,21 @@ export const useWebSocket = () => {
 
   // Remove stream
   const removeStream = useCallback(async (streamId) => {
-    const stream = streams.find(s => s.id === streamId);
-    if (!stream) return;
-
     try {
+      // Get stream from current state
+      let streamToRemove = null;
+      setStreams(prev => {
+        streamToRemove = prev.find(s => s.id === streamId);
+        return prev;
+      });
+
+      if (!streamToRemove) return;
+
       // Unsubscribe from WebSocket
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
           type: 'unsubscribe',
-          connectionId: stream.connectionId
+          connectionId: streamToRemove.connectionId
         }));
       }
 
@@ -180,20 +177,20 @@ export const useWebSocket = () => {
       await fetch(`${API_URL}/api/v1/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connectionId: stream.connectionId })
+        body: JSON.stringify({ connectionId: streamToRemove.connectionId })
       });
 
       // Remove from state
       setStreams(prev => prev.filter(s => s.id !== streamId));
       setMessages(prev => {
         const newMessages = { ...prev };
-        delete newMessages[stream.connectionId];
+        delete newMessages[streamToRemove.connectionId];
         return newMessages;
       });
     } catch (error) {
       console.error('Error removing stream:', error);
     }
-  }, [streams]);
+  }, []);
 
   // Connect on mount
   useEffect(() => {
