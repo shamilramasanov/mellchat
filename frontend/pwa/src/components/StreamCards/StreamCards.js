@@ -47,9 +47,9 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
 
   const getPlatformIcon = (platform) => {
     switch (platform) {
-      case 'youtube': return '📺';
-      case 'twitch': return '🟣'; // Twitch purple circle
-      case 'kick': return '⚡'; // Kick lightning
+      case 'youtube': return '/YouTube_full-color_icon_(2017).svg.png';
+      case 'twitch': return '/twitch-horizontal.svg';
+      case 'kick': return '/kick-logo.svg';
       default: return '📡';
     }
   };
@@ -86,15 +86,17 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
             
             <div className="stream-card__header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span 
+                <img 
+                  src={getPlatformIcon(stream.platform)}
+                  alt={stream.platform}
                   className="stream-card__icon"
                   style={{ 
-                    fontSize: '1.5rem',
+                    width: '24px',
+                    height: '24px',
+                    objectFit: 'contain',
                     filter: `drop-shadow(0 0 8px ${getPlatformColor(stream.platform)})` 
                   }}
-                >
-                  {getPlatformIcon(stream.platform)}
-                </span>
+                />
                 <span 
                   className="stream-card__platform"
                   style={{

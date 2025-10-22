@@ -217,12 +217,23 @@ export const ChatContainer = ({
                       border: '1px solid rgba(76, 201, 240, 0.3)',
                       borderRadius: '6px',
                       color: 'var(--accent-blue)',
-                      fontWeight: 600
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}>
-                      {msg.streamPlatform === 'youtube' && '📺'}
-                      {msg.streamPlatform === 'twitch' && '🎮'}
-                      {msg.streamPlatform === 'kick' && '⚡'}
-                      {' '}{msg.streamName}
+                      <img 
+                        src={msg.streamPlatform === 'youtube' ? '/YouTube_full-color_icon_(2017).svg.png' :
+                             msg.streamPlatform === 'twitch' ? '/twitch-horizontal.svg' :
+                             msg.streamPlatform === 'kick' ? '/kick-logo.svg' : '📡'}
+                        alt={msg.streamPlatform}
+                        style={{ 
+                          width: '12px', 
+                          height: '12px', 
+                          objectFit: 'contain' 
+                        }}
+                      />
+                      {msg.streamName}
                     </span>
                   )}
                 </div>

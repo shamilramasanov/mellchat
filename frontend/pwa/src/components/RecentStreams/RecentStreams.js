@@ -19,9 +19,9 @@ export const RecentStreams = ({ onSelectStream }) => {
 
   const getPlatformIcon = (platform) => {
     switch (platform) {
-      case 'youtube': return '📺';
-      case 'twitch': return '🎮';
-      case 'kick': return '⚡';
+      case 'youtube': return '/YouTube_full-color_icon_(2017).svg.png';
+      case 'twitch': return '/twitch-horizontal.svg';
+      case 'kick': return '/kick-logo.svg';
       default: return '🎥';
     }
   };
@@ -69,7 +69,15 @@ export const RecentStreams = ({ onSelectStream }) => {
               </button>
               
               <div className="recent-stream-card__icon">
-                {getPlatformIcon(stream.platform)}
+                <img 
+                  src={getPlatformIcon(stream.platform)}
+                  alt={stream.platform}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain' 
+                  }}
+                />
               </div>
               
               <div className="recent-stream-card__info">
