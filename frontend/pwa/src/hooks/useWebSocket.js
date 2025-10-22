@@ -176,11 +176,17 @@ export const useWebSocket = () => {
       }
 
       // Disconnect from backend
-      await fetch(`${API_URL}/api/v1/disconnect`, {
+      const disconnectResponse = await fetch(`${API_URL}/api/v1/connect/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionId: streamToRemove.connectionId })
       });
+      
+      if (disconnectResponse.ok) {
+        console.log('✅ Stream disconnected from backend');
+      } else {
+        console.error('❌ Failed to disconnect stream from backend');
+      }
 
       // Remove from state
       setStreams(prev => prev.filter(s => s.id !== streamId));
