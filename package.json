@@ -1,20 +1,39 @@
 {
-  "name": "mellchat",
-  "version": "1.0.0",
-  "description": "MellChat - Live Chat Manager for Streamers",
+  "name": "mellchat-pwa",
+  "version": "2.0.0",
+  "description": "MellChat - Live Chat Manager with Liquid Glass UI",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "react-i18next": "^13.5.0",
+    "i18next": "^23.7.6",
+    "i18next-browser-languagedetector": "^7.2.0",
+    "framer-motion": "^10.16.16"
+  },
   "scripts": {
-    "start": "cd frontend/pwa && npm start",
-    "build": "cd frontend/pwa && npm run build",
-    "install": "cd frontend/pwa && npm install"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/shamilramasanov/mellchat.git"
-  },
-  "author": "Shamil Ramasanov",
-  "license": "MIT"
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }
+
