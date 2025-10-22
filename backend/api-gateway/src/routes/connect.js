@@ -65,7 +65,7 @@ const startTwitchConnection = (connectionId, channelName, wsHub) => {
 /**
  * Start Kick WebSocket client
  */
-const startKickConnection = (connectionId, channelName, wsHub) => {
+const startKickConnection = async (connectionId, channelName, wsHub) => {
   try {
     // Import Kick router to access its connection logic
     const kickRouter = require('./kick');
@@ -75,8 +75,11 @@ const startKickConnection = (connectionId, channelName, wsHub) => {
       body: { channelName },
       app: { get: () => wsHub }
     };
+    
+    let kickResult = null;
     const mockRes = {
       json: (data) => {
+        kickResult = data;
         if (data.success) {
           logger.info(`✅ Kick connected via kick.js: ${channelName}`);
         } else {
@@ -84,17 +87,22 @@ const startKickConnection = (connectionId, channelName, wsHub) => {
         }
       },
       status: (code) => ({
-        json: (data) => logger.error(`❌ Kick error ${code}: ${data.message}`)
+        json: (data) => {
+          kickResult = { success: false, message: data.message };
+          logger.error(`❌ Kick error ${code}: ${data.message}`);
+        }
       })
     };
     
     // Execute Kick connection using existing kick.js logic
     const kickHandler = kickRouter(() => wsHub);
-    kickHandler(mockReq, mockRes);
+    await kickHandler(mockReq, mockRes);
     
-    logger.info(`🔌 Kick WS connecting to ${channelName}`);
+    logger.info(`🔌 Kick WS connecting to ${channelName}`, { result: kickResult });
+    return kickResult;
   } catch (error) {
     logger.error(`❌ Kick connection error: ${error.message}`);
+    return { success: false, message: error.message };
   }
 };
 
@@ -200,7 +208,11 @@ router.post('/', async (req, res, next) => {
       logger.info(`YouTube connection pending for: ${videoId}`);
     } else if (platform === 'kick') {
       // Start Kick connection
-      startKickConnection(connectionId, channelName, wsHub);
+      startKickConnection(connectionId, channelName, wsHub).then(result => {
+        logger.info(`Kick connection result:`, result);
+      }).catch(error => {
+        logger.error(`Kick connection error:`, error);
+      });
     }
     
     res.status(200).json({

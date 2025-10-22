@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 const KickWsClient = require('../services/kickWsClient');
+const KickJsClient = require('../services/kickJsClient');
 
 // In-memory connections: connectionId -> state
 const activeKickConnections = new Map();
@@ -129,39 +130,55 @@ router.post('/', async (req, res) => {
     };
     activeKickConnections.set(connectionId, conn);
 
-    // Resolve channel data (chatroom id) asynchronously
-    fetchKickChannel(channelName).then(info => {
-      if (!info) return;
-      const c = activeKickConnections.get(connectionId);
-      if (!c) return;
-      c.title = info?.livestream?.session_title || c.title;
-      c.chatroomId = info?.chatroom?.id || info?.id;
-      // Try WS real-time if configured
-      try {
-        const wsHub = router.wsHubRef && router.wsHubRef();
-        const client = new KickWsClient({
-          chatroomId: c.chatroomId,
-          channelName: c.channel,
-          onMessage: (msg) => {
-            const conn = activeKickConnections.get(connectionId);
-            if (!conn) return;
-            const exists = new Set((conn.messages||[]).map(m => m.id));
-            if (!exists.has(msg.id)) {
-              const payload = { id: msg.id, username: msg.username, message: msg.message, timestamp: msg.timestamp, platform: 'kick', connectionId };
-              conn.messages = [...(conn.messages||[]), payload].slice(-200);
-              try { wsHub && wsHub.emitMessage(connectionId, payload); } catch {}
-            }
+    // Try to connect using the new kick-js library
+    try {
+      const wsHub = router.wsHubRef && router.wsHubRef();
+      const kickJsClient = new KickJsClient({
+        channelName: channelName,
+        onMessage: (msg) => {
+          const conn = activeKickConnections.get(connectionId);
+          if (!conn) return;
+          
+          // Add message to connection
+          if (!conn.messages) conn.messages = [];
+          conn.messages.push(msg);
+          conn.messages = conn.messages.slice(-200); // Keep last 200 messages
+          
+          // Emit via WebSocket
+          try { 
+            wsHub && wsHub.emitMessage(connectionId, msg); 
+            logger.info(`Kick message emitted: ${msg.username}: ${msg.text}`);
+          } catch (e) {
+            logger.error('Kick WebSocket emit error', { error: e.message });
           }
-        });
-        client.connect();
-        c.wsClient = client;
-      } catch (e) {
-        logger.error('Kick WS start failed', { error: e.message });
-      }
-    }).finally(() => {
-      // Start polling regardless; it will no-op until chatroomId is present
+        }
+      });
+      
+      // Connect the client
+      kickJsClient.connect().then(success => {
+        if (success) {
+          logger.info(`✅ Kick-js client connected to ${channelName}`);
+          const conn = activeKickConnections.get(connectionId);
+          if (conn) {
+            conn.kickJsClient = kickJsClient;
+            conn.title = `Kick: ${channelName}`;
+          }
+        } else {
+          logger.warn(`⚠️ Kick-js client failed to connect to ${channelName}, falling back to polling`);
+          // Fallback to polling if kick-js fails
+          pollKickMessages(connectionId, wsHub);
+        }
+      }).catch(error => {
+        logger.error(`❌ Kick-js connection error for ${channelName}:`, error);
+        // Fallback to polling
+        pollKickMessages(connectionId, wsHub);
+      });
+      
+    } catch (e) {
+      logger.error('Kick-js client creation failed', { error: e.message });
+      // Fallback to polling
       pollKickMessages(connectionId, wsHub);
-    });
+    }
 
     res.json({ success: true, connectionId, message: `Connected to Kick chat: ${channelName}`, data: { channelName, platform: 'kick' } });
   } catch (e) {
@@ -189,7 +206,18 @@ router.delete('/:connectionId', (req, res) => {
   const { connectionId } = req.params;
   if (!activeKickConnections.has(connectionId)) return res.status(404).json({ success: false, message: 'Connection not found' });
   const conn = activeKickConnections.get(connectionId);
-  try { conn.wsClient?.close?.(); } catch {}
+  
+  // Disconnect kick-js client if exists
+  try { 
+    if (conn.kickJsClient) {
+      conn.kickJsClient.disconnect();
+    }
+    // Also try old wsClient for compatibility
+    conn.wsClient?.close?.(); 
+  } catch (e) {
+    logger.error('Error disconnecting Kick client:', e);
+  }
+  
   activeKickConnections.delete(connectionId);
   logger.info('Kick disconnected', { connectionId });
   res.json({ success: true, message: 'Disconnected from Kick chat' });

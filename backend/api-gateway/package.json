@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "@retconned/kick-js": "^0.5.4",
     "axios": "^1.6.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
