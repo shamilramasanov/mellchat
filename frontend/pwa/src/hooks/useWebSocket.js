@@ -33,8 +33,10 @@ export const useWebSocket = () => {
         const data = JSON.parse(event.data);
         console.log('📨 WebSocket message:', data);
 
-        if (data.type === 'message' && data.message) {
-          const msg = data.message;
+        if (data.type === 'message' && data.payload) {
+          const msg = data.payload;
+          console.log('💬 Message payload:', msg);
+          
           // Add message to the stream's messages
           setMessages(prev => ({
             ...prev,
@@ -43,7 +45,7 @@ export const useWebSocket = () => {
               {
                 id: msg.id || `${Date.now()}-${Math.random()}`,
                 username: msg.username || msg.author || 'Anonymous',
-                text: msg.message || msg.text || '',
+                text: msg.text || msg.message || '',
                 timestamp: msg.timestamp || Date.now(),
                 color: msg.color || generateColor(msg.username || 'Anonymous'),
                 platform: msg.platform || 'unknown',
