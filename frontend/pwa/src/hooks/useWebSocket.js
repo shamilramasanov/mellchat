@@ -1,140 +1,234 @@
-// WebSocket hook with auto-reconnect, subscriptions and keepalive
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-const WS_URL = process.env.REACT_APP_WS_URL || '';
-const WS_ENABLED = typeof WS_URL === 'string' && WS_URL.startsWith('ws');
-const RECONNECT_INTERVAL = 3000; // 3 seconds
-const MAX_RECONNECT_ATTEMPTS = 10;
-const PING_INTERVAL = 25000; // 25 seconds
+const WS_URL = process.env.REACT_APP_WS_URL || 'wss://mellchat-production.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://mellchat-production.up.railway.app';
 
-export function useWebSocket() {
+export const useWebSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [lastMessage, setLastMessage] = useState(null);
-
+  const [streams, setStreams] = useState([]);
+  const [messages, setMessages] = useState({});
   const wsRef = useRef(null);
-  const reconnectAttemptsRef = useRef(0);
-  const reconnectTimerRef = useRef(null);
-  const pingTimerRef = useRef(null);
-  const messageHandlersRef = useRef(new Map());
-  const subscriptionsRef = useRef(new Set());
+  const reconnectTimeoutRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const MAX_RECONNECT_ATTEMPTS = 5;
 
-  const emitEvent = useCallback((event, payload) => {
-    const handlers = messageHandlersRef.current.get(event);
-    if (!handlers) return;
-    handlers.forEach(fn => { try { fn(payload); } catch (e) { console.error('WS handler error:', e); } });
-  }, []);
-
-  const stopPing = useCallback(() => {
-    if (pingTimerRef.current) {
-      clearInterval(pingTimerRef.current);
-      pingTimerRef.current = null;
-    }
-  }, []);
-
-  const startPing = useCallback(() => {
-    stopPing();
-    pingTimerRef.current = setInterval(() => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        try { wsRef.current.send(JSON.stringify({ type: 'ping', ts: Date.now() })); } catch {}
-      }
-    }, PING_INTERVAL);
-    pingTimerRef.current.unref?.();
-  }, [stopPing]);
-
-  const handleMessage = useCallback((data) => {
-    setLastMessage(data);
-    emitEvent(data.type, data);
-    emitEvent('message', data);
-  }, [emitEvent]);
-
+  // Connect to WebSocket
   const connect = useCallback(() => {
-    if (!WS_ENABLED) {
-      setConnectionStatus('disabled');
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected');
       return;
     }
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    try {
-      setConnectionStatus('connecting');
-      const ws = new WebSocket(WS_URL);
-      wsRef.current = ws;
-      ws.onopen = () => {
-        setIsConnected(true);
-        setConnectionStatus('connected');
-        reconnectAttemptsRef.current = 0;
-        startPing();
-        emitEvent('connected', { timestamp: Date.now() });
-      };
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleMessage(data);
-        } catch (e) { console.error('WS parse error', e); }
-      };
-      ws.onerror = (error) => {
-        setConnectionStatus('error');
-        emitEvent('error', { error });
-      };
-      ws.onclose = (event) => {
-        setIsConnected(false);
-        setConnectionStatus('disconnected');
-        wsRef.current = null;
-        stopPing();
-        emitEvent('disconnected', { code: event.code, reason: event.reason });
-        if (event.code !== 1000 && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
-          const backoff = Math.min(RECONNECT_INTERVAL * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          setConnectionStatus('reconnecting');
-          reconnectTimerRef.current = setTimeout(() => { reconnectAttemptsRef.current++; connect(); }, backoff);
+
+    console.log('Connecting to WebSocket:', WS_URL);
+    const ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log('✅ WebSocket connected');
+      setIsConnected(true);
+      reconnectAttempts.current = 0;
+
+      // Subscribe to all active streams
+      streams.forEach(stream => {
+        if (stream.connectionId) {
+          ws.send(JSON.stringify({
+            type: 'subscribe',
+            connectionId: stream.connectionId
+          }));
         }
-      };
-    } catch (e) {
-      setConnectionStatus('error');
-      const backoff = Math.min(RECONNECT_INTERVAL * Math.pow(2, reconnectAttemptsRef.current), 30000);
-      reconnectTimerRef.current = setTimeout(() => { reconnectAttemptsRef.current++; connect(); }, backoff);
-    }
-  }, [emitEvent, handleMessage, startPing, stopPing]);
+      });
+    };
 
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('📨 WebSocket message:', data);
+
+        if (data.type === 'message' && data.message) {
+          const msg = data.message;
+          // Add message to the stream's messages
+          setMessages(prev => ({
+            ...prev,
+            [data.connectionId]: [
+              ...(prev[data.connectionId] || []),
+              {
+                id: msg.id || `${Date.now()}-${Math.random()}`,
+                username: msg.username || msg.author || 'Anonymous',
+                text: msg.message || msg.text || '',
+                timestamp: msg.timestamp || Date.now(),
+                color: msg.color || generateColor(msg.username || 'Anonymous'),
+                platform: msg.platform || 'unknown',
+                reactions: { like: 0, dislike: 0 },
+                isBookmarked: false,
+                userReaction: null
+              }
+            ]
+          }));
+        } else if (data.type === 'stream_info') {
+          // Update stream info
+          setStreams(prev => prev.map(s => 
+            s.connectionId === data.connectionId 
+              ? { ...s, viewers: data.viewers, isLive: data.isLive }
+              : s
+          ));
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('🔌 WebSocket disconnected');
+      setIsConnected(false);
+      wsRef.current = null;
+
+      // Attempt to reconnect
+      if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+        console.log(`Reconnecting in ${delay}ms... (attempt ${reconnectAttempts.current + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectAttempts.current++;
+          connect();
+        }, delay);
+      } else {
+        console.error('Max reconnection attempts reached');
+      }
+    };
+
+    wsRef.current = ws;
+  }, [streams]);
+
+  // Disconnect WebSocket
   const disconnect = useCallback(() => {
-    if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
-    stopPing();
-    if (wsRef.current) { wsRef.current.close(1000, 'Client disconnect'); wsRef.current = null; }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
     setIsConnected(false);
-    setConnectionStatus('disconnected');
-    reconnectAttemptsRef.current = MAX_RECONNECT_ATTEMPTS;
-  }, [stopPing]);
-
-  const sendMessage = useCallback((message) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return false;
-    try { wsRef.current.send(JSON.stringify(message)); return true; } catch { return false; }
   }, []);
 
-  const subscribe = useCallback((connectionId) => {
-    if (subscriptionsRef.current.has(connectionId)) return;
-    subscriptionsRef.current.add(connectionId);
-    sendMessage({ type: 'subscribe', connectionId });
-  }, [sendMessage]);
+  // Add stream
+  const addStream = useCallback(async (url) => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
 
-  const unsubscribe = useCallback((connectionId) => {
-    subscriptionsRef.current.delete(connectionId);
-    sendMessage({ type: 'unsubscribe', connectionId });
-  }, [sendMessage]);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to connect to stream');
+      }
 
-  const on = useCallback((event, handler) => {
-    if (!messageHandlersRef.current.has(event)) messageHandlersRef.current.set(event, new Set());
-    const set = messageHandlersRef.current.get(event);
-    set.add(handler);
-    return () => { set.delete(handler); if (set.size === 0) messageHandlersRef.current.delete(event); };
+      const data = await response.json();
+      console.log('Stream connected:', data);
+
+      // Add stream to state
+      const newStream = {
+        id: data.connectionId,
+        connectionId: data.connectionId,
+        platform: data.platform,
+        channel: data.channel || data.channelId,
+        title: data.title || `${data.platform} Stream`,
+        isLive: true,
+        viewers: 0,
+        messageCount: 0,
+        url: url
+      };
+
+      setStreams(prev => [...prev, newStream]);
+      setMessages(prev => ({ ...prev, [data.connectionId]: [] }));
+
+      // Subscribe to WebSocket updates
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'subscribe',
+          connectionId: data.connectionId
+        }));
+      }
+
+      return newStream;
+    } catch (error) {
+      console.error('Error adding stream:', error);
+      throw error;
+    }
   }, []);
 
-  const off = useCallback((event, handler) => {
-    const set = messageHandlersRef.current.get(event);
-    if (set) { set.delete(handler); if (set.size === 0) messageHandlersRef.current.delete(event); }
-  }, []);
+  // Remove stream
+  const removeStream = useCallback(async (streamId) => {
+    const stream = streams.find(s => s.id === streamId);
+    if (!stream) return;
 
-  useEffect(() => { connect(); return () => { disconnect(); }; }, [connect, disconnect]);
+    try {
+      // Unsubscribe from WebSocket
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'unsubscribe',
+          connectionId: stream.connectionId
+        }));
+      }
 
-  return { isConnected, connectionStatus, lastMessage, connect, disconnect, sendMessage, subscribe, unsubscribe, on, off };
+      // Disconnect from backend
+      await fetch(`${API_URL}/api/v1/disconnect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId: stream.connectionId })
+      });
+
+      // Remove from state
+      setStreams(prev => prev.filter(s => s.id !== streamId));
+      setMessages(prev => {
+        const newMessages = { ...prev };
+        delete newMessages[stream.connectionId];
+        return newMessages;
+      });
+    } catch (error) {
+      console.error('Error removing stream:', error);
+    }
+  }, [streams]);
+
+  // Connect on mount
+  useEffect(() => {
+    connect();
+    return () => disconnect();
+  }, [connect, disconnect]);
+
+  // Update message count
+  useEffect(() => {
+    setStreams(prev => prev.map(stream => ({
+      ...stream,
+      messageCount: messages[stream.connectionId]?.length || 0
+    })));
+  }, [messages]);
+
+  return {
+    isConnected,
+    streams,
+    messages,
+    addStream,
+    removeStream,
+    connect,
+    disconnect
+  };
+};
+
+// Helper function to generate color from username
+function generateColor(username) {
+  const colors = [
+    '#4CC9F0', '#7209B7', '#F72585', '#4361EE', '#3A0CA3',
+    '#06FFA5', '#FFBE0B', '#FB5607', '#FF006E', '#8338EC'
+  ];
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
 }
-
-
 

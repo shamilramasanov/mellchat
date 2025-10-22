@@ -1,20 +1,30 @@
 {
-    "short_name": "MellChat",
-    "name": "MellChat - Live Chat Manager",
-    "description": "Керуйте питаннями з Twitch та YouTube в реальному часі",
-    "icons": [
-      {
-        "src": "favicon.ico",
-        "sizes": "32x32",
-        "type": "image/x-icon"
-      }
-    ],
-    "start_url": "/",
-    "display": "standalone",
-    "theme_color": "#6366f1",
-    "background_color": "#0a0e27",
-    "orientation": "portrait-primary",
-    "scope": "/",
-    "categories": ["productivity", "entertainment", "social"],
-    "prefer_related_applications": false
-  }
+  "short_name": "MellChat",
+  "name": "MellChat - Live Chat Manager",
+  "description": "Manage live chats from YouTube, Twitch, and Kick with Liquid Glass UI",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f0f23",
+  "background_color": "#0f0f23",
+  "orientation": "portrait-primary"
+}
+

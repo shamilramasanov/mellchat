@@ -1,81 +1,23 @@
 <!DOCTYPE html>
-<html lang="uk">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#6366f1" />
-    
-    <!-- PWA Meta Tags -->
-    <meta name="description" content="MellChat - Керуйте питаннями з Twitch та YouTube в реальному часі" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="MellChat" />
-    
-    <!-- PWA Icons -->
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/icon-192x192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    
-    <!-- Preconnect to external domains -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
-    <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self';
-                   img-src 'self' data: https:;
-                   script-src 'self' 'unsafe-inline';
-                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-                   font-src 'self' data: https: https://fonts.gstatic.com https://r2cdn.perplexity.ai;
-                   connect-src 'self' http://localhost:3000 http://localhost:3001 ws://localhost:8080 https://mellchat-production.up.railway.app wss://mellchat-production.up.railway.app;
-                   frame-src 'self' https://www.youtube.com https://player.youtube.com https://www.twitch.tv;">
-    
-    <title>MellChat - Live Chat Manager</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    
-    <!-- Service Worker Registration (improved error handling) -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', async () => {
-          try {
-            // In dev/localhost: ensure no SW to avoid cache sticking in Safari
-            const isLocalhost = ['localhost', '127.0.0.1'].includes(location.hostname);
-            if (isLocalhost) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              for (const r of regs) { try { await r.unregister(); } catch(e) {} }
-              console.log('SW disabled on localhost');
-              return;
-            }
-
-            const reg = await navigator.serviceWorker.register('/service-worker.js');
-            console.log('✅ SW registered:', reg.scope);
-
-            // Force activate updated SW immediately
-            reg.addEventListener('updatefound', () => {
-              const sw = reg.installing;
-              if (!sw) return;
-              sw.addEventListener('statechange', () => {
-                if (sw.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    sw.postMessage({ type: 'SKIP_WAITING' });
-                  }
-                }
-              });
-            });
-
-            // Reload when controller changes to the new SW
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-              window.location.reload();
-            });
-          } catch (e) {
-            console.error('❌ SW registration failed:', e);
-          }
-        });
-      }
-    </script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f0f23" />
+  <meta name="description" content="MellChat - Live Chat Manager for Streamers" />
+  
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/icon-192.png" />
+  <!-- <link rel="manifest" href="%PUBLIC_URL%/manifest.json" /> -->
+  
+  <!-- Preconnect to API -->
+  <link rel="preconnect" href="https://mellchat-production.up.railway.app" />
+  
+  <title>MellChat - Live Chat Manager</title>
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+</body>
 </html>
+
