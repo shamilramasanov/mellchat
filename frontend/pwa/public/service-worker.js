@@ -1,5 +1,5 @@
-// MellChat Service Worker - v1.0.0
-const CACHE_NAME = 'mellchat-v1';
+// MellChat Service Worker - v2.0.0 (Material Design Update)
+const CACHE_NAME = 'mellchat-v2';
 const DEBUG = true;
 
 // Мінімальний список для кешування - тільки те, що точно існує
