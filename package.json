@@ -1,0 +1,20 @@
+{
+  "name": "mellchat",
+  "version": "1.0.0",
+  "description": "MellChat - Live Chat Manager for Streamers",
+  "scripts": {
+    "start": "cd frontend/pwa && npm start",
+    "build": "cd frontend/pwa && npm run build",
+    "install": "cd frontend/pwa && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shamilramasanov/mellchat.git"
+  },
+  "author": "Shamil Ramasanov",
+  "license": "MIT"
+}
