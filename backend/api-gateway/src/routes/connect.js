@@ -66,42 +66,26 @@ const startTwitchConnection = (connectionId, channelName, wsHub) => {
  * Start Kick WebSocket client
  */
 const startKickConnection = (connectionId, channelName, wsHub) => {
-  const KickWsClient = require('../services/kickWsClient');
+  // Import Kick router to access its connection logic
+  const kickRouter = require('./kick');
   
-  const client = new KickWsClient(channelName);
-  
-  client.onMessage = (msg) => {
-    const message = {
-      id: msg.id || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-      username: msg.username || 'unknown',
-      text: msg.message || '',
-      timestamp: msg.timestamp || Date.now(),
-      platform: 'kick',
-    };
-    
-    const conn = activeConnections.get(connectionId);
-    if (conn) {
-      conn.messages = [...(conn.messages || []), message].slice(-200);
-      
-      // Emit to WebSocket subscribers
-      if (wsHub) {
-        try {
-          wsHub.emitMessage(connectionId, message);
-        } catch (err) {
-          logger.error('Failed to emit Kick message:', err);
-        }
+  // Create a mock request/response to trigger Kick connection
+  const mockReq = { body: { channel: channelName } };
+  const mockRes = {
+    json: (data) => {
+      if (data.success) {
+        logger.info(`✅ Kick connected via kick.js: ${channelName}`);
+      } else {
+        logger.error(`❌ Kick connection failed: ${data.message}`);
       }
-    }
+    },
+    status: (code) => ({
+      json: (data) => logger.error(`❌ Kick error ${code}: ${data.message}`)
+    })
   };
   
-  client.connect().catch(err => {
-    logger.error(`❌ Kick WS connect error: ${err.message}`);
-  });
-  
-  const conn = activeConnections.get(connectionId);
-  if (conn) {
-    conn.client = client;
-  }
+  // Execute Kick connection using existing kick.js logic
+  kickRouter(wsHub)(mockReq, mockRes);
   
   logger.info(`🔌 Kick WS connecting to ${channelName}`);
 };
