@@ -67,18 +67,32 @@ const startTwitchConnection = (connectionId, channelName, wsHub) => {
  */
 const startKickConnection = (connectionId, channelName, wsHub) => {
   try {
-    // Simple Kick connection - just log for now
-    logger.info(`🔌 Kick connection started for ${channelName} (${connectionId})`);
+    // Import Kick router to access its connection logic
+    const kickRouter = require('./kick');
     
-    // For now, just simulate a successful connection
-    // TODO: Implement actual Kick WebSocket connection
-    const conn = activeConnections.get(connectionId);
-    if (conn) {
-      conn.status = 'connected';
-      conn.platform = 'kick';
-    }
+    // Create a mock request/response to trigger Kick connection
+    const mockReq = { 
+      body: { channelName },
+      app: { get: () => wsHub }
+    };
+    const mockRes = {
+      json: (data) => {
+        if (data.success) {
+          logger.info(`✅ Kick connected via kick.js: ${channelName}`);
+        } else {
+          logger.error(`❌ Kick connection failed: ${data.message}`);
+        }
+      },
+      status: (code) => ({
+        json: (data) => logger.error(`❌ Kick error ${code}: ${data.message}`)
+      })
+    };
     
-    logger.info(`✅ Kick connection simulated for ${channelName}`);
+    // Execute Kick connection using existing kick.js logic
+    const kickHandler = kickRouter(() => wsHub);
+    kickHandler(mockReq, mockRes);
+    
+    logger.info(`🔌 Kick WS connecting to ${channelName}`);
   } catch (error) {
     logger.error(`❌ Kick connection error: ${error.message}`);
   }

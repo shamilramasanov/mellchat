@@ -165,5 +165,3 @@ router.delete('/:connectionId', (req, res) => {
 });
 
 module.exports = (wsHubProvider) => { router.wsHubRef = wsHubProvider; return router; };
-
-
