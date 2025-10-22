@@ -39,75 +39,6 @@ async function fetchKickChannel(channel) {
   };
 }
 
-// Simulate Kick messages for testing when real connection fails
-function startKickMessageSimulation(connectionId, wsHub, channelName) {
-  logger.info(`🎭 Starting Kick message simulation for ${channelName}`);
-  
-  const testMessages = [
-    "Hello from Kick chat! 🎮",
-    "This is a test message from Kick",
-    "Kick integration is working!",
-    "How are you doing?",
-    "Great stream! 👍",
-    "Kick chat is live!",
-    "Testing message system",
-    "Hope this works! 🚀"
-  ];
-  
-  const testUsers = ["KickUser1", "KickViewer", "KickFan", "KickSupporter", "KickModerator"];
-  
-  const sendTestMessage = () => {
-    const randomMessage = testMessages[Math.floor(Math.random() * testMessages.length)];
-    const randomUser = testUsers[Math.floor(Math.random() * testUsers.length)];
-    
-    const msg = {
-      id: `kick-sim-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-      username: randomUser,
-      text: randomMessage,
-      timestamp: new Date(),
-      platform: 'kick',
-      color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-      reactions: { like: 0, dislike: 0 },
-      isBookmarked: false,
-      userReaction: null
-    };
-    
-    // Add to connection
-    const conn = activeKickConnections.get(connectionId);
-    if (conn) {
-      if (!conn.messages) conn.messages = [];
-      conn.messages.push(msg);
-      conn.messages = conn.messages.slice(-200);
-    }
-    
-    // Emit via WebSocket
-    try { 
-      wsHub && wsHub.emitMessage(connectionId, msg); 
-      logger.info(`🎭 Kick simulation message: ${randomUser}: ${randomMessage}`);
-    } catch (e) {
-      logger.error('Kick simulation WebSocket emit error', { error: e.message });
-    }
-  };
-  
-  // Send first message immediately
-  sendTestMessage();
-  
-  // Then send every 15 seconds
-  const interval = setInterval(() => {
-    const conn = activeKickConnections.get(connectionId);
-    if (!conn) {
-      clearInterval(interval);
-      return;
-    }
-    sendTestMessage();
-  }, 15000);
-  
-  // Store interval for cleanup
-  const conn = activeKickConnections.get(connectionId);
-  if (conn) {
-    conn.simulationInterval = interval;
-  }
-}
 
 // Best-effort polling of recent messages
 async function pollKickMessages(connectionId, wsHub) {
@@ -235,21 +166,17 @@ router.post('/', async (req, res) => {
             conn.title = `Kick: ${channelName}`;
           }
         } else {
-          logger.warn(`⚠️ Kick simple client failed to connect to ${channelName}, falling back to simulation`);
-          // Fallback to simulation for testing
-          startKickMessageSimulation(connectionId, wsHub, channelName);
+          logger.warn(`⚠️ Kick simple client failed to connect to ${channelName}`);
+          // No fallback - just log the failure
         }
       }).catch(error => {
         logger.error(`❌ Kick simple connection error for ${channelName}:`, error);
-        // Fallback to simulation
-        startKickMessageSimulation(connectionId, wsHub, channelName);
+        // No fallback - just log the error
       });
       
     } catch (e) {
       logger.error('Kick simple client creation failed', { error: e.message });
-      // Fallback to simulation
-      const wsHub = router.wsHubRef && router.wsHubRef();
-      startKickMessageSimulation(connectionId, wsHub, channelName);
+      // No fallback - just log the error
     }
 
     res.json({ success: true, connectionId, message: `Connected to Kick chat: ${channelName}`, data: { channelName, platform: 'kick' } });
@@ -289,9 +216,6 @@ router.delete('/:connectionId', (req, res) => {
     }
     if (conn.wsClient) {
       conn.wsClient.close();
-    }
-    if (conn.simulationInterval) {
-      clearInterval(conn.simulationInterval);
     }
   } catch (e) {
     logger.error('Error disconnecting Kick client:', e);
