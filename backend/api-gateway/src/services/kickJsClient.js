@@ -13,10 +13,9 @@ class KickJsClient {
     try {
       logger.info(`🔌 Connecting to Kick channel: ${this.channelName}`);
       
-      // Create client in read-only mode (no authentication needed)
+      // Create client - try without readOnly first
       this.client = createClient(this.channelName, { 
-        logger: false, // Disable internal logging
-        readOnly: true // Read-only mode, no auth required
+        logger: true // Enable logging to see what's happening
       });
 
       // Set up event listeners
@@ -60,6 +59,7 @@ class KickJsClient {
       });
 
       // Connect to the channel
+      logger.info(`🔌 Attempting to connect kick-js client to ${this.channelName}...`);
       await this.client.connect();
       
       logger.info(`🎯 Kick client connected to ${this.channelName}`);
