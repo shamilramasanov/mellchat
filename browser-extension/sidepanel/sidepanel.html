@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MellChat Filtered Chat</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="window">
+    <div class="title-bar">
+      <div class="title-bar-text">MellChat - Filtered Chat</div>
+    </div>
+    
+    <!-- Connected Streams List -->
+    <div class="streams-section">
+      <div class="streams-header">
+        <span>📺 Connected Streams</span>
+        <button class="btn-small" id="addStreamBtn">+ Add</button>
+      </div>
+      <div class="streams-list" id="streamsList">
+        <div class="empty-state-small">No streams connected</div>
+      </div>
+    </div>
+    
+    <!-- Add Stream Form (hidden by default) -->
+    <div class="add-stream-form" id="addStreamForm" style="display:none">
+      <input type="text" id="streamUrl" class="input" placeholder="Enter stream URL...">
+      <div class="form-buttons">
+        <button class="btn" id="connectBtn">Connect</button>
+        <button class="btn" id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="toolbar">
+      <button class="btn active" id="filterAll" data-filter="all">All Messages</button>
+      <button class="btn" id="filterQuestions" data-filter="questions">Questions Only</button>
+    </div>
+    
+    <!-- Chat Container -->
+    <div class="chat-container" id="chatContainer">
+      <div class="empty-state">
+        <p>💬 Messages will appear here</p>
+        <p>Click "+ Add" to connect to a stream</p>
+      </div>
+    </div>
+  </div>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

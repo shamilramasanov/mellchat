@@ -135,5 +135,3 @@ class KickWsClient {
 }
 
 module.exports = KickWsClient;
-
-

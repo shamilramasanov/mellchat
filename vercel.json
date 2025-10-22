@@ -1,4 +1,8 @@
 {
+  "buildCommand": "cd frontend/pwa && npm install && npm run build",
+  "outputDirectory": "frontend/pwa/build",
+  "installCommand": "cd frontend/pwa && npm install",
+  "framework": "create-react-app",
   "rewrites": [
     {
       "source": "/(.*)",

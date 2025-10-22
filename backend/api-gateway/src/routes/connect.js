@@ -1,5 +1,133 @@
 const express = require('express');
 const router = express.Router();
+const logger = require('../utils/logger');
+
+// Global activeKickConnections to share between kick.js and connect.js
+global.activeKickConnections = global.activeKickConnections || new Map();
+const tmi = require('tmi.js');
+
+// Store active connections across all platforms
+const activeConnections = new Map();
+
+/**
+ * Start Twitch IRC client
+ */
+const startTwitchConnection = (connectionId, channelName, wsHub) => {
+  const client = new tmi.Client({
+    options: { debug: false },
+    connection: { reconnect: true, secure: true },
+    identity: undefined,
+    channels: [channelName]
+  });
+
+  client.on('message', (channel, tags, message, self) => {
+    if (self) return;
+    
+    const msg = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      username: tags['display-name'] || tags['username'] || 'unknown',
+      text: message,
+      timestamp: Date.now(),
+      platform: 'twitch',
+      color: tags['color'] || '#' + Math.floor(Math.random()*16777215).toString(16),
+    };
+    
+    const conn = activeConnections.get(connectionId);
+    if (conn) {
+      conn.messages = [...(conn.messages || []), msg].slice(-200);
+      
+      // Emit to WebSocket subscribers
+      if (wsHub) {
+        try {
+          wsHub.emitMessage(connectionId, msg);
+        } catch (err) {
+          logger.error('Failed to emit message:', err);
+        }
+      }
+    }
+  });
+
+  client.on('connected', () => {
+    logger.info(`✅ Twitch IRC connected to #${channelName}`);
+  });
+
+  client.on('disconnected', (reason) => {
+    logger.warn(`🔌 Twitch IRC disconnected: ${reason}`);
+  });
+
+  client.connect().catch(err => {
+    logger.error(`❌ Twitch IRC connect error: ${err.message}`);
+  });
+
+  const conn = activeConnections.get(connectionId);
+  if (conn) {
+    conn.client = client;
+  }
+};
+
+/**
+ * Start Kick WebSocket client using direct logic from kick.js
+ */
+const startKickConnection = async (connectionId, channelName, wsHub) => {
+  try {
+    logger.info(`🔌 Starting Kick connection for ${channelName} (${connectionId})`);
+    
+    // Import Kick services directly
+    const KickSimpleClient = require('../services/kickSimpleClient');
+    
+    // Use global activeKickConnections
+    const activeKickConnections = global.activeKickConnections;
+    
+    // Create connection object
+    const conn = {
+      platform: 'kick',
+      channel: channelName,
+      title: `Kick: ${channelName}`,
+      connectedAt: new Date(),
+      messages: []
+    };
+    activeKickConnections.set(connectionId, conn);
+    
+    
+    // Try to connect using the simple Kick client
+    const kickSimpleClient = new KickSimpleClient({
+      channelName: channelName,
+      onMessage: (msg) => {
+        const conn = activeKickConnections.get(connectionId);
+        if (!conn) return;
+        
+        // Add message to connection
+        if (!conn.messages) conn.messages = [];
+        conn.messages.push(msg);
+        conn.messages = conn.messages.slice(-200); // Keep last 200 messages
+        
+        // Emit via WebSocket
+        try { 
+          wsHub && wsHub.emitMessage(connectionId, msg); 
+          logger.info(`Kick message emitted: ${msg.username}: ${msg.text}`);
+        } catch (e) {
+          logger.error('Kick WebSocket emit error', { error: e.message });
+        }
+      }
+    });
+    
+    // Connect the client
+    const success = await kickSimpleClient.connect();
+    if (success) {
+      logger.info(`✅ Kick simple client connected to ${channelName}`);
+      conn.kickSimpleClient = kickSimpleClient;
+      conn.title = `Kick: ${channelName}`;
+      return { success: true, message: `Connected to Kick channel: ${channelName}` };
+    } else {
+      logger.warn(`⚠️ Kick simple client failed to connect to ${channelName}`);
+      return { success: false, message: `Failed to connect to Kick channel: ${channelName}` };
+    }
+    
+  } catch (error) {
+    logger.error(`❌ Kick connection error: ${error.message}`);
+    return { success: false, message: error.message };
+  }
+};
 
 /**
  * POST /api/v1/connect
@@ -7,7 +135,7 @@ const router = express.Router();
  */
 router.post('/', async (req, res, next) => {
   try {
-    const { streamUrl, platform } = req.body;
+    const { streamUrl } = req.body;
     
     if (!streamUrl) {
       return res.status(400).json({
@@ -19,33 +147,31 @@ router.post('/', async (req, res, next) => {
     }
     
     // Parse URL to determine platform and channel
-    let detectedPlatform = '';
+    let platform = '';
     let channelName = '';
-    let channelId = '';
+    let videoId = '';
     
     if (streamUrl.includes('twitch.tv')) {
-      detectedPlatform = 'twitch';
+      platform = 'twitch';
       const match = streamUrl.match(/twitch\.tv\/([^/?]+)/);
       channelName = match ? match[1] : '';
       
-      // Get Twitch channel ID using Helix API
-      // This would be implemented with actual Twitch API calls
-      channelId = `twitch_${channelName}`;
-      
     } else if (streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be')) {
-      detectedPlatform = 'youtube';
+      platform = 'youtube';
       const match = streamUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
-      channelName = match ? match[1] : '';
+      videoId = match ? match[1] : '';
+      channelName = videoId; // Use videoId as channel name for YouTube
       
-      // Get YouTube channel ID using YouTube API
-      // This would be implemented with actual YouTube API calls
-      channelId = `youtube_${channelName}`;
+    } else if (streamUrl.includes('kick.com')) {
+      platform = 'kick';
+      const match = streamUrl.match(/kick\.com\/([^/?]+)/);
+      channelName = match ? match[1] : '';
       
     } else {
       return res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Unsupported platform. Only Twitch and YouTube are supported.',
+          message: 'Unsupported platform. Supported: YouTube, Twitch, Kick',
         },
       });
     }
@@ -54,32 +180,175 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Could not extract channel name from URL',
+          message: 'Could not extract channel/video ID from URL',
         },
       });
     }
     
-    // Store connection info (in real implementation, this would go to database)
-    const connection = {
-      id: `conn_${Date.now()}`,
-      platform: detectedPlatform,
-      channel: channelName,
-      channelId: channelId,
-      streamUrl: streamUrl,
-      connectedAt: new Date(),
-      status: 'connected',
-    };
+    // Check if already connected to this channel (skip for Kick - it has its own deduplication)
+    if (platform !== 'kick') {
+      for (let [id, conn] of activeConnections.entries()) {
+        if (conn.platform === platform && conn.channelName === channelName) {
+          logger.info(`Already connected to ${platform} channel: ${channelName}`);
+          return res.status(200).json({
+            success: true,
+            connection: {
+              id,
+              platform: conn.platform,
+              channel: conn.channelName,
+              streamUrl,
+              connectedAt: conn.connectedAt,
+              status: 'connected',
+            },
+            message: `Already connected to ${platform} channel: ${channelName}`,
+          });
+        }
+      }
+    }
     
-    // Start collecting messages from this channel
-    // In real implementation, this would trigger the collectors
+    // Create new connection
+    const connectionId = `${platform}-${channelName}-${Date.now()}`;
+    
+    activeConnections.set(connectionId, {
+      platform,
+      channelName,
+      videoId,
+      streamUrl,
+      connectedAt: new Date(),
+      messages: [],
+    });
+    
+    logger.info(`🔌 Connecting to ${platform} channel: ${channelName} (${connectionId})`);
+    
+    // Start platform-specific connection
+    const wsHub = req.app.get('wsHub');
+    
+    if (platform === 'twitch') {
+      startTwitchConnection(connectionId, channelName, wsHub);
+    } else if (platform === 'youtube') {
+      // Start YouTube connection using youtubePersistentManager
+      try {
+        const youtubeManager = require('../services/youtubePersistentManager');
+        const conn = await youtubeManager.connect(videoId, streamUrl);
+        logger.info(`✅ YouTube connected: ${conn.title}`);
+        
+        // Update connection with YouTube data
+        const connData = activeConnections.get(connectionId);
+        if (connData) {
+          connData.title = conn.title;
+          connData.channelName = conn.channelName;
+          connData.liveChatId = conn.liveChatId;
+        }
+      } catch (error) {
+        logger.error(`❌ YouTube connection failed: ${error.message}`);
+        // Remove failed connection
+        activeConnections.delete(connectionId);
+        return res.status(500).json({
+          error: {
+            code: 'YOUTUBE_CONNECTION_FAILED',
+            message: error.message,
+          },
+        });
+      }
+    } else if (platform === 'kick') {
+      // Start Kick connection and wait for result
+      const kickResult = await startKickConnection(connectionId, channelName, wsHub);
+      logger.info(`Kick connection result:`, kickResult);
+      
+      if (!kickResult.success) {
+        // Remove failed connection
+        activeConnections.delete(connectionId);
+        return res.status(500).json({
+          error: {
+            code: 'KICK_CONNECTION_FAILED',
+            message: kickResult.message,
+          },
+        });
+      }
+    }
     
     res.status(200).json({
       success: true,
-      connection,
-      message: `Successfully connected to ${detectedPlatform} channel: ${channelName}`,
+      connection: {
+        id: connectionId,
+        platform,
+        channel: channelName,
+        streamUrl,
+        connectedAt: new Date(),
+        status: 'connected',
+      },
+      message: `Successfully connected to ${platform} channel: ${channelName}`,
     });
     
   } catch (error) {
+    logger.error('Connect error:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/disconnect
+ * Disconnect from a channel
+ */
+router.post('/disconnect', async (req, res, next) => {
+  try {
+    const { connectionId } = req.body;
+    
+    if (!connectionId) {
+      return res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Connection ID is required',
+        },
+      });
+    }
+    
+    const connection = activeConnections.get(connectionId);
+    
+    if (!connection) {
+      return res.status(404).json({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Connection not found',
+        },
+      });
+    }
+    
+    // Disconnect platform-specific client
+    if (connection.client) {
+      connection.client.disconnect();
+      logger.info(`🔌 ${connection.platform} client disconnected for: ${connectionId}`);
+    }
+    
+    // For Kick connections, also disconnect from activeKickConnections
+    if (connection.platform === 'kick') {
+      const activeKickConnections = global.activeKickConnections;
+      const kickConn = activeKickConnections.get(connectionId);
+      if (kickConn) {
+        if (kickConn.kickSimpleClient) {
+          kickConn.kickSimpleClient.disconnect();
+        }
+        if (kickConn.kickJsClient) {
+          kickConn.kickJsClient.disconnect();
+        }
+        if (kickConn.wsClient) {
+          kickConn.wsClient.close();
+        }
+        activeKickConnections.delete(connectionId);
+        logger.info(`🔌 Kick connection disconnected: ${connectionId}`);
+      }
+    }
+    
+    activeConnections.delete(connectionId);
+    logger.info(`🗑️ Connection removed: ${connectionId}`);
+    
+    res.json({
+      success: true,
+      message: 'Successfully disconnected from channel',
+    });
+    
+  } catch (error) {
+    logger.error('Disconnect error:', error);
     next(error);
   }
 });
@@ -90,32 +359,20 @@ router.post('/', async (req, res, next) => {
  */
 router.get('/status', async (req, res, next) => {
   try {
-    // In real implementation, this would check actual connection status
-    res.json({
-      connected: true,
-      platform: 'twitch',
-      channel: 'test_channel',
-      connectedAt: new Date(),
-      messagesCount: 42,
-      questionsCount: 15,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * DELETE /api/v1/connect
- * Disconnect from current channel
- */
-router.delete('/', async (req, res, next) => {
-  try {
-    // In real implementation, this would stop collectors and clean up
+    const connections = Array.from(activeConnections.entries()).map(([id, data]) => ({
+      id,
+      platform: data.platform,
+      channel: data.channelName,
+      connectedAt: data.connectedAt,
+      messageCount: data.messages?.length || 0,
+    }));
     
     res.json({
       success: true,
-      message: 'Successfully disconnected from channel',
+      connections,
+      total: connections.length,
     });
+    
   } catch (error) {
     next(error);
   }

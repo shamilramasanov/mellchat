@@ -1,11 +1,10 @@
 {
-  "name": "mellchat-backend",
+  "name": "mellchat",
   "version": "1.0.0",
-  "description": "MellChat Backend API",
-  "main": "backend/api-gateway/src/index.js",
+  "description": "MellChat - Live Chat Manager for Streamers",
   "scripts": {
-    "start": "cd backend/api-gateway && npm install && npm start",
-    "install": "cd backend/api-gateway && npm install"
+    "start": "cd backend/api-gateway && npm start",
+    "postinstall": "cd backend/api-gateway && npm install"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -18,3 +17,4 @@
   "author": "Shamil Ramasanov",
   "license": "MIT"
 }
+
