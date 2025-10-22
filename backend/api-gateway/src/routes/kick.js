@@ -9,68 +9,98 @@ const activeKickConnections = new Map();
 // Try to fetch channel info from Kick public API
 async function fetchKickChannel(channel) {
   try {
-    // Kick API is often blocked, so we'll use a mock approach
     logger.info(`Kick channel info requested for: ${channel}`);
     
-    // Return mock channel info since Kick API is blocked
-    return {
-      id: `kick-${channel}`,
-      chatroom: { id: `chatroom-${channel}` },
-      livestream: { session_title: `Kick Stream: ${channel}` }
-    };
+    // Try to fetch real channel info first
+    const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(channel)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      logger.info(`Kick channel info fetched successfully for: ${channel}`);
+      return data;
+    } else {
+      logger.warn(`Kick API blocked for channel: ${channel}, using fallback`);
+    }
   } catch (e) {
-    logger.error('Kick fetch channel failed', { error: e.message, channel });
-    return null;
+    logger.warn(`Kick API error for ${channel}: ${e.message}, using fallback`);
   }
+  
+  // Fallback: return mock channel info when API is blocked
+  return {
+    id: `kick-${channel}`,
+    chatroom: { id: `chatroom-${channel}` },
+    livestream: { session_title: `Kick Stream: ${channel}` }
+  };
 }
 
-// Simulate Kick messages for testing (since API is blocked)
+// Best-effort polling of recent messages
 async function pollKickMessages(connectionId, wsHub) {
   const conn = activeKickConnections.get(connectionId);
   if (!conn) return;
 
   try {
-    // Since Kick API is blocked, simulate some test messages
-    const testMessages = [
-      "Hello from Kick chat! 🎮",
-      "This is a test message",
-      "Kick integration is working!",
-      "How are you doing?",
-      "Great stream! 👍"
+    // Kick does not provide stable public message API. Try recent messages via chatroom id if available.
+    // This is best-effort and may return empty; logs will show failures.
+    if (!conn.chatroomId) {
+      return; // wait until channel info resolves
+    }
+
+    // Try to get recent messages from Kick API (may be blocked)
+    const urlCandidates = [
+      `https://kick.com/api/v2/chatrooms/${conn.chatroomId}/messages?limit=50`,
+      `https://kick.com/api/v2/channels/${encodeURIComponent(conn.channel)}/messages?limit=50`
     ];
     
-    const randomMessage = testMessages[Math.floor(Math.random() * testMessages.length)];
-    const testUsers = ["KickUser1", "KickUser2", "KickViewer", "KickFan", "KickSupporter"];
-    const randomUser = testUsers[Math.floor(Math.random() * testUsers.length)];
-    
-    // Create a test message
-    const msg = {
-      id: `kick-test-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-      platform: 'kick',
-      connectionId,
-      username: randomUser,
-      message: randomMessage,
-      timestamp: new Date()
-    };
-    
-    // Add to connection messages
-    if (!conn.messages) conn.messages = [];
-    conn.messages.push(msg);
-    conn.messages = conn.messages.slice(-200); // Keep last 200 messages
-    
-    // Emit via WebSocket
-    try { 
-      wsHub && wsHub.emitMessage(connectionId, msg); 
-      logger.info(`Kick test message sent: ${randomUser}: ${randomMessage}`);
-    } catch (e) {
-      logger.error('Kick WebSocket emit error', { error: e.message });
+    let data = null;
+    for (const url of urlCandidates) {
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        if (res.ok) { 
+          data = await res.json(); 
+          break; 
+        }
+      } catch (e) {
+        logger.debug(`Kick API attempt failed: ${url}`, { error: e.message });
+      }
     }
-    
+
+    if (data && Array.isArray(data)) {
+      const existing = new Set((conn.messages || []).map(m => m.id));
+      const newMsgs = [];
+      for (const item of data) {
+        const id = item.id || `${item.timestamp || Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+        if (existing.has(id)) continue;
+        const msg = {
+          id,
+          platform: 'kick',
+          connectionId,
+          username: item?.sender?.username || item?.user?.username || 'user',
+          message: item?.content || item?.message || '',
+          timestamp: new Date(item?.created_at || item?.timestamp || Date.now())
+        };
+        newMsgs.push(msg);
+        try { wsHub && wsHub.emitMessage(connectionId, msg); } catch {}
+      }
+      if (newMsgs.length > 0) {
+        conn.messages = [...(conn.messages || []), ...newMsgs].slice(-200);
+        logger.info(`Kick polling: ${newMsgs.length} new messages for ${conn.channel}`);
+      }
+    } else {
+      logger.debug(`Kick polling: no new messages for ${conn.channel} (API may be blocked)`);
+    }
   } catch (e) {
     logger.error('Kick polling error', { error: e.message, connectionId });
   } finally {
-    // schedule next poll every 10 seconds for testing
-    setTimeout(() => pollKickMessages(connectionId, wsHub), 10000);
+    // schedule next poll every 15 seconds
+    setTimeout(() => pollKickMessages(connectionId, wsHub), 15000);
   }
 }
 
