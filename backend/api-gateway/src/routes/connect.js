@@ -146,22 +146,24 @@ router.post('/', async (req, res, next) => {
       });
     }
     
-    // Check if already connected to this channel
-    for (let [id, conn] of activeConnections.entries()) {
-      if (conn.platform === platform && conn.channelName === channelName) {
-        logger.info(`Already connected to ${platform} channel: ${channelName}`);
-        return res.status(200).json({
-          success: true,
-          connection: {
-            id,
-            platform: conn.platform,
-            channel: conn.channelName,
-            streamUrl,
-            connectedAt: conn.connectedAt,
-            status: 'connected',
-          },
-          message: `Already connected to ${platform} channel: ${channelName}`,
-        });
+    // Check if already connected to this channel (skip for Kick - it has its own deduplication)
+    if (platform !== 'kick') {
+      for (let [id, conn] of activeConnections.entries()) {
+        if (conn.platform === platform && conn.channelName === channelName) {
+          logger.info(`Already connected to ${platform} channel: ${channelName}`);
+          return res.status(200).json({
+            success: true,
+            connection: {
+              id,
+              platform: conn.platform,
+              channel: conn.channelName,
+              streamUrl,
+              connectedAt: conn.connectedAt,
+              status: 'connected',
+            },
+            message: `Already connected to ${platform} channel: ${channelName}`,
+          });
+        }
       }
     }
     
