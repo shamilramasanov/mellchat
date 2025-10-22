@@ -4,57 +4,9 @@ import { StreamCards } from './components/StreamCards/StreamCards';
 import { ChatContainer } from './components/Chat/ChatContainer';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { AddStreamModal } from './components/AddStreamModal/AddStreamModal';
+import { RecentStreams } from './components/RecentStreams/RecentStreams';
 import { useWebSocket } from './hooks/useWebSocket';
 import './App.css';
-
-// Mock data for demo
-const mockStreams = [
-  {
-    id: '1',
-    platform: 'youtube',
-    channel: 'DemoChannel',
-    title: 'Live Stream Demo',
-    isLive: true,
-    viewers: 1234,
-    messageCount: 42
-  },
-  {
-    id: '2',
-    platform: 'twitch',
-    channel: 'DemoStreamer',
-    title: 'Gaming Session',
-    isLive: true,
-    viewers: 567,
-    messageCount: 28
-  }
-];
-
-const mockMessages = [
-  {
-    id: '1',
-    username: 'User123',
-    text: 'Hello everyone! How are you?',
-    timestamp: Date.now() - 60000,
-    color: '#4CC9F0',
-    reactions: { like: 5, dislike: 0 }
-  },
-  {
-    id: '2',
-    username: 'Viewer456',
-    text: 'Great stream!',
-    timestamp: Date.now() - 50000,
-    color: '#7209B7',
-    reactions: { like: 3, dislike: 0 }
-  },
-  {
-    id: '3',
-    username: 'Fan789',
-    text: 'When is the next stream?',
-    timestamp: Date.now() - 40000,
-    color: '#F72585',
-    reactions: { like: 2, dislike: 0 }
-  }
-];
 
 function App() {
   // WebSocket integration
@@ -75,15 +27,35 @@ function App() {
   const [localReactions, setLocalReactions] = useState({});
   const [localBookmarks, setLocalBookmarks] = useState(new Set());
   
-  // Use WebSocket streams if available, otherwise use mock data
-  const streams = wsStreams.length > 0 ? wsStreams : mockStreams;
+  // Use only WebSocket streams (no mock data)
+  const streams = wsStreams;
   const [activeStreamId, setActiveStreamId] = useState(null);
+  const [filter, setFilter] = useState('all');
   
-  // Get messages for active stream
+  // Get messages for active stream OR all questions from all streams
   const activeStream = streams.find(s => s.id === activeStreamId);
-  const rawMessages = activeStream?.connectionId && wsMessages[activeStream.connectionId] 
-    ? wsMessages[activeStream.connectionId] 
-    : (wsStreams.length === 0 ? mockMessages : []);
+  
+  // Collect ALL messages from ALL streams (for counting)
+  const allMessages = streams.flatMap(stream => {
+    const streamMessages = stream.connectionId && wsMessages[stream.connectionId] 
+      ? wsMessages[stream.connectionId] 
+      : [];
+    
+    // Add stream info to each message
+    return streamMessages.map(msg => ({
+      ...msg,
+      streamName: stream.title || stream.channel,
+      streamPlatform: stream.platform,
+      streamId: stream.id
+      }));
+    });
+  
+  // If 'all-questions' filter is active, collect questions from ALL streams
+  const rawMessages = filter === 'all-questions' 
+    ? allMessages.filter(msg => msg.text?.includes('?')) // Only questions
+    : (activeStream?.connectionId && wsMessages[activeStream.connectionId] 
+        ? wsMessages[activeStream.connectionId] 
+        : []);
   
   // Enrich messages with local reactions and bookmarks
   const messages = rawMessages.map(msg => ({
@@ -98,8 +70,6 @@ function App() {
       } : {})
     }
   }));
-  
-  const [filter, setFilter] = useState('all');
   const [settings, setSettings] = useState({
     autoTranslate: false,
     fontSize: 'medium',
@@ -193,12 +163,44 @@ function App() {
 
   const handleAddStreamSubmit = async (url) => {
     try {
-      await wsAddStream(url);
+      const newStream = await wsAddStream(url);
+      
+      // Save to recent streams history
+      if (newStream) {
+        const recentStreams = JSON.parse(localStorage.getItem('mellchat-recent-streams') || '[]');
+        const streamData = {
+          url,
+          platform: newStream.platform,
+          channel: newStream.channel,
+          title: newStream.title,
+          lastViewed: Date.now()
+        };
+        
+        // Remove duplicate if exists
+        const filtered = recentStreams.filter(s => s.url !== url);
+        
+        // Add to beginning
+        const updated = [streamData, ...filtered].slice(0, 10); // Keep last 10
+        localStorage.setItem('mellchat-recent-streams', JSON.stringify(updated));
+      }
+      
       setShowAddStream(false);
     } catch (error) {
       console.error('Error adding stream:', error);
       alert(`Failed to add stream: ${error.message}`);
     }
+  };
+  
+  const handleRecentStreamSelect = (url) => {
+    handleAddStreamSubmit(url);
+  };
+  
+  const handleLogoClick = () => {
+    // Close all streams to show Recent Streams screen
+    streams.forEach(stream => {
+      wsRemoveStream(stream.id);
+    });
+    setActiveStreamId(null);
   };
 
   const handleReaction = (messageId, reactionType) => {
@@ -260,7 +262,27 @@ function App() {
         flexShrink: 0,
         boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
       }}>
-        <h1 className="app__logo" style={{ fontSize: '1.5rem', margin: 0 }}>MellChat v2.0</h1>
+        <h1 
+          className="app__logo" 
+          onClick={handleLogoClick}
+          style={{ 
+            fontSize: '1.5rem', 
+            margin: 0,
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.05)';
+            e.target.style.filter = 'brightness(1.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.filter = 'brightness(1)';
+          }}
+          title="Show Recent Streams"
+        >
+          MellChat v2.0
+        </h1>
         <div className="app__header-actions" style={{
           display: 'flex',
           gap: '0.5rem'
@@ -348,22 +370,69 @@ function App() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <StreamCards
-          streams={streams}
-          activeStreamId={activeStreamId}
-          onStreamClick={handleStreamClick}
-          onStreamClose={handleStreamClose}
-        />
-        
-        <ChatContainer
-          messages={messages}
-          filter={filter}
-          onFilterChange={setFilter}
-          onAddStream={handleAddStream}
-          onReaction={handleReaction}
-          onBookmark={handleBookmark}
-                        />
-                      </div>
+        {streams.length === 0 ? (
+          <RecentStreams onSelectStream={handleRecentStreamSelect} />
+        ) : (
+          <>
+            <StreamCards
+              streams={streams}
+              activeStreamId={activeStreamId}
+              onStreamClick={handleStreamClick}
+              onStreamClose={handleStreamClose}
+            />
+            
+            <ChatContainer
+              messages={messages}
+              allMessages={allMessages}
+              filter={filter}
+              onFilterChange={setFilter}
+              onAddStream={handleAddStream}
+              onReaction={handleReaction}
+              onBookmark={handleBookmark}
+            />
+          </>
+        )}
+
+        {/* Global FAB - Add Stream (always visible) */}
+              <button 
+          className="global-fab" 
+          onClick={handleAddStream}
+          title="Add Stream"
+          style={{
+            position: 'fixed',
+            bottom: streams.length === 0 ? '2rem' : '8rem',
+            right: '2rem',
+            width: '56px',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #4CC9F0, #7209B7)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '50%',
+            fontSize: '2rem',
+            fontWeight: 300,
+            color: 'white',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 8px 32px rgba(76, 201, 240, 0.4), 0 0 0 0 rgba(76, 201, 240, 0.4)',
+            zIndex: 1000,
+            animation: 'pulse 2s ease-in-out infinite'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.1) rotate(90deg)';
+            e.target.style.boxShadow = '0 12px 48px rgba(76, 201, 240, 0.6), 0 0 0 8px rgba(76, 201, 240, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1) rotate(0deg)';
+            e.target.style.boxShadow = '0 8px 32px rgba(76, 201, 240, 0.4), 0 0 0 0 rgba(76, 201, 240, 0.4)';
+          }}
+        >
+          +
+            </button>
+          </div>
 
       <AddStreamModal
         isOpen={showAddStream}

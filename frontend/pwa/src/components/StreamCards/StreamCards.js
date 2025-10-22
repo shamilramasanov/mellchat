@@ -48,8 +48,8 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
   const getPlatformIcon = (platform) => {
     switch (platform) {
       case 'youtube': return '📺';
-      case 'twitch': return '🎮';
-      case 'kick': return '⚡';
+      case 'twitch': return '🟣'; // Twitch purple circle
+      case 'kick': return '⚡'; // Kick lightning
       default: return '📡';
     }
   };
@@ -85,14 +85,31 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
             </button>
             
             <div className="stream-card__header">
-              <span 
-                className="stream-card__icon"
-                style={{ filter: `drop-shadow(0 0 8px ${getPlatformColor(stream.platform)})` }}
-              >
-                {getPlatformIcon(stream.platform)}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span 
+                  className="stream-card__icon"
+                  style={{ 
+                    fontSize: '1.5rem',
+                    filter: `drop-shadow(0 0 8px ${getPlatformColor(stream.platform)})` 
+                  }}
+                >
+                  {getPlatformIcon(stream.platform)}
+                </span>
+                <span 
+                  className="stream-card__platform"
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: getPlatformColor(stream.platform),
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  {stream.platform}
+                </span>
+              </div>
               <span className={`stream-card__status ${stream.isLive ? 'stream-card__status--live' : ''}`}>
-                {stream.isLive ? t('stream.live') : t('stream.offline')}
+                {stream.isLive ? '🔴 LIVE' : '⚫️ Offline'}
               </span>
             </div>
             

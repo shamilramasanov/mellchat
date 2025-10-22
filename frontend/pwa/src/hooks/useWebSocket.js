@@ -137,7 +137,16 @@ export const useWebSocket = () => {
         url: url
       };
 
-      setStreams(prev => [...prev, newStream]);
+      // Check if stream already exists (prevent duplicates)
+      setStreams(prev => {
+        const exists = prev.find(s => s.connectionId === data.connection.id);
+        if (exists) {
+          console.log('Stream already exists, skipping duplicate');
+          return prev;
+        }
+        return [...prev, newStream];
+      });
+      
       setMessages(prev => ({ ...prev, [data.connection.id]: [] }));
 
       // Subscribe to WebSocket updates

@@ -63,6 +63,50 @@ const startTwitchConnection = (connectionId, channelName, wsHub) => {
 };
 
 /**
+ * Start Kick WebSocket client
+ */
+const startKickConnection = (connectionId, channelName, wsHub) => {
+  const KickWsClient = require('../services/kickWsClient');
+  
+  const client = new KickWsClient(channelName);
+  
+  client.onMessage = (msg) => {
+    const message = {
+      id: msg.id || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      username: msg.username || 'unknown',
+      text: msg.message || '',
+      timestamp: msg.timestamp || Date.now(),
+      platform: 'kick',
+    };
+    
+    const conn = activeConnections.get(connectionId);
+    if (conn) {
+      conn.messages = [...(conn.messages || []), message].slice(-200);
+      
+      // Emit to WebSocket subscribers
+      if (wsHub) {
+        try {
+          wsHub.emitMessage(connectionId, message);
+        } catch (err) {
+          logger.error('Failed to emit Kick message:', err);
+        }
+      }
+    }
+  };
+  
+  client.connect().catch(err => {
+    logger.error(`❌ Kick WS connect error: ${err.message}`);
+  });
+  
+  const conn = activeConnections.get(connectionId);
+  if (conn) {
+    conn.client = client;
+  }
+  
+  logger.info(`🔌 Kick WS connecting to ${channelName}`);
+};
+
+/**
  * POST /api/v1/connect
  * Connect to a streaming channel
  */
@@ -161,7 +205,8 @@ router.post('/', async (req, res, next) => {
       // Just return success, the manager will pick it up
       logger.info(`YouTube connection pending for: ${videoId}`);
     } else if (platform === 'kick') {
-      logger.info(`Kick connection pending for: ${channelName}`);
+      // Start Kick connection
+      startKickConnection(connectionId, channelName, wsHub);
     }
     
     res.status(200).json({

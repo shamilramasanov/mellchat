@@ -5,6 +5,7 @@ import './ChatContainer.css';
 
 export const ChatContainer = ({ 
   messages = [], 
+  allMessages = [], // All messages from all streams for counting
   filter = 'all',
   onFilterChange,
   onAddStream,
@@ -18,6 +19,10 @@ export const ChatContainer = ({
   const chatRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [sortBy, setSortBy] = useState('time'); // 'time', 'popular', 'active'
+  
+  // Count all questions from all streams
+  const allQuestionsCount = allMessages.filter(msg => msg.text?.includes('?')).length;
+  const currentQuestionsCount = messages.filter(msg => msg.text?.includes('?')).length;
 
   // Filter messages
   const filteredMessages = messages.filter(msg => {
@@ -190,14 +195,6 @@ export const ChatContainer = ({
         className="chat-messages" 
         ref={chatRef}
         onScroll={handleScroll}
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem'
-        }}
       >
         {sortedMessages.length === 0 ? (
           <div className="chat-empty">
@@ -207,9 +204,28 @@ export const ChatContainer = ({
           sortedMessages.map((msg) => (
             <div key={msg.id} className="chat-message glass">
               <div className="chat-message__header">
-                <span className="chat-message__username" style={{ color: msg.color }}>
-                  {msg.username}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className="chat-message__username">
+                    {msg.username}
+                  </span>
+                  {/* Show stream badge for all-questions filter */}
+                  {filter === 'all-questions' && msg.streamName && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      padding: '0.2rem 0.5rem',
+                      background: 'rgba(76, 201, 240, 0.15)',
+                      border: '1px solid rgba(76, 201, 240, 0.3)',
+                      borderRadius: '6px',
+                      color: 'var(--accent-blue)',
+                      fontWeight: 600
+                    }}>
+                      {msg.streamPlatform === 'youtube' && '📺'}
+                      {msg.streamPlatform === 'twitch' && '🎮'}
+                      {msg.streamPlatform === 'kick' && '⚡'}
+                      {' '}{msg.streamName}
+                    </span>
+                  )}
+                </div>
                 <span className="chat-message__time">
                   {new Date(msg.timestamp).toLocaleTimeString('ru-RU', { 
                     hour: '2-digit', 
@@ -245,11 +261,6 @@ export const ChatContainer = ({
           ))
         )}
 
-        {/* FAB - Add Stream (over chat) */}
-        <button className="chat-fab" onClick={onAddStream}>
-          +
-        </button>
-
         {/* New Messages Notification */}
         {showNewMessages && (
           <button className="chat-new-messages" onClick={scrollToBottom}>
@@ -259,25 +270,25 @@ export const ChatContainer = ({
       </div>
 
       {/* Filters */}
-      <div className="chat-filters" style={{
-        display: 'flex',
-        gap: '0.5rem',
-        padding: '1rem',
-        borderTop: '1px solid rgba(255, 255, 255, 0.18)',
-        overflowX: 'auto',
-        flexShrink: 0
-      }}>
+      <div className="chat-filters">
         <button
           className={`chat-filter ${filter === 'all' ? 'chat-filter--active' : ''}`}
           onClick={() => onFilterChange('all')}
         >
-          {t('filter.all')}
+          {t('filter.all')} ({messages.length})
         </button>
         <button
           className={`chat-filter ${filter === 'questions' ? 'chat-filter--active' : ''}`}
           onClick={() => onFilterChange('questions')}
         >
-          ❓ {t('filter.questions')}
+          ❓ {t('filter.questions')} ({currentQuestionsCount})
+        </button>
+        <button
+          className={`chat-filter ${filter === 'all-questions' ? 'chat-filter--active' : ''}`}
+          onClick={() => onFilterChange('all-questions')}
+          title={t('filter.allQuestions')}
+        >
+          🌐 {t('filter.allQuestions')} ({allQuestionsCount})
         </button>
         <button
           className={`chat-filter ${filter === 'bookmarks' ? 'chat-filter--active' : ''}`}
@@ -294,11 +305,7 @@ export const ChatContainer = ({
       </div>
 
       {/* Search */}
-      <div className="chat-search" style={{
-        padding: '1rem',
-        borderTop: '1px solid rgba(255, 255, 255, 0.18)',
-        flexShrink: 0
-      }}>
+      <div className="chat-search">
         <Input
           icon="🔍"
           placeholder={t('search.placeholder')}
