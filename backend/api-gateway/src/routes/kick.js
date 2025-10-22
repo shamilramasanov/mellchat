@@ -5,8 +5,9 @@ const KickWsClient = require('../services/kickWsClient');
 const KickJsClient = require('../services/kickJsClient');
 const KickSimpleClient = require('../services/kickSimpleClient');
 
-// In-memory connections: connectionId -> state
-const activeKickConnections = new Map();
+// Use global activeKickConnections to share with connect.js
+global.activeKickConnections = global.activeKickConnections || new Map();
+const activeKickConnections = global.activeKickConnections;
 
 // Try to fetch channel info from Kick public API
 async function fetchKickChannel(channel) {
@@ -226,4 +227,8 @@ router.delete('/:connectionId', (req, res) => {
   res.json({ success: true, message: 'Disconnected from Kick chat' });
 });
 
-module.exports = (wsHubProvider) => { router.wsHubRef = wsHubProvider; return router; };
+module.exports = (wsHubProvider) => { 
+  router.wsHubRef = wsHubProvider; 
+  router.activeKickConnections = activeKickConnections;
+  return router; 
+};

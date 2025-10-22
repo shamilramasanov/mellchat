@@ -1,0 +1,63 @@
+{
+  "manifest_version": 2,
+  "name": "MellChat Filter",
+  "version": "1.2.0",
+  "description": "Filter and enhance chat experience on YouTube, Twitch, and Kick",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "https://www.youtube.com/*",
+    "https://www.twitch.tv/*",
+    "https://kick.com/*"
+  ],
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "sidebar_action": {
+    "default_title": "MellChat",
+    "default_panel": "sidepanel/sidepanel.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["shared/browser-polyfill.js", "content/youtube.js"],
+      "css": ["content/chat-filter.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://www.twitch.tv/*"],
+      "js": ["shared/browser-polyfill.js", "content/twitch.js"],
+      "css": ["content/chat-filter.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://kick.com/*"],
+      "js": ["shared/browser-polyfill.js", "content/kick.js"],
+      "css": ["content/chat-filter.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "mellchat@mellchat.app",
+      "strict_min_version": "57.0"
+    }
+  }
+}
+

@@ -22,9 +22,13 @@ class KickSimpleClient {
         this.chatroomId = 4598; // Fallback ID from the example
       }
       
-      // Create WebSocket connection using the same approach as KickChatConnection
+      // Use actual Pusher app key from environment
+      const pusherAppKey = process.env.KICK_PUSHER_APP_KEY || '32cbd69e4b950bf97679';
+      const pusherCluster = process.env.KICK_PUSHER_CLUSTER || 'us2';
+      
+      // Create WebSocket connection using actual Kick Pusher keys
       this.ws = new WebSocket(
-        "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false"
+        `wss://ws-${pusherCluster}.pusher.com/app/${pusherAppKey}?protocol=7&client=js&version=7.6.0&flash=false`
       );
 
       this.ws.on('open', () => {

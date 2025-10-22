@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
+
+// Global activeKickConnections to share between kick.js and connect.js
+global.activeKickConnections = global.activeKickConnections || new Map();
 const tmi = require('tmi.js');
 
 // Store active connections across all platforms
@@ -63,43 +66,63 @@ const startTwitchConnection = (connectionId, channelName, wsHub) => {
 };
 
 /**
- * Start Kick WebSocket client
+ * Start Kick WebSocket client using direct logic from kick.js
  */
 const startKickConnection = async (connectionId, channelName, wsHub) => {
   try {
-    // Import Kick router to access its connection logic
-    const kickRouter = require('./kick');
+    logger.info(`🔌 Starting Kick connection for ${channelName} (${connectionId})`);
     
-    // Create a mock request/response to trigger Kick connection
-    const mockReq = { 
-      body: { channelName },
-      app: { get: () => wsHub }
+    // Import Kick services directly
+    const KickSimpleClient = require('../services/kickSimpleClient');
+    
+    // Use global activeKickConnections
+    const activeKickConnections = global.activeKickConnections;
+    
+    // Create connection object
+    const conn = {
+      platform: 'kick',
+      channel: channelName,
+      title: `Kick: ${channelName}`,
+      connectedAt: new Date(),
+      messages: []
     };
+    activeKickConnections.set(connectionId, conn);
     
-    let kickResult = null;
-    const mockRes = {
-      json: (data) => {
-        kickResult = data;
-        if (data.success) {
-          logger.info(`✅ Kick connected via kick.js: ${channelName}`);
-        } else {
-          logger.error(`❌ Kick connection failed: ${data.message}`);
+    
+    // Try to connect using the simple Kick client
+    const kickSimpleClient = new KickSimpleClient({
+      channelName: channelName,
+      onMessage: (msg) => {
+        const conn = activeKickConnections.get(connectionId);
+        if (!conn) return;
+        
+        // Add message to connection
+        if (!conn.messages) conn.messages = [];
+        conn.messages.push(msg);
+        conn.messages = conn.messages.slice(-200); // Keep last 200 messages
+        
+        // Emit via WebSocket
+        try { 
+          wsHub && wsHub.emitMessage(connectionId, msg); 
+          logger.info(`Kick message emitted: ${msg.username}: ${msg.text}`);
+        } catch (e) {
+          logger.error('Kick WebSocket emit error', { error: e.message });
         }
-      },
-      status: (code) => ({
-        json: (data) => {
-          kickResult = { success: false, message: data.message };
-          logger.error(`❌ Kick error ${code}: ${data.message}`);
-        }
-      })
-    };
+      }
+    });
     
-    // Execute Kick connection using existing kick.js logic
-    const kickHandler = kickRouter(() => wsHub);
-    await kickHandler(mockReq, mockRes);
+    // Connect the client
+    const success = await kickSimpleClient.connect();
+    if (success) {
+      logger.info(`✅ Kick simple client connected to ${channelName}`);
+      conn.kickSimpleClient = kickSimpleClient;
+      conn.title = `Kick: ${channelName}`;
+      return { success: true, message: `Connected to Kick channel: ${channelName}` };
+    } else {
+      logger.warn(`⚠️ Kick simple client failed to connect to ${channelName}`);
+      return { success: false, message: `Failed to connect to Kick channel: ${channelName}` };
+    }
     
-    logger.info(`🔌 Kick WS connecting to ${channelName}`, { result: kickResult });
-    return kickResult;
   } catch (error) {
     logger.error(`❌ Kick connection error: ${error.message}`);
     return { success: false, message: error.message };
@@ -207,12 +230,20 @@ router.post('/', async (req, res, next) => {
       // Just return success, the manager will pick it up
       logger.info(`YouTube connection pending for: ${videoId}`);
     } else if (platform === 'kick') {
-      // Start Kick connection
-      startKickConnection(connectionId, channelName, wsHub).then(result => {
-        logger.info(`Kick connection result:`, result);
-      }).catch(error => {
-        logger.error(`Kick connection error:`, error);
-      });
+      // Start Kick connection and wait for result
+      const kickResult = await startKickConnection(connectionId, channelName, wsHub);
+      logger.info(`Kick connection result:`, kickResult);
+      
+      if (!kickResult.success) {
+        // Remove failed connection
+        activeConnections.delete(connectionId);
+        return res.status(500).json({
+          error: {
+            code: 'KICK_CONNECTION_FAILED',
+            message: kickResult.message,
+          },
+        });
+      }
     }
     
     res.status(200).json({
@@ -266,6 +297,25 @@ router.post('/disconnect', async (req, res, next) => {
     if (connection.client) {
       connection.client.disconnect();
       logger.info(`🔌 ${connection.platform} client disconnected for: ${connectionId}`);
+    }
+    
+    // For Kick connections, also disconnect from activeKickConnections
+    if (connection.platform === 'kick') {
+      const activeKickConnections = global.activeKickConnections;
+      const kickConn = activeKickConnections.get(connectionId);
+      if (kickConn) {
+        if (kickConn.kickSimpleClient) {
+          kickConn.kickSimpleClient.disconnect();
+        }
+        if (kickConn.kickJsClient) {
+          kickConn.kickJsClient.disconnect();
+        }
+        if (kickConn.wsClient) {
+          kickConn.wsClient.close();
+        }
+        activeKickConnections.delete(connectionId);
+        logger.info(`🔌 Kick connection disconnected: ${connectionId}`);
+      }
     }
     
     activeConnections.delete(connectionId);
