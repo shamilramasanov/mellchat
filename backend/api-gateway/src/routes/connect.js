@@ -226,9 +226,30 @@ router.post('/', async (req, res, next) => {
     if (platform === 'twitch') {
       startTwitchConnection(connectionId, channelName, wsHub);
     } else if (platform === 'youtube') {
-      // YouTube connection will be handled by youtubePersistentManager
-      // Just return success, the manager will pick it up
-      logger.info(`YouTube connection pending for: ${videoId}`);
+      // Start YouTube connection using youtubePersistentManager
+      try {
+        const youtubeManager = require('../services/youtubePersistentManager');
+        const conn = await youtubeManager.connect(videoId, streamUrl);
+        logger.info(`✅ YouTube connected: ${conn.title}`);
+        
+        // Update connection with YouTube data
+        const connData = activeConnections.get(connectionId);
+        if (connData) {
+          connData.title = conn.title;
+          connData.channelName = conn.channelName;
+          connData.liveChatId = conn.liveChatId;
+        }
+      } catch (error) {
+        logger.error(`❌ YouTube connection failed: ${error.message}`);
+        // Remove failed connection
+        activeConnections.delete(connectionId);
+        return res.status(500).json({
+          error: {
+            code: 'YOUTUBE_CONNECTION_FAILED',
+            message: error.message,
+          },
+        });
+      }
     } else if (platform === 'kick') {
       // Start Kick connection and wait for result
       const kickResult = await startKickConnection(connectionId, channelName, wsHub);
