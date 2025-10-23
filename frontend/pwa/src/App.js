@@ -239,15 +239,10 @@ function App() {
   }
 
   return (
-    <div className="app" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
-      {/* NEW VERSION - Icons on the RIGHT */}
-      <div className="app__header" style={{
+    <div className="app">
+      {/* Header - Fixed */}
+      <header className="app__header" style={{
+        flex: '0 0 auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -256,10 +251,6 @@ function App() {
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        flexShrink: 0,
         boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
       }}>
         <h1 
@@ -354,15 +345,15 @@ function App() {
               ⚙️
             </button>
           </div>
-        </div>
+        </header>
         
-      <div 
-        className="app__main" 
+      {/* Main Content - Scrollable */}
+      <main 
+        className="app__main scrollable" 
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          overflow: 'hidden',
+          flex: '1 1 auto',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           position: 'relative',
           zIndex: 10
         }}
@@ -432,7 +423,7 @@ function App() {
         >
           +
             </button>
-          </div>
+      </main>
 
       <AddStreamModal
         isOpen={showAddStream}

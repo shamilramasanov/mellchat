@@ -91,15 +91,15 @@ html {
 }
 
 body {
-  margin: 0;
   height: 100%;
+  margin: 0;
+  overflow: hidden; /* блокируем прокрутку страницы */
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   color: var(--text-primary);
   background: var(--bg-gradient);
   background-size: 400% 400%;
   background-attachment: fixed;
-  overflow-x: hidden;
   animation: gradientShift 15s ease infinite;
 }
 
