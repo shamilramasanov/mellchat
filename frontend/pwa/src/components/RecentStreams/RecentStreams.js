@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import './RecentStreams.css';
 
 export const RecentStreams = ({ onSelectStream }) => {
+  const { t } = useTranslation();
   const [recentStreams, setRecentStreams] = useState([]);
 
   useEffect(() => {
@@ -40,17 +42,17 @@ export const RecentStreams = ({ onSelectStream }) => {
   return (
     <div className="recent-streams">
       <div className="recent-streams__header">
-        <h2 className="recent-streams__title">📌 Recent Streams</h2>
+        <h2 className="recent-streams__title">📌 {t('recent.title')}</h2>
         <p className="recent-streams__subtitle">
-          Click on a stream to reconnect, or add a new one using the + button
+          {t('recent.subtitle')}
         </p>
       </div>
 
       {recentStreams.length === 0 ? (
         <div className="recent-streams__empty glass">
           <div className="recent-streams__empty-icon">📺</div>
-          <h3>No recent streams</h3>
-          <p>Add your first stream using the + button above</p>
+          <h3>{t('recent.empty.title')}</h3>
+          <p>{t('recent.empty.subtitle')}</p>
         </div>
       ) : (
         <div className="recent-streams__grid">
@@ -63,7 +65,7 @@ export const RecentStreams = ({ onSelectStream }) => {
               <button
                 className="recent-stream-card__remove"
                 onClick={(e) => handleRemove(e, stream.url)}
-                title="Remove from history"
+                title={t('recent.remove')}
               >
                 ✕
               </button>

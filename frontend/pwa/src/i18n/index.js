@@ -49,6 +49,29 @@ const resources = {
       
       // Common
       'common.close': 'Close',
+      
+      // Auth
+      'auth.subtitle': 'Connect your favorite streaming platforms',
+      'auth.login': 'Login with Google',
+      'auth.skip': 'Skip for now',
+      
+      // Recent Streams
+      'recent.title': 'Recent Streams',
+      'recent.subtitle': 'Click on a stream to reconnect, or add a new one using the + button',
+      'recent.empty.title': 'No recent streams',
+      'recent.empty.subtitle': 'Add your first stream using the + button above',
+      'recent.remove': 'Remove from history',
+      
+      // Stream Cards
+      'stream.live': 'LIVE',
+      'stream.offline': 'Offline',
+      'stream.viewers': 'viewers',
+      'stream.messages': 'messages',
+      
+      // Chat Actions
+      'chat.like': 'Like',
+      'chat.dislike': 'Dislike',
+      'chat.bookmark': 'Bookmark',
     }
   },
   ru: {
@@ -97,6 +120,29 @@ const resources = {
       
       // Common
       'common.close': 'Закрыть',
+      
+      // Auth
+      'auth.subtitle': 'Подключите ваши любимые платформы для стримов',
+      'auth.login': 'Войти через Google',
+      'auth.skip': 'Пропустить',
+      
+      // Recent Streams
+      'recent.title': 'Недавние стримы',
+      'recent.subtitle': 'Нажмите на стрим для переподключения или добавьте новый с помощью кнопки +',
+      'recent.empty.title': 'Нет недавних стримов',
+      'recent.empty.subtitle': 'Добавьте ваш первый стрим с помощью кнопки + выше',
+      'recent.remove': 'Удалить из истории',
+      
+      // Stream Cards
+      'stream.live': 'В ЭФИРЕ',
+      'stream.offline': 'Офлайн',
+      'stream.viewers': 'зрителей',
+      'stream.messages': 'сообщений',
+      
+      // Chat Actions
+      'chat.like': 'Нравится',
+      'chat.dislike': 'Не нравится',
+      'chat.bookmark': 'Закладка',
     }
   },
   uk: {
@@ -145,6 +191,29 @@ const resources = {
       
       // Common
       'common.close': 'Закрити',
+      
+      // Auth
+      'auth.subtitle': 'Підключіть ваші улюблені платформи для стрімів',
+      'auth.login': 'Увійти через Google',
+      'auth.skip': 'Пропустити',
+      
+      // Recent Streams
+      'recent.title': 'Недавні стріми',
+      'recent.subtitle': 'Натисніть на стрім для перепідключення або додайте новий за допомогою кнопки +',
+      'recent.empty.title': 'Немає недавніх стрімів',
+      'recent.empty.subtitle': 'Додайте ваш перший стрім за допомогою кнопки + вище',
+      'recent.remove': 'Видалити з історії',
+      
+      // Stream Cards
+      'stream.live': 'В ЕФІРІ',
+      'stream.offline': 'Офлайн',
+      'stream.viewers': 'глядачів',
+      'stream.messages': 'повідомлень',
+      
+      // Chat Actions
+      'chat.like': 'Подобається',
+      'chat.dislike': 'Не подобається',
+      'chat.bookmark': 'Закладка',
     }
   }
 };

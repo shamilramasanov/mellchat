@@ -10,10 +10,12 @@
 
 .chat-messages-container {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-controls {
@@ -72,13 +74,11 @@
 
 .chat-messages {
   flex: 1;
-  overflow-y: auto;
   padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
   min-height: 0; /* Fix flexbox overflow */
-  -webkit-overflow-scrolling: touch;
 }
 
 .chat-empty {

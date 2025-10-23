@@ -76,7 +76,13 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
               className="stream-card__close"
               onClick={(e) => {
                 e.stopPropagation();
-                onStreamClose(stream.id);
+                e.preventDefault();
+                console.log('Closing stream:', stream.id);
+                if (onStreamClose) {
+                  onStreamClose(stream.id);
+                } else {
+                  console.error('onStreamClose function not provided');
+                }
               }}
               aria-label="Close"
             >
@@ -110,7 +116,7 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
                 </span>
               </div>
               <span className={`stream-card__status ${stream.isLive ? 'stream-card__status--live' : ''}`}>
-                {stream.isLive ? '🔴 LIVE' : '⚫️ Offline'}
+                {stream.isLive ? `🔴 ${t('stream.live')}` : `⚫️ ${t('stream.offline')}`}
               </span>
             </div>
             
@@ -118,11 +124,11 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
             
             <div className="stream-card__stats">
               <span className="stream-card__stat">
-                💬 {stream.messageCount || 0}
+                💬 {stream.messageCount || 0} {t('stream.messages')}
               </span>
               {stream.viewers && (
                 <span className="stream-card__stat">
-                  👁️ {stream.viewers.toLocaleString()}
+                  👁️ {stream.viewers.toLocaleString()} {t('stream.viewers')}
                 </span>
               )}
             </div>

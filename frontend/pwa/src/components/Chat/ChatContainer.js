@@ -191,7 +191,7 @@ export const ChatContainer = ({
       )}
 
       {/* Messages Container - Scrollable */}
-      <div className="chat-messages-container scrollable">
+      <div className="chat-messages-container">
         <div 
           className="chat-messages" 
           ref={chatRef}
