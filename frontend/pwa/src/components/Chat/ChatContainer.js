@@ -191,12 +191,12 @@ export const ChatContainer = ({
       )}
 
       {/* Messages Container - Scrollable */}
-      <div className="chat-messages-container">
-        <div 
-          className="chat-messages" 
-          ref={chatRef}
-          onScroll={handleScroll}
-        >
+      <div 
+        className="chat-messages-container"
+        ref={chatRef}
+        onScroll={handleScroll}
+      >
+        <div className="chat-messages">
         {sortedMessages.length === 0 ? (
           <div className="chat-empty">
             <p>{t('chat.noMessages')}</p>
@@ -280,10 +280,9 @@ export const ChatContainer = ({
           </button>
         )}
         </div>
-      </div>
 
-      {/* Fixed Bottom Controls */}
-      <div className="chat-controls">
+        {/* Fixed Bottom Controls */}
+        <div className="chat-controls">
         {/* Filters */}
         <div className="chat-filters">
         <button
@@ -328,6 +327,7 @@ export const ChatContainer = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             fullWidth
           />
+        </div>
         </div>
       </div>
     </div>
