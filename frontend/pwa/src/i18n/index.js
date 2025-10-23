@@ -23,6 +23,32 @@ const resources = {
       // Chat
       'chat.noMessages': 'No messages yet',
       'chat.newMessages': 'New Messages',
+      
+      // Settings
+      'settings.title': 'Settings',
+      'settings.language': 'Language',
+      'settings.translation': 'Auto Translation',
+      'settings.fontSize': 'Font Size',
+      'settings.fontSizeSmall': 'Small',
+      'settings.fontSizeMedium': 'Medium',
+      'settings.fontSizeLarge': 'Large',
+      'settings.fontSizeXlarge': 'Extra Large',
+      'settings.autoScroll': 'Auto Scroll',
+      'settings.autoScrollDelay': 'Auto Scroll Delay',
+      'settings.density': 'Display Density',
+      'settings.densityCompact': 'Compact',
+      'settings.densityComfortable': 'Comfortable',
+      'settings.densitySpacious': 'Spacious',
+      'settings.notifications': 'Notifications',
+      'settings.notifyMessages': 'Notify New Messages',
+      
+      // Languages
+      'lang.en': 'English',
+      'lang.ru': 'Русский',
+      'lang.uk': 'Українська',
+      
+      // Common
+      'common.close': 'Close',
     }
   },
   ru: {
@@ -45,6 +71,32 @@ const resources = {
       // Chat
       'chat.noMessages': 'Пока нет сообщений',
       'chat.newMessages': 'Новые сообщения',
+      
+      // Settings
+      'settings.title': 'Настройки',
+      'settings.language': 'Язык',
+      'settings.translation': 'Автоперевод',
+      'settings.fontSize': 'Размер шрифта',
+      'settings.fontSizeSmall': 'Малый',
+      'settings.fontSizeMedium': 'Средний',
+      'settings.fontSizeLarge': 'Большой',
+      'settings.fontSizeXlarge': 'Очень большой',
+      'settings.autoScroll': 'Автопрокрутка',
+      'settings.autoScrollDelay': 'Задержка автопрокрутки',
+      'settings.density': 'Плотность отображения',
+      'settings.densityCompact': 'Компактная',
+      'settings.densityComfortable': 'Комфортная',
+      'settings.densitySpacious': 'Просторная',
+      'settings.notifications': 'Уведомления',
+      'settings.notifyMessages': 'Уведомлять о новых сообщениях',
+      
+      // Languages
+      'lang.en': 'English',
+      'lang.ru': 'Русский',
+      'lang.uk': 'Українська',
+      
+      // Common
+      'common.close': 'Закрыть',
     }
   },
   uk: {
@@ -67,6 +119,32 @@ const resources = {
       // Chat
       'chat.noMessages': 'Поки немає повідомлень',
       'chat.newMessages': 'Нові повідомлення',
+      
+      // Settings
+      'settings.title': 'Налаштування',
+      'settings.language': 'Мова',
+      'settings.translation': 'Автопереклад',
+      'settings.fontSize': 'Розмір шрифту',
+      'settings.fontSizeSmall': 'Малий',
+      'settings.fontSizeMedium': 'Середній',
+      'settings.fontSizeLarge': 'Великий',
+      'settings.fontSizeXlarge': 'Дуже великий',
+      'settings.autoScroll': 'Автопрокрутка',
+      'settings.autoScrollDelay': 'Затримка автопрокрутки',
+      'settings.density': 'Щільність відображення',
+      'settings.densityCompact': 'Компактна',
+      'settings.densityComfortable': 'Зручна',
+      'settings.densitySpacious': 'Простора',
+      'settings.notifications': 'Сповіщення',
+      'settings.notifyMessages': 'Повідомляти про нові повідомлення',
+      
+      // Languages
+      'lang.en': 'English',
+      'lang.ru': 'Русский',
+      'lang.uk': 'Українська',
+      
+      // Common
+      'common.close': 'Закрити',
     }
   }
 };

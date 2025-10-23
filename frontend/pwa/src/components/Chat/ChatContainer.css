@@ -8,12 +8,29 @@
   min-height: 0;
 }
 
+.chat-messages-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-controls {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border-top: 1px solid var(--glass-border);
+}
+
 .chat-filters {
   position: relative;
   display: flex;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  border-top: 1px solid var(--glass-border);
   overflow-x: auto;
   z-index: 1;
   flex-shrink: 0; /* Prevent filters from shrinking */
@@ -22,7 +39,6 @@
 .chat-search {
   position: relative;
   padding: var(--spacing-md);
-  border-top: 1px solid var(--glass-border);
   z-index: 1;
   flex-shrink: 0; /* Prevent search from shrinking */
 }
@@ -62,6 +78,7 @@
   flex-direction: column;
   gap: var(--spacing-md);
   min-height: 0; /* Fix flexbox overflow */
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-empty {

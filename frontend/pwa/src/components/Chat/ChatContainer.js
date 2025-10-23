@@ -190,12 +190,13 @@ export const ChatContainer = ({
         </div>
       )}
 
-      {/* Messages */}
-      <div 
-        className="chat-messages" 
-        ref={chatRef}
-        onScroll={handleScroll}
-      >
+      {/* Messages Container - Scrollable */}
+      <div className="chat-messages-container scrollable">
+        <div 
+          className="chat-messages" 
+          ref={chatRef}
+          onScroll={handleScroll}
+        >
         {sortedMessages.length === 0 ? (
           <div className="chat-empty">
             <p>{t('chat.noMessages')}</p>
@@ -278,10 +279,13 @@ export const ChatContainer = ({
             📩 {t('chat.newMessages')} ({newMessageCount})
           </button>
         )}
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="chat-filters">
+      {/* Fixed Bottom Controls */}
+      <div className="chat-controls">
+        {/* Filters */}
+        <div className="chat-filters">
         <button
           className={`chat-filter ${filter === 'all' ? 'chat-filter--active' : ''}`}
           onClick={() => onFilterChange('all')}
@@ -313,17 +317,18 @@ export const ChatContainer = ({
         >
           🚫 {t('filter.spam')}
         </button>
-      </div>
+        </div>
 
-      {/* Search */}
-      <div className="chat-search">
-        <Input
-          icon="🔍"
-          placeholder={t('search.placeholder')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          fullWidth
-        />
+        {/* Search */}
+        <div className="chat-search">
+          <Input
+            icon="🔍"
+            placeholder={t('search.placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            fullWidth
+          />
+        </div>
       </div>
     </div>
   );
