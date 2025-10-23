@@ -1,10 +1,8 @@
 {
   "buildCommand": "cd frontend/pwa && npm install && npm run build",
   "outputDirectory": "frontend/pwa/build",
-  "framework": "create-react-app",
   "installCommand": "cd frontend/pwa && npm install",
   "devCommand": "cd frontend/pwa && npm start",
-  "root": ".",
   "rewrites": [
     {
       "source": "/api/(.*)",
