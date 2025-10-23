@@ -1,5 +1,8 @@
+# Exclude backend and browser-extension from Vercel deployment
 backend/
 browser-extension/
+
+# Standard ignores
 node_modules/
 *.log
 .env.local

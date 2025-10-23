@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "cd frontend/pwa && npm install && npm run build",
   "outputDirectory": "frontend/pwa/build",
   "rewrites": [
     {
