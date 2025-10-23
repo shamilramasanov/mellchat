@@ -297,9 +297,9 @@ export const ChatContainer = ({
         <button
           className={`chat-filter ${filter === 'all-questions' ? 'chat-filter--active' : ''}`}
           onClick={() => onFilterChange('all-questions')}
-          title="Все вопросы"
+          title={t('filter.allQuestions')}
         >
-          🌐 Все вопросы ({allQuestionsCount})
+          🌐 {t('filter.allQuestions')} ({allQuestionsCount})
         </button>
         <button
           className={`chat-filter ${filter === 'bookmarks' ? 'chat-filter--active' : ''}`}
