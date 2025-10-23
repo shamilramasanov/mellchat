@@ -163,6 +163,15 @@ function App() {
 
   const handleAddStreamSubmit = async (url) => {
     try {
+      // Check if stream already exists before adding
+      const existingStream = streams.find(s => s.url === url);
+      if (existingStream) {
+        console.log('Stream already open, switching to it:', existingStream.id);
+        setActiveStreamId(existingStream.id);
+        setShowAddStream(false);
+        return;
+      }
+      
       const newStream = await wsAddStream(url);
       
       // Save to recent streams history
@@ -182,6 +191,9 @@ function App() {
         // Add to beginning
         const updated = [streamData, ...filtered].slice(0, 10); // Keep last 10
         localStorage.setItem('mellchat-recent-streams', JSON.stringify(updated));
+        
+        // Set as active stream
+        setActiveStreamId(newStream.id);
       }
       
       setShowAddStream(false);
@@ -191,8 +203,17 @@ function App() {
     }
   };
   
-  const handleRecentStreamSelect = (url) => {
-    handleAddStreamSubmit(url);
+  const handleRecentStreamSelect = async (url) => {
+    // Check if stream already exists
+    const existingStream = streams.find(s => s.url === url);
+    if (existingStream) {
+      console.log('Stream already open, switching to it:', existingStream.id);
+      setActiveStreamId(existingStream.id);
+      return;
+    }
+    
+    // Add new stream
+    await handleAddStreamSubmit(url);
   };
   
   const handleLogoClick = () => {

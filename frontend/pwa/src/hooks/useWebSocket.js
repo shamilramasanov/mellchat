@@ -137,10 +137,12 @@ export const useWebSocket = () => {
         url: url
       };
 
-      // Check if stream already exists (prevent duplicates)
+      // Check if stream already exists (prevent duplicates by URL)
       setStreams(prev => {
-        const exists = prev.find(s => s.connectionId === data.connection.id);
-        if (exists) {
+        const existsByUrl = prev.find(s => s.url === url);
+        const existsById = prev.find(s => s.connectionId === data.connection.id);
+        
+        if (existsByUrl || existsById) {
           console.log('Stream already exists, skipping duplicate');
           return prev;
         }

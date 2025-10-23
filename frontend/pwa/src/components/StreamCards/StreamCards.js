@@ -77,14 +77,22 @@ export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamCl
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('Closing stream:', stream.id);
+                e.nativeEvent.stopImmediatePropagation();
+                console.log('🔴 Closing stream:', stream.id);
                 if (onStreamClose) {
                   onStreamClose(stream.id);
                 } else {
                   console.error('onStreamClose function not provided');
                 }
               }}
-              aria-label="Close"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              aria-label="Close stream"
+              title="Close stream"
             >
               ✕
             </button>

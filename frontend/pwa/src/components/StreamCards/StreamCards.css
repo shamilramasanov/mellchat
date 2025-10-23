@@ -53,28 +53,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: bold;
   cursor: pointer;
-  opacity: 0.7; /* Always visible */
+  opacity: 1; /* Always visible */
   transition: all var(--transition-fast);
-  z-index: 10;
+  z-index: 100; /* Higher z-index */
+  pointer-events: auto; /* Ensure it's clickable */
 }
 
 .stream-card:hover .stream-card__close {
-  opacity: 1;
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(247, 37, 133, 0.5);
 }
 
 .stream-card__close:hover {
-  background: rgba(247, 37, 133, 0.2);
+  background: rgba(247, 37, 133, 0.3);
+  border-color: var(--accent-pink);
   color: var(--accent-pink);
-  transform: rotate(90deg);
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 0 12px rgba(247, 37, 133, 0.4);
+}
+
+.stream-card__close:active {
+  transform: scale(0.95);
 }
 
 .stream-card__header {
