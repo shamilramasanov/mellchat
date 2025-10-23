@@ -1,7 +1,7 @@
 {
   "buildCommand": "cd frontend/pwa && npm install && npm run build",
   "outputDirectory": "frontend/pwa/build",
-  "installCommand": "npm install --prefix frontend/pwa",
+  "installCommand": "echo 'Skip root install'",
   "framework": null,
   "rewrites": [
     {
