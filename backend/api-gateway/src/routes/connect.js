@@ -116,8 +116,14 @@ const startKickConnection = async (connectionId, channelName, wsHub) => {
     if (success) {
       logger.info(`✅ Kick simple client connected to ${channelName}`);
       conn.kickSimpleClient = kickSimpleClient;
-      conn.title = `Kick: ${channelName}`;
-      return { success: true, message: `Connected to Kick channel: ${channelName}` };
+      conn.title = kickSimpleClient.channelTitle || `Kick: ${channelName}`;
+      conn.viewers = kickSimpleClient.viewerCount || 0;
+      return { 
+        success: true, 
+        message: `Connected to Kick channel: ${channelName}`,
+        viewers: kickSimpleClient.viewerCount || 0,
+        title: kickSimpleClient.channelTitle || `Kick: ${channelName}`
+      };
     } else {
       logger.warn(`⚠️ Kick simple client failed to connect to ${channelName}`);
       return { success: false, message: `Failed to connect to Kick channel: ${channelName}` };
@@ -216,6 +222,7 @@ router.post('/', async (req, res, next) => {
       streamUrl,
       connectedAt: new Date(),
       messages: [],
+      viewers: 0, // Initialize viewers count
     });
     
     logger.info(`🔌 Connecting to ${platform} channel: ${channelName} (${connectionId})`);
@@ -265,7 +272,17 @@ router.post('/', async (req, res, next) => {
           },
         });
       }
+      
+      // Update connection with Kick data
+      const connData = activeConnections.get(connectionId);
+      if (connData && kickResult.viewers !== undefined) {
+        connData.viewers = kickResult.viewers;
+        connData.title = kickResult.title || connData.title;
+      }
     }
+    
+    // Get final connection data
+    const finalConnData = activeConnections.get(connectionId);
     
     res.status(200).json({
       success: true,
@@ -276,6 +293,8 @@ router.post('/', async (req, res, next) => {
         streamUrl,
         connectedAt: new Date(),
         status: 'connected',
+        viewers: finalConnData?.viewers || 0,
+        title: finalConnData?.title || `${platform}: ${channelName}`,
       },
       message: `Successfully connected to ${platform} channel: ${channelName}`,
     });

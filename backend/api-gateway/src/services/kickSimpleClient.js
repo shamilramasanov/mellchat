@@ -112,7 +112,9 @@ class KickSimpleClient {
       if (response.ok) {
         const data = await response.json();
         this.chatroomId = data.chatroom?.id || data.id;
-        logger.info(`📡 Got chatroom ID ${this.chatroomId} for ${this.channelName}`);
+        this.viewerCount = data.livestream?.viewer_count || 0;
+        this.channelTitle = data.livestream?.session_title || data.user?.username || this.channelName;
+        logger.info(`📡 Got chatroom ID ${this.chatroomId} for ${this.channelName}, viewers: ${this.viewerCount}`);
       } else {
         logger.warn(`⚠️ Kick API blocked for ${this.channelName}, using fallback`);
       }
