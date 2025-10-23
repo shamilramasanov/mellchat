@@ -4,7 +4,8 @@
   "description": "Real-time chat aggregator",
   "scripts": {
     "build": "cd frontend/pwa && npm install && CI=false npm run build",
-    "start": "cd backend/api-gateway && npm start"
+    "start": "cd backend/api-gateway && npm install && npm start",
+    "postinstall": "cd backend/api-gateway && npm install"
   },
   "engines": {
     "node": ">=18.0.0",
