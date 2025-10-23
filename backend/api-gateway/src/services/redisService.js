@@ -30,6 +30,13 @@ const redisService = {
       return true;
     } catch (e) { logger.error('redis.set error', { error: e.message }); return false; }
   },
+  async setex(key, ttlSeconds, value) {
+    try {
+      const c = ensureClient();
+      await c.set(key, value, { EX: ttlSeconds });
+      return true;
+    } catch (e) { logger.error('redis.setex error', { error: e.message }); return false; }
+  },
   async del(key) {
     try { const c = ensureClient(); await c.del(key); return true; }
     catch (e) { logger.error('redis.del error', { error: e.message }); return false; }
