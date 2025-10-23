@@ -4,9 +4,10 @@
   "description": "Real-time chat aggregator for Twitch, YouTube, and Kick streams",
   "private": true,
   "scripts": {
-    "build": "cd frontend/pwa && npm run build",
+    "build": "cd frontend/pwa && npm install && npm run build",
     "start": "cd frontend/pwa && npm start",
-    "install": "cd frontend/pwa && npm install"
+    "install": "cd frontend/pwa && npm install",
+    "vercel-build": "cd frontend/pwa && npm install && npm run build"
   },
   "engines": {
     "node": ">=16.0.0"

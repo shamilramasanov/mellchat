@@ -1,6 +1,6 @@
 backend/
 browser-extension/
-frontend/pwa/node_modules/
+node_modules/
 *.log
 .env.local
 .env.development.local

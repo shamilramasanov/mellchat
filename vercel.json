@@ -1,8 +1,6 @@
 {
-  "buildCommand": "cd frontend/pwa && npm install && npm run build",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/pwa/build",
-  "installCommand": "cd frontend/pwa && npm install",
-  "devCommand": "cd frontend/pwa && npm start",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -11,17 +9,6 @@
     {
       "source": "/(.*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/static/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
     }
   ]
 }
