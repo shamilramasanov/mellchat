@@ -142,7 +142,18 @@ class EmojiService {
         return;
       }
 
-      const response = await axios.get(this.seventvApi);
+      const response = await axios.get(this.seventvApi, {
+        timeout: 5000, // 5 second timeout
+        headers: {
+          'User-Agent': 'MellChat/1.0.0'
+        }
+      });
+      
+      if (response.status === 404) {
+        logger.warn('7TV API endpoint not found, skipping 7TV emojis');
+        return;
+      }
+      
       const emojis = response.data || [];
       
       // Cache in Redis for 24 hours
@@ -160,7 +171,11 @@ class EmojiService {
       
       logger.info(`Loaded ${emojis.length} 7TV emojis from API`);
     } catch (error) {
-      logger.error('Failed to load 7TV emojis:', error);
+      if (error.response?.status === 404) {
+        logger.warn('7TV API endpoint not found, skipping 7TV emojis');
+      } else {
+        logger.error('Failed to load 7TV emojis:', error.message);
+      }
     }
   }
 
