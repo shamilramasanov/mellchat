@@ -223,7 +223,7 @@ export const ChatContainer = ({
                       gap: '0.25rem'
                     }}>
                       <img 
-                        src={msg.streamPlatform === 'youtube' ? '/YouTube_full-color_icon_(2017).svg.png' :
+                        src={msg.streamPlatform === 'youtube' ? '/youtube-logo.svg' :
                              msg.streamPlatform === 'twitch' ? '/twitch-horizontal.svg' :
                              msg.streamPlatform === 'kick' ? '/kick-logo.svg' : '📡'}
                         alt={msg.streamPlatform}

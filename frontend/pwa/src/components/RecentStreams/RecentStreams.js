@@ -19,7 +19,7 @@ export const RecentStreams = ({ onSelectStream }) => {
 
   const getPlatformIcon = (platform) => {
     switch (platform) {
-      case 'youtube': return '/YouTube_full-color_icon_(2017).svg.png';
+      case 'youtube': return '/youtube-logo.svg';
       case 'twitch': return '/twitch-horizontal.svg';
       case 'kick': return '/kick-logo.svg';
       default: return '🎥';
