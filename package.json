@@ -1,30 +1,22 @@
 {
   "name": "mellchat",
   "version": "2.0.0",
-  "description": "Real-time chat aggregator for Twitch, YouTube, and Kick streams",
-  "private": true,
+  "description": "Real-time chat aggregator for Twitch, YouTube, and Kick",
   "scripts": {
-    "build": "cd frontend/pwa && npm install && npm run build",
     "start": "cd frontend/pwa && npm start",
-    "install": "cd frontend/pwa && npm install",
-    "vercel-build": "cd frontend/pwa && npm install && npm run build"
+    "build": "cd frontend/pwa && npm install && npm run build",
+    "dev": "cd frontend/pwa && npm run start",
+    "backend": "cd backend/api-gateway && npm start"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/shamilramasanov/mellchat.git"
   },
-  "keywords": [
-    "chat",
-    "twitch",
-    "youtube",
-    "kick",
-    "streaming",
-    "pwa",
-    "react"
-  ],
-  "author": "MellChat Team",
+  "keywords": ["chat", "twitch", "youtube", "kick", "streaming"],
+  "author": "Shamil Ramasanov",
   "license": "MIT"
 }

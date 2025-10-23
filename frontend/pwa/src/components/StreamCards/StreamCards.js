@@ -1,11 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GlassCard } from '../UI';
 import './StreamCards.css';
 
 export const StreamCards = ({ streams, activeStreamId, onStreamClick, onStreamClose }) => {
   const { t } = useTranslation();
-  const containerRef = useRef(null);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
