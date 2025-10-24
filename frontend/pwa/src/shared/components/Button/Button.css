@@ -223,3 +223,15 @@
 .opacity-75 {
   opacity: 0.75;
 }
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .button__glass-effect {
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+  }
+  
+  .button__glass-tint {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}

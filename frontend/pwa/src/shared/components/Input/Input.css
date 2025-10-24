@@ -145,3 +145,15 @@
   -webkit-text-fill-color: rgba(0, 0, 0, 0.9);
   border-radius: var(--radius-md);
 }
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .input-container::before {
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
+  
+  .input-container::after {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}

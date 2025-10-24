@@ -96,6 +96,18 @@
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.25), 0 0 24px rgba(0, 0, 0, 0.15);
 }
 
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .glass-card__effect {
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
+  
+  .glass-card__tint {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
 /* Fallback for browsers without backdrop-filter */
 @supports not (backdrop-filter: blur(1px)) {
   .glass-card__effect {

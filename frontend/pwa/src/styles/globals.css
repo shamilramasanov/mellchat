@@ -196,6 +196,26 @@ body.light-theme {
   transform: translateY(0) scale(0.98);
 }
 
+/* iOS Safari specific fixes for backdrop-filter */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari requires more aggressive backdrop-filter settings */
+  .glass {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  .glass-sm {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+  
+  .glass-lg {
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+  }
+}
+
 /* Fallback for browsers without backdrop-filter support */
 @supports not (backdrop-filter: blur(1px)) {
   .glass, .glass-sm, .glass-lg {
