@@ -137,9 +137,9 @@
 
 /* FAB Button - Liquid Glass Style */
 .chat-container__fab {
-  position: fixed;
-  bottom: calc(var(--spacing-xl) + 60px); /* Above filters */
-  right: var(--spacing-md);
+  position: absolute;
+  bottom: 85px; /* Above filters, in corner of chat container */
+  right: var(--spacing-lg);
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -215,14 +215,14 @@ body.light-theme .chat-container__fab > * {
   }
   
   .chat-container__fab {
-    width: 56px;
-    height: 56px;
-    bottom: calc(var(--spacing-lg) + 80px);
-    right: var(--spacing-lg);
+    width: 52px;
+    height: 52px;
+    bottom: 90px; /* Slightly higher on mobile */
+    right: var(--spacing-md);
   }
   
   .chat-container__fab:hover {
-    width: 62px;
-    height: 62px;
+    width: 56px;
+    height: 56px;
   }
 }

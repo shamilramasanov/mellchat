@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useChatStore } from '../store/chatStore';
+import { useStreamsStore } from '@features/streams/store/streamsStore';
 import { useDebounce } from '@shared/hooks';
 import { FILTERS, SORT_OPTIONS } from '@shared/utils/constants';
 import './Filters.css';
@@ -13,9 +14,12 @@ const Filters = () => {
   const setSortBy = useChatStore((state) => state.setSortBy);
   const setSearchQuery = useChatStore((state) => state.setSearchQuery);
   
+  // Get active stream ID
+  const activeStreamId = useStreamsStore((state) => state.activeStreamId);
+  
   // Subscribe to messages so component re-renders when messages change
   const messages = useChatStore((state) => state.messages);
-  const getAllStreamsStats = useChatStore((state) => state.getAllStreamsStats);
+  const getStreamStats = useChatStore((state) => state.getStreamStats);
   
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -25,10 +29,10 @@ const Filters = () => {
     setSearchQuery(debouncedSearch);
   }, [debouncedSearch, setSearchQuery]);
 
-  // Recalculate stats whenever messages change
-  const stats = getAllStreamsStats();
-  const totalMessages = Object.values(stats).reduce((sum, s) => sum + s.messageCount, 0);
-  const totalQuestions = Object.values(stats).reduce((sum, s) => sum + s.questionCount, 0);
+  // Get stats ONLY for active stream
+  const streamStats = activeStreamId ? getStreamStats(activeStreamId) : { messageCount: 0, questionCount: 0 };
+  const totalMessages = streamStats.messageCount;
+  const totalQuestions = streamStats.questionCount;
 
   const filters = [
     { id: FILTERS.ALL, label: t('filters.all'), icon: '', count: totalMessages },
