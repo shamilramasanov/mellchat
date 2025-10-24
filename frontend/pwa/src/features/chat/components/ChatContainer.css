@@ -230,30 +230,28 @@ body.light-theme .chat-container__fab > * {
 /* iOS Safari - Enhanced glass effect */
 @supports (-webkit-touch-callout: none) {
   .chat-container__fab {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   .chat-container__fab::before {
-    backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
-    -webkit-backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
   }
   
   .chat-container__fab::after {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.55) !important;
   }
   
   .chat-container__new-messages {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   .chat-container__new-messages::before {
-    backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
-    -webkit-backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(25px) saturate(300%) brightness(1.4) !important;
   }
   
   .chat-container__new-messages::after {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.5) !important;
   }
 }

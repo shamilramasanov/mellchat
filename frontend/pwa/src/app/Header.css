@@ -167,23 +167,21 @@
 /* iOS Safari - Enhanced glass effect */
 @supports (-webkit-touch-callout: none) {
   .header {
-    backdrop-filter: blur(20px) saturate(200%) brightness(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.2);
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   .header__action {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   .header__action::before {
-    backdrop-filter: blur(10px) saturate(200%) brightness(1.2);
-    -webkit-backdrop-filter: blur(10px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(25px) saturate(300%) brightness(1.4) !important;
   }
   
   .header__action::after {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.5) !important;
   }
 }

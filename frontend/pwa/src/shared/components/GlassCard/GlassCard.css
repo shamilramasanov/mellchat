@@ -98,23 +98,32 @@
 
 /* iOS Safari - Enhanced glass effect */
 @supports (-webkit-touch-callout: none) {
+  /* Force hardware acceleration and stronger blur on iOS only */
   .glass-card__effect {
-    backdrop-filter: blur(18px) saturate(200%) brightness(1.2);
-    -webkit-backdrop-filter: blur(18px) saturate(200%) brightness(1.2);
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    will-change: transform;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
   }
   
   .glass-card__tint {
-    background: rgba(255, 255, 255, 0.35);
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    background: rgba(255, 255, 255, 0.5) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   .glass-card__shine {
-    opacity: 0.4;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    opacity: 0.6;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+  
+  .glass-card {
+    isolation: isolate;
+    -webkit-isolation: isolate;
   }
 }
 

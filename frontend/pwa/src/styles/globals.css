@@ -198,27 +198,26 @@ body.light-theme {
 
 /* iOS Safari specific fixes for backdrop-filter */
 @supports (-webkit-touch-callout: none) {
-  /* iOS Safari requires more aggressive backdrop-filter settings */
+  /* iOS Safari requires EXTREME backdrop-filter settings */
   .glass {
-    backdrop-filter: blur(20px) saturate(180%) brightness(1.1);
-    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.1);
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
   }
   
   .glass-sm {
-    backdrop-filter: blur(16px) saturate(180%) brightness(1.1);
-    -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.1);
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    -webkit-backdrop-filter: blur(25px) saturate(300%) brightness(1.4) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   .glass-lg {
-    backdrop-filter: blur(32px) saturate(180%) brightness(1.1);
-    -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.1);
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    -webkit-backdrop-filter: blur(40px) saturate(300%) brightness(1.4) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
   }
   
   /* Force hardware acceleration for all glass elements */
@@ -226,9 +225,11 @@ body.light-theme {
   *[class*="__effect"],
   *[class*="__tint"],
   *[class*="liquidGlass"] {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    will-change: backdrop-filter;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    will-change: transform;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
   }
 }
 
