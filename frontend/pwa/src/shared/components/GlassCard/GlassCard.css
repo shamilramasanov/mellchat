@@ -100,7 +100,7 @@
 @supports (-webkit-touch-callout: none) {
   /* Force hardware acceleration and stronger blur on iOS only */
   .glass-card__effect {
-    backdrop-filter: blur(3px);
+    /* Don't override backdrop-filter to preserve desktop SVG filter */
     -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
     transform: translate3d(0, 0, 0);
     -webkit-transform: translate3d(0, 0, 0);

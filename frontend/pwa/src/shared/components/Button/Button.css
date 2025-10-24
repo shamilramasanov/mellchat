@@ -143,12 +143,8 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Ghost button - always visible glass effect */
 .button--ghost .button__glass-effect {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.button--ghost:hover:not(:disabled) .button__glass-effect {
   opacity: 1;
 }
 
