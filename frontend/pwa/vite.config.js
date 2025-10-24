@@ -136,8 +136,9 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'socket': ['socket.io-client'],
-          'ui-vendor': ['framer-motion', '@headlessui/react']
+          'ui-vendor': ['framer-motion'],
+          'i18n-vendor': ['react-i18next', 'i18next'],
+          'state-vendor': ['zustand']
         }
       }
     }
