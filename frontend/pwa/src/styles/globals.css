@@ -200,19 +200,35 @@ body.light-theme {
 @supports (-webkit-touch-callout: none) {
   /* iOS Safari requires more aggressive backdrop-filter settings */
   .glass {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px) saturate(180%) brightness(1.1);
+    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.1);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
   
   .glass-sm {
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%) brightness(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.1);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
   
   .glass-lg {
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    backdrop-filter: blur(32px) saturate(180%) brightness(1.1);
+    -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.1);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  /* Force hardware acceleration for all glass elements */
+  *[class*="glass"],
+  *[class*="__effect"],
+  *[class*="__tint"],
+  *[class*="liquidGlass"] {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: backdrop-filter;
   }
 }
 

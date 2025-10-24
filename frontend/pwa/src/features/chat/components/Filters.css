@@ -287,3 +287,39 @@
     padding: var(--spacing-md);
   }
 }
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .filters {
+    backdrop-filter: blur(15px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(15px) saturate(200%) brightness(1.2);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .filters__filter-btn,
+  .filters__sort-btn {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .filters__filter-btn::before,
+  .filters__sort-btn::before {
+    backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
+  }
+  
+  .filters__filter-btn::after,
+  .filters__sort-btn::after {
+    background: rgba(255, 255, 255, 0.35);
+  }
+  
+  .filters__search-input {
+    backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(200%) brightness(1.2);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}

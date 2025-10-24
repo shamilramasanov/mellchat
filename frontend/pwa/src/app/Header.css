@@ -163,3 +163,27 @@
     font-size: 1.1rem;
   }
 }
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .header {
+    backdrop-filter: blur(20px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.2);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .header__action {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .header__action::before {
+    backdrop-filter: blur(10px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(200%) brightness(1.2);
+  }
+  
+  .header__action::after {
+    background: rgba(255, 255, 255, 0.35);
+  }
+}

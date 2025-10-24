@@ -196,3 +196,20 @@
     flex-wrap: wrap;
   }
 }
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .message-card__action {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .message-card__action::before {
+    backdrop-filter: blur(10px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(200%) brightness(1.2);
+  }
+  
+  .message-card__action::after {
+    background: rgba(255, 255, 255, 0.35);
+  }
+}

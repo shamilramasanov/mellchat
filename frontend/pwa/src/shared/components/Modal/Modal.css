@@ -248,3 +248,24 @@
     padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
   }
 }
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .modal::before {
+    backdrop-filter: blur(20px) saturate(200%) brightness(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.2);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .modal::after {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  .modal {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
