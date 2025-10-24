@@ -1,0 +1,250 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+}
+
+/* Modal - Liquid Glass Style */
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: var(--modal-max-width);
+  max-height: calc(100vh - 2 * var(--spacing-lg));
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Liquid Glass Effect */
+  isolation: isolate;
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+  border-radius: 2.5rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+/* Liquid Glass Layers */
+.modal::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 2.5rem;
+}
+
+.modal::after {
+  content: '';
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: 2.5rem;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Sizes */
+.modal--sm {
+  --modal-max-width: 400px;
+}
+
+.modal--md {
+  --modal-max-width: 600px;
+}
+
+.modal--lg {
+  --modal-max-width: 800px;
+}
+
+.modal-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: black;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Close Button - Liquid Glass */
+.modal-close {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  padding: 0.5rem;
+  border-radius: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  position: relative;
+  color: black;
+}
+
+.modal-close::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.5rem;
+}
+
+.modal-close::after {
+  content: '';
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: 1.5rem;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Текст крестика должен быть поверх ВСЕГО */
+.modal-close {
+  z-index: 100;
+}
+
+/* Все дочерние элементы кнопки (включая текст) */
+.modal-close > * {
+  position: relative;
+  z-index: 10;
+  color: black;
+}
+
+/* Если текст напрямую в кнопке (не в span) */
+.modal-close::first-line {
+  z-index: 10;
+}
+
+.modal-close:hover {
+  padding: 0.6rem;
+}
+
+.modal-close:active {
+  transform: scale(0.95);
+}
+
+.modal-content {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .modal-container {
+    padding: var(--spacing-md);
+  }
+  
+  .modal {
+    max-height: calc(100vh - 2 * var(--spacing-md));
+    border-radius: 2rem;
+  }
+  
+  .modal::before,
+  .modal::after {
+    border-radius: 2rem;
+  }
+  
+  .modal--sm,
+  .modal--md,
+  .modal--lg {
+    --modal-max-width: 100%;
+  }
+  
+  .modal-header {
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+  }
+  
+  .modal-content {
+    padding: var(--spacing-md);
+  }
+}
+
+/* iOS safe area */
+@supports (padding: env(safe-area-inset-top)) {
+  .modal-container {
+    padding-top: max(var(--spacing-lg), env(safe-area-inset-top));
+    padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom));
+    padding-left: max(var(--spacing-lg), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-lg), env(safe-area-inset-right));
+  }
+}

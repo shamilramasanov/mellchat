@@ -1,0 +1,289 @@
+.filters {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+  isolation: isolate;
+  box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Liquid Glass Effect Layer */
+.filters::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Gradient overlay at top */
+.filters::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  z-index: 1;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+}
+
+.filters__sort {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 2;
+}
+
+.filters__sort::-webkit-scrollbar {
+  display: none;
+}
+
+/* Liquid Glass Sort Buttons */
+.filters__sort-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 1.25rem;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  border: none;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.filters__sort-btn,
+.filters__sort-btn > div {
+  border-radius: 1.5rem;
+}
+
+.filters__sort-btn::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.filters__sort-btn::after {
+  content: '';
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.filters__sort-btn > * {
+  position: relative;
+  z-index: 10;
+  color: var(--text-primary);
+}
+
+.filters__sort-btn:hover {
+  padding: calc(var(--spacing-sm) + 0.1rem) calc(var(--spacing-md) + 0.1rem);
+}
+
+.filters__sort-btn--active::after {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.filters__sort-btn--active > * {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.filters__buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  position: relative;
+  z-index: 2;
+}
+
+.filters__buttons::-webkit-scrollbar {
+  display: none;
+}
+
+/* Liquid Glass Filter Buttons */
+.filters__btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 1.25rem;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: none;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.filters__btn,
+.filters__btn > div {
+  border-radius: 1.5rem;
+}
+
+.filters__btn::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.filters__btn::after {
+  content: '';
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.filters__btn > * {
+  position: relative;
+  z-index: 10;
+  color: var(--text-primary);
+}
+
+.filters__btn-count {
+  padding: 0.125rem 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.filters__btn:hover {
+  padding: calc(var(--spacing-sm) + 0.1rem) calc(var(--spacing-md) + 0.15rem);
+}
+
+.filters__btn--active::after {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.filters__btn--active > * {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Search Input with Liquid Glass */
+.filters__search {
+  position: relative;
+  padding: var(--spacing-sm);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  z-index: 2;
+}
+
+.filters__search::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.filters__search::after {
+  content: '';
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.filters__search:hover {
+  padding: calc(var(--spacing-sm) + 0.1rem);
+}
+
+.filters__search:focus-within {
+  padding: calc(var(--spacing-sm) + 0.15rem);
+  box-shadow: 0 6px 12px rgba(255, 255, 255, 0.2), 0 0 16px rgba(255, 255, 255, 0.1);
+}
+
+.filters__search:focus-within::after {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.filters__search-input {
+  width: 100%;
+  padding: 0.25rem 0.5rem 0.25rem 2.5rem;
+  background: transparent;
+  border: none;
+  border-radius: inherit;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  font-weight: 500;
+  outline: none;
+  position: relative;
+  z-index: 100;
+}
+
+.filters__search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.filters__search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  pointer-events: none;
+  z-index: 100;
+  color: var(--text-primary);
+}
+
+@media (max-width: 767px) {
+  .filters {
+    padding: var(--spacing-md);
+  }
+}

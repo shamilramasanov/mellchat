@@ -1,283 +1,276 @@
-/* Liquid Glass - Global Styles */
+/* Import reset */
+@import './reset.css';
+@import './animations.css';
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
+/* CSS Variables */
 :root {
-  /* Liquid Glass Colors */
+  /* ===== Colors ===== */
+  /* Background */
   --bg-primary: #0f0f23;
   --bg-secondary: #1a1a2e;
+  --bg-tertiary: #16213e;
   --bg-gradient: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   
-  /* Glass Colors */
+  /* Glass Effects - НЕЙТРАЛЬНЫЕ (БЕЗ СИНЕГО) */
   --glass-white: rgba(255, 255, 255, 0.1);
   --glass-white-hover: rgba(255, 255, 255, 0.15);
+  --glass-white-active: rgba(255, 255, 255, 0.12);
   --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-hover: rgba(255, 255, 255, 0.3);
   
-  /* Accent Colors */
-  --accent-blue: #4CC9F0;
-  --accent-purple: #7209B7;
-  --accent-pink: #F72585;
-  --accent-green: #4361EE;
-  --accent-cyan: #00D9FF;
-  
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #4CC9F0 0%, #7209B7 100%);
-  --gradient-secondary: linear-gradient(135deg, #F72585 0%, #7209B7 100%);
-  --gradient-success: linear-gradient(135deg, #4361EE 0%, #4CC9F0 100%);
+  /* Accent Colors - УБРАЛ СИНИЙ, оставил только нейтральные */
+  --accent-primary: rgba(255, 255, 255, 0.9);
+  --accent-secondary: rgba(255, 255, 255, 0.7);
   
   /* Text Colors */
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-tertiary: rgba(255, 255, 255, 0.5);
+  --text-disabled: rgba(255, 255, 255, 0.3);
   
-  /* Shadows & Glows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --glow-blue: 0 0 20px rgba(76, 201, 240, 0.3);
-  --glow-purple: 0 0 20px rgba(114, 9, 183, 0.3);
-  --glow-pink: 0 0 20px rgba(247, 37, 133, 0.3);
+  /* Semantic Colors */
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --color-info: rgba(255, 255, 255, 0.8);
   
-  /* Spacing */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
+  /* Platform Colors */
+  --platform-youtube: #FF0000;
+  --platform-twitch: #9146FF;
+  --platform-kick: #53FC18;
   
-  /* Border Radius */
+  /* ===== Spacing ===== */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  
+  /* ===== Border Radius ===== */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
   
-  /* Blur */
+  /* ===== Shadows - НЕЙТРАЛЬНЫЕ ===== */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
+  
+  /* ===== Blur ===== */
   --blur-sm: 12px;
   --blur-md: 24px;
   --blur-lg: 48px;
   
-  /* Typography */
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 2rem;
+  /* ===== Transitions ===== */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Z-index */
-  --z-dropdown: 1000;
+  /* ===== Typography ===== */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+                 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+                 'Helvetica Neue', sans-serif;
+  
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 2rem;      /* 32px */
+  
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* ===== Z-index Scale ===== */
+  --z-base: 1;
+  --z-messages: 10;
+  --z-cards: 50;
+  --z-header: 100;
+  --z-fab: 1000;
   --z-modal: 2000;
   --z-toast: 3000;
   --z-tooltip: 4000;
   
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* ===== Layout ===== */
+  --header-height: 64px;
+  --stream-cards-height: 120px;
+  --filters-height: 140px;
+  --content-padding: var(--spacing-lg);
+  
+  /* iOS Safe Area */
+  --safe-area-top: env(safe-area-inset-top, 0);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0);
+  --safe-area-left: env(safe-area-inset-left, 0);
+  --safe-area-right: env(safe-area-inset-right, 0);
 }
 
-html {
-  height: 100%;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ===== Light Theme Variables ===== */
+body.light-theme {
+  /* Background */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e5e5e5;
+  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f5f5f5 50%, #e5e5e5 100%);
+  
+  /* Glass Effects */
+  --glass-white: rgba(0, 0, 0, 0.05);
+  --glass-white-hover: rgba(0, 0, 0, 0.08);
+  --glass-white-active: rgba(0, 0, 0, 0.1);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --glass-border-hover: rgba(0, 0, 0, 0.2);
+  
+  /* Text Colors */
+  --text-primary: #000000;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --text-tertiary: rgba(0, 0, 0, 0.5);
+  --text-disabled: rgba(0, 0, 0, 0.3);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
+/* ===== Global Styles ===== */
 body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden; /* блокируем прокрутку страницы */
   font-family: var(--font-family);
   font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
   color: var(--text-primary);
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  background-size: 400% 400%;
+  background: #000;
   background-attachment: fixed;
-  animation: gradientShift 15s ease infinite;
+  transition: background 0.3s ease, color 0.3s ease;
+  
+  /* iOS PWA - Prevent bounce/overscroll */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+body.light-theme {
+  background: #fff;
 }
 
-#root {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Glass Effect Utility Class */
+/* ===== Glass Effect Classes ===== */
 .glass {
-  position: relative;
   background: var(--glass-white);
   backdrop-filter: blur(var(--blur-md));
   -webkit-backdrop-filter: blur(var(--blur-md));
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
 }
 
-/* Liquid glass "wet" effect */
-.glass::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(255, 255, 255, 0.05),
-    transparent
-  );
-  transform: rotate(45deg);
-  pointer-events: none;
-}
-
-/* Subtle highlight on hover */
-.glass::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.02);
-  opacity: 0;
-  transition: opacity var(--transition-base);
-  pointer-events: none;
-}
-
-.glass:hover::after {
-  opacity: 1;
-}
-
-.glass-hover {
-  transition: all var(--transition-base);
-}
-
-.glass-hover:hover {
-  background: var(--glass-white-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-/* Scrollbar Styles */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--glass-white);
-  border-radius: var(--radius-full);
+.glass-sm {
   backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
 }
 
-::-webkit-scrollbar-thumb:hover {
+.glass-lg {
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+}
+
+.glass-interactive {
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.glass-interactive:hover {
   background: var(--glass-white-hover);
+  border-color: var(--glass-border-hover);
+  transform: translateY(-2px);
 }
 
-/* Selection */
-::selection {
-  background: var(--accent-blue);
-  color: var(--text-primary);
+.glass-interactive:active {
+  background: var(--glass-white-active);
+  transform: translateY(0) scale(0.98);
 }
 
-::-moz-selection {
-  background: var(--accent-blue);
-  color: var(--text-primary);
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass, .glass-sm, .glass-lg {
+    background: rgba(15, 15, 35, 0.85);
+  }
 }
 
-/* Focus Visible */
-:focus-visible {
-  outline: 2px solid var(--accent-blue);
+/* ===== Utility Classes ===== */
+.gradient-text {
+  color: #ffffff;
+}
+
+/* Черный текст на светлой теме */
+body.light-theme .gradient-text {
+  color: #000000;
+}
+
+.glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.glow-strong {
+  box-shadow: 0 0 32px rgba(255, 255, 255, 0.3);
+}
+
+/* ===== iOS Specific ===== */
+@supports (-webkit-touch-callout: none) {
+  body {
+    /* iOS Safari viewport height fix */
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Prevent iOS zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 767px) {
+  :root {
+    --content-padding: var(--spacing-md);
+    --header-height: 56px;
+  }
+}
+
+/* ===== Focus Styles - НЕЙТРАЛЬНЫЕ ===== */
+*:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
   outline-offset: 2px;
 }
 
-/* Disable tap highlight on mobile */
-* {
-  -webkit-tap-highlight-color: transparent;
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
 }
 
-/* iOS Safari Full Screen Fix */
-@supports (-webkit-touch-callout: none) {
-  html {
-    height: 100vh;
-    height: -webkit-fill-available;
-    height: calc(var(--vh, 1vh) * 100);
+/* ===== Animations Performance ===== */
+.gpu-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* ===== Print Styles ===== */
+@media print {
+  body {
+    background: white;
+    color: black;
   }
   
-  body {
-    height: 100vh;
-    height: -webkit-fill-available;
-    height: calc(var(--vh, 1vh) * 100);
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    min-height: calc(var(--vh, 1vh) * 100);
-  }
-  
-  #root {
-    height: 100vh;
-    height: -webkit-fill-available;
-    height: calc(var(--vh, 1vh) * 100);
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    min-height: calc(var(--vh, 1vh) * 100);
+  .glass {
+    background: white;
+    backdrop-filter: none;
+    border: 1px solid #ccc;
   }
 }
-
-/* Safe area support for mobile */
-@supports (padding: max(0px)) {
-  body {
-    padding-left: max(0px, env(safe-area-inset-left));
-    padding-right: max(0px, env(safe-area-inset-right));
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
-  }
-}
-
-/* iOS Safari white bars fix - только для Safari без PWA */
-@media screen and (max-width: 768px) {
-  @supports (-webkit-touch-callout: none) {
-    body {
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-      background-attachment: fixed;
-      background-size: 400% 400%;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-    
-    /* Ensure full coverage on iOS Safari only */
-    html, body, #root {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-    }
-  }
-}
-

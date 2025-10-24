@@ -1,0 +1,52 @@
+.main-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0; /* Important for flexbox overflow */
+}
+
+.main-view__streams {
+  flex-shrink: 0;
+  padding: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  position: relative;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  z-index: 10;
+}
+
+/* Gradient overlay at bottom of stream cards */
+.main-view__streams::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+}
+
+.main-view__chat {
+  flex: 1;
+  min-height: 0; /* Important for flexbox overflow */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .main-view__streams {
+    padding: var(--spacing-sm);
+    padding-bottom: 0;
+  }
+}
+

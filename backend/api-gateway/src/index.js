@@ -30,6 +30,9 @@ app.use(helmet());
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:5173', // Vite dev server
+  'http://localhost:5174', // Vite dev server (alternate port)
+  'http://192.168.88.22:5173', // Local network access (mobile testing)
   'https://mellchat-v5y7.vercel.app',
   'https://mellchat-v5y7-5oxlvx0a6-shamils-projects-6a5060d0.vercel.app',
   process.env.CORS_ORIGIN

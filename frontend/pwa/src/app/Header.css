@@ -1,0 +1,165 @@
+.header {
+  height: var(--header-height);
+  flex-shrink: 0;
+  position: relative;
+  z-index: var(--z-header);
+  background: transparent;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 var(--spacing-lg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.header__content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Logo */
+.header__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast);
+}
+
+.header__logo:hover {
+  transform: scale(1.05);
+}
+
+.header__logo:active {
+  transform: scale(0.98);
+}
+
+.header__logo .gradient-text {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.5px;
+}
+
+.header__version {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Connection Status - СКРЫТ */
+.header__status {
+  display: none;
+}
+
+/* Actions */
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Action Buttons - Liquid Glass Style */
+.header__action {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  border: none;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  padding: 0.5rem;
+  border-radius: 1.5rem;
+  position: relative;
+}
+
+.header__action,
+.header__action > div {
+  border-radius: 1.5rem;
+}
+
+/* Liquid Glass Layers for Actions */
+.header__action::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.header__action::after {
+  content: '';
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* ИСПРАВЛЕНИЕ: Иконки поверх всех слоев */
+.header__action > * {
+  position: relative;
+  z-index: 100;
+  color: black;
+}
+
+.header__action:hover {
+  padding: 0.6rem;
+}
+
+.header__action:active {
+  transform: scale(0.95);
+}
+
+.header__user-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  z-index: 100;
+}
+
+.header__user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .header {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .header__logo .gradient-text {
+    font-size: var(--font-size-lg);
+  }
+  
+  .header__action {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+}

@@ -51,33 +51,58 @@ class KickSimpleClient {
           const dataString = data.toString();
           const jsonData = JSON.parse(dataString);
           
-          if (jsonData.data) {
-            const jsonDataSub = JSON.parse(jsonData.data);
+          // Log ALL incoming messages for debugging
+          logger.info(`📨 Kick WebSocket raw message:`, JSON.stringify(jsonData, null, 2));
+          
+          // Handle different Pusher event types
+          if (jsonData.event === 'pusher:connection_established') {
+            logger.info(`✅ Kick Pusher connection established`);
+            return;
+          }
+          
+          if (jsonData.event === 'pusher_internal:subscription_succeeded') {
+            logger.info(`✅ Kick subscription succeeded for chatrooms.${this.chatroomId}.v2`);
+            return;
+          }
+          
+          // Handle chat messages - Kick uses different event names
+          if (jsonData.event === 'App\\Events\\ChatMessageEvent' || 
+              jsonData.event === 'ChatMessageEvent' ||
+              jsonData.event === 'message') {
             
-            // Check if this is a chat message
-            if (jsonDataSub.sender && jsonDataSub.content) {
-              const normalizedMessage = {
-                id: jsonDataSub.id || `kick-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-                username: jsonDataSub.sender.username || 'Anonymous',
-                text: jsonDataSub.content || '',
-                timestamp: new Date(jsonDataSub.created_at || Date.now()),
-                platform: 'kick',
-                color: this.generateColor(jsonDataSub.sender.username || 'Anonymous'),
-                reactions: { like: 0, dislike: 0 },
-                isBookmarked: false,
-                userReaction: null
-              };
-
-              logger.info(`💬 Kick message: ${normalizedMessage.username}: ${normalizedMessage.text}`);
+            if (jsonData.data) {
+              const jsonDataSub = typeof jsonData.data === 'string' 
+                ? JSON.parse(jsonData.data) 
+                : jsonData.data;
               
-              if (this.onMessage) {
-                this.onMessage(normalizedMessage);
+              logger.info(`📬 Kick parsed message data:`, JSON.stringify(jsonDataSub, null, 2));
+              
+              // Check if this is a chat message
+              if (jsonDataSub.sender && jsonDataSub.content) {
+                const normalizedMessage = {
+                  id: jsonDataSub.id || `kick-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+                  username: jsonDataSub.sender.username || 'Anonymous',
+                  text: jsonDataSub.content || '',
+                  timestamp: new Date(jsonDataSub.created_at || Date.now()),
+                  platform: 'kick',
+                  color: this.generateColor(jsonDataSub.sender.username || 'Anonymous'),
+                  reactions: { like: 0, dislike: 0 },
+                  isBookmarked: false,
+                  userReaction: null
+                };
+
+                logger.info(`💬 Kick message: ${normalizedMessage.username}: ${normalizedMessage.text}`);
+                
+                if (this.onMessage) {
+                  this.onMessage(normalizedMessage);
+                }
+              } else {
+                logger.warn(`⚠️ Kick message missing sender or content:`, jsonDataSub);
               }
             }
           }
         } catch (error) {
-          // Ignore parsing errors for non-message events
-          logger.debug(`Kick WebSocket message parsing error: ${error.message}`);
+          logger.error(`❌ Kick WebSocket message parsing error: ${error.message}`, error.stack);
         }
       });
 

@@ -1,0 +1,225 @@
+.button {
+  /* Base styles */
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  font-family: var(--font-family);
+  text-decoration: none;
+  border: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* True Liquid Glass Effect Layers */
+.button__glass-effect {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.button__glass-tint {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: inherit;
+}
+
+.button__glass-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+  border-radius: inherit;
+}
+
+.button__content {
+  position: relative;
+  z-index: 10;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* Sizes with Demo-style hover effect (разбухание) */
+.button--sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 1.25rem;
+  font-size: var(--font-size-sm);
+}
+
+.button--sm,
+.button--sm > div {
+  border-radius: 1.25rem;
+}
+
+.button--sm:hover:not(:disabled) {
+  padding: calc(var(--spacing-sm) + 0.1rem) calc(var(--spacing-md) + 0.1rem);
+}
+
+.button--md {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 1.5rem;
+  font-size: var(--font-size-base);
+}
+
+.button--md,
+.button--md > div {
+  border-radius: 1.5rem;
+}
+
+.button--md:hover:not(:disabled) {
+  padding: calc(var(--spacing-sm) + 0.15rem) calc(var(--spacing-lg) + 0.2rem);
+}
+
+.button--lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: 1.5rem;
+  font-size: var(--font-size-lg);
+}
+
+.button--lg,
+.button--lg > div {
+  border-radius: 1.5rem;
+}
+
+.button--lg:hover:not(:disabled) {
+  padding: calc(var(--spacing-md) + 0.15rem) calc(var(--spacing-xl) + 0.2rem);
+}
+
+/* Primary Variant - НЕЙТРАЛЬНЫЙ (БЕЗ СИНЕГО) */
+.button--primary .button__glass-tint {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.button--primary .button__content {
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.button--primary .button__glass-shine {
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.6),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+/* Danger Variant */
+.button--danger .button__glass-tint {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.button--danger .button__content {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.button--danger .button__glass-shine {
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Secondary & Ghost - subtle glass */
+.button--secondary .button__content,
+.button--ghost .button__content {
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.button--secondary .button__glass-tint,
+.button--ghost .button__glass-tint {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.button--ghost .button__glass-effect {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.button--ghost:hover:not(:disabled) .button__glass-effect {
+  opacity: 1;
+}
+
+/* Full width */
+.button--full-width {
+  width: 100%;
+}
+
+/* States */
+.button--disabled,
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.button--loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.button--loading .button__text {
+  color: transparent;
+}
+
+.button__spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: currentColor;
+}
+
+/* Icons */
+.button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.button__icon--left {
+  margin-right: calc(var(--spacing-xs) * -1);
+}
+
+.button__icon--right {
+  margin-left: calc(var(--spacing-xs) * -1);
+}
+
+/* Focus styles - НЕЙТРАЛЬНЫЙ */
+.button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* Spin animation for loading */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Opacity utilities for SVG */
+.opacity-25 {
+  opacity: 0.25;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
