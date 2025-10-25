@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useChatStore } from '../store/chatStore';
 import { useSettingsStore } from '@features/settings/store/settingsStore';
-import { GlassCard } from '@shared/components';
+// import { GlassCard } from '@shared/components'; // Удален - используем обычные div с glass эффектами
 import { formatRelativeTime, generateColor, copyToClipboard, getPlatformColor } from '@shared/utils/helpers';
 import { NICKNAME_COLOR_MODES, PLATFORM_ICONS, PLATFORM_LOGOS } from '@shared/utils/constants';
 import './MessageCard.css';
@@ -61,38 +61,38 @@ const MessageCard = ({ message }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <GlassCard className="message-card">
-        {/* Header */}
-        <div className="message-card__header">
-          <span 
-            className="message-card__username"
-            style={{ color: getNicknameColor() }}
-          >
-            {message.username}
-          </span>
-          <span className="message-card__timestamp">
-            {formatRelativeTime(message.timestamp)}
-          </span>
-        </div>
-
-        {/* Platform Badge */}
-        {message.platform && (
-          <div className="message-card__platform">
-            <img 
-              src={PLATFORM_LOGOS[message.platform]} 
-              alt={message.platform}
-              className="message-card__platform-logo"
-            />
-            <span>{message.platform}</span>
+      <div className="message-card">
+        {/* Top Row: Left side (Username/Platform) and Right side (Message Text + Timestamp) */}
+        <div className="message-card__top">
+          <div className="message-card__left">
+            <span 
+              className="message-card__username"
+              style={{ color: getNicknameColor() }}
+            >
+              {message.username}
+            </span>
+            {message.platform && (
+              <div className="message-card__platform">
+                <img 
+                  src={PLATFORM_LOGOS[message.platform]} 
+                  alt={message.platform}
+                  className="message-card__platform-logo"
+                />
+                <span>{message.platform}</span>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Message Text */}
-        <div className="message-card__text">
-          {message.text}
+          <div className="message-card__right">
+            <div className="message-card__text">
+              {message.text}
+            </div>
+            <span className="message-card__timestamp">
+              {formatRelativeTime(message.timestamp)}
+            </span>
+          </div>
         </div>
 
-        {/* Actions */}
+        {/* Bottom Row: Actions */}
         <div className="message-card__actions">
           <button
             className={`message-card__action ${isLiked ? 'message-card__action--active' : ''}`}
@@ -127,7 +127,7 @@ const MessageCard = ({ message }) => {
             <span style={{ position: 'relative', zIndex: 100 }}>📋</span>
           </button>
         </div>
-      </GlassCard>
+      </div>
     </motion.div>
   );
 };

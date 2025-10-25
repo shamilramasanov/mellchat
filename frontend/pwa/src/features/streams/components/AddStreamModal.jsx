@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { Modal, Input, Button, GlassCard } from '@shared/components';
+// import { Modal, Input, Button, GlassCard } from '@shared/components'; // Удалены - используем обычные элементы с glass эффектами
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
 import { streamsAPI } from '@shared/services';
@@ -9,6 +9,7 @@ import { isValidStreamURL } from '@shared/utils/validators';
 import { detectPlatform } from '@shared/utils/helpers';
 import { PLATFORM_LOGOS } from '@shared/utils/constants';
 import ArchivePromptModal from './ArchivePromptModal';
+import './AddStreamModal.css';
 
 const AddStreamModal = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
@@ -92,68 +93,64 @@ const AddStreamModal = ({ isOpen, onClose }) => {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={`➕ ${t('streams.add')}`}
-        size="md"
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <Input
-            placeholder={t('streams.urlPlaceholder')}
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            leftIcon="🔗"
-            fullWidth
-          />
+      {/* Modal Overlay */}
+      <div className="add-stream-modal__overlay" onClick={onClose}>
+        <div className="add-stream-modal" onClick={(e) => e.stopPropagation()}>
+          {/* Modal Header */}
+          <div className="add-stream-modal__header">
+            <h2 className="add-stream-modal__title">➕ {t('streams.add')}</h2>
+            <button className="add-stream-modal__close" onClick={onClose}>
+              ✕
+            </button>
+          </div>
 
-          {platform && (
-            <GlassCard style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.75rem 1rem',
-              fontSize: 'var(--font-size-base)',
-            }}>
-              <img 
-                src={PLATFORM_LOGOS[platform]} 
-                alt={platform}
-                style={{ 
-                  height: '24px', 
-                  width: 'auto',
-                  objectFit: 'contain',
-                  filter: 'brightness(0.9)'
-                }}
+          {/* Modal Content */}
+          <div className="add-stream-modal__content">
+            <div className="add-stream-modal__input-container">
+              <span className="add-stream-modal__input-icon">🔗</span>
+              <input
+                className="add-stream-modal__input"
+                placeholder={t('streams.urlPlaceholder')}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
               />
-              <span style={{ 
-                fontWeight: 'var(--font-weight-medium)', 
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                {platform}
-              </span>
-            </GlassCard>
-          )}
+            </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Button variant="secondary" fullWidth onClick={onClose}>
-              {t('streams.cancel')}
-            </Button>
-            <Button 
-              variant="primary" 
-              fullWidth 
-              onClick={handleConnect}
-              loading={isLoading}
-              disabled={!url}
-            >
-              {t('streams.connect')}
-            </Button>
+            {platform && (
+              <div className="add-stream-modal__platform">
+                <img 
+                  src={PLATFORM_LOGOS[platform]} 
+                  alt={platform}
+                  className="add-stream-modal__platform-logo"
+                />
+                <span className="add-stream-modal__platform-name">
+                  {platform}
+                </span>
+              </div>
+            )}
+
+            <div className="add-stream-modal__buttons">
+              <button 
+                className="add-stream-modal__button add-stream-modal__button--secondary"
+                onClick={onClose}
+              >
+                {t('streams.cancel')}
+              </button>
+              <button 
+                className="add-stream-modal__button add-stream-modal__button--primary"
+                onClick={handleConnect}
+                disabled={!url || isLoading}
+              >
+                {isLoading ? '⏳' : t('streams.connect')}
+              </button>
+            </div>
           </div>
         </div>
-      </Modal>
+      </div>
       
       {/* Archive Prompt Modal */}
       {pendingStream && (

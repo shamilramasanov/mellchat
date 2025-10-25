@@ -1,12 +1,21 @@
 .stream-cards {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: var(--spacing-sm);
+  padding-bottom: 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  background: transparent;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  z-index: 10;
+  position: relative;
+  width: 100%; /* Занимаем всю доступную ширину */
+  box-sizing: border-box; /* Включаем отступы в общую ширину */
 }
 
 .stream-cards::-webkit-scrollbar {
@@ -28,30 +37,35 @@
 
 .stream-card {
   position: relative;
-  min-width: 200px;
-  max-width: 240px;
+  min-width: 160px;
+  max-width: 180px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.3s ease;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
 }
 
 /* Inactive cards - dimmed */
 .stream-card:not(.stream-card--active) {
-  opacity: 0.5;
-  filter: brightness(0.7);
+  opacity: 0.95;
+  filter: brightness(0.9);
 }
 
 .stream-card:not(.stream-card--active):hover {
-  opacity: 0.7;
-  filter: brightness(0.85);
+  opacity: 1;
+  filter: brightness(1);
 }
 
-/* Active card - bright and highlighted */
-.stream-card--active .glass-card__tint {
-  background: rgba(255, 255, 255, 0.35);
+/* Active card */
+.stream-card--active {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--color-primary);
 }
 
 .stream-card--active {
@@ -61,8 +75,8 @@
 
 .stream-card__close {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.5rem; /* 8px від верхнього правого кута */
+  right: 0.5rem; /* 8px від верхнього правого кута */
   width: 24px;
   height: 24px;
   display: flex;
@@ -76,9 +90,9 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   z-index: 200;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   font-weight: bold;
+  line-height: 1;
+  text-align: center;
 }
 
 .stream-card__close:hover {
@@ -99,7 +113,7 @@
 }
 
 .stream-card__logo {
-  height: 24px;
+  height: 20px;
   width: auto;
   object-fit: contain;
   filter: brightness(0.9);
@@ -133,7 +147,7 @@
 }
 
 .stream-card__author {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   overflow: hidden;
@@ -144,7 +158,7 @@
 }
 
 .stream-card__title {
-  font-size: var(--font-size-xs);
+  font-size: 0.625rem;
   font-weight: var(--font-weight-regular);
   color: var(--text-secondary);
   overflow: hidden;
@@ -157,7 +171,7 @@
 .stream-card__stats {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   padding-top: var(--spacing-xs);
   border-top: 1px solid var(--glass-border);
   margin-top: auto;
@@ -175,7 +189,7 @@
 }
 
 .stream-card__stat-icon {
-  font-size: 1rem;
+  font-size: 0.75rem;
   opacity: 0.8;
   position: relative;
   z-index: 10;
@@ -209,23 +223,5 @@
   }
 }
 
-/* iOS Safari - Enhanced glass effect */
-@supports (-webkit-touch-callout: none) {
-  /* iOS-only: super strong blur */
-  .stream-card .glass-card__effect {
-    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .stream-card .glass-card__tint {
-    background: rgba(255, 255, 255, 0.5) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .stream-card--active .glass-card__tint {
-    background: rgba(255, 255, 255, 0.6) !important;
-  }
-}
+/* iOS Safari glass effects removed */
 

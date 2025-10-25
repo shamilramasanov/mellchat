@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
-import { GlassCard, Button } from '@shared/components';
+// import { GlassCard, Button } from '@shared/components'; // Удалены - используем обычные div с glass эффектами
 import { PLATFORM_LOGOS } from '@shared/utils/constants';
 import AddStreamModal from './AddStreamModal';
 import './RecentStreams.css';
@@ -69,14 +69,30 @@ const RecentStreams = () => {
 
           {streamsToShow.length === 0 ? (
             <div className="recent-streams__empty">
-              <span className="recent-streams__empty-icon">📺</span>
+              <div className="recent-streams__empty-platforms">
+                <img 
+                  src={PLATFORM_LOGOS.youtube} 
+                  alt="YouTube" 
+                  className="recent-streams__empty-platform"
+                />
+                <img 
+                  src={PLATFORM_LOGOS.kick} 
+                  alt="Kick" 
+                  className="recent-streams__empty-platform"
+                />
+                <img 
+                  src={PLATFORM_LOGOS.twitch} 
+                  alt="Twitch" 
+                  className="recent-streams__empty-platform"
+                />
+              </div>
               <h3>{t('streams.noRecent')}</h3>
               <p>{t('streams.noRecentSubtitle')}</p>
             </div>
           ) : (
             <div className="recent-streams__list">
               {streamsToShow.map((stream, index) => {
-                const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0 };
+                const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0, unreadCount: 0, unreadQuestionCount: 0 };
                 
                 return (
                   <motion.div
@@ -85,8 +101,7 @@ const RecentStreams = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <GlassCard
-                      interactive
+                    <div
                       className="recent-stream-card"
                       onClick={() => handleStreamClick(stream)}
                     >
@@ -121,29 +136,27 @@ const RecentStreams = () => {
                       <div className="recent-stream-card__stats">
                         <div className="recent-stream-card__stat">
                           <span className="recent-stream-card__stat-icon">💬</span>
-                          <span className="recent-stream-card__stat-value">{streamStats.messageCount}</span>
+                          <span className="recent-stream-card__stat-value">{streamStats.unreadCount || 0}</span>
                         </div>
                         <div className="recent-stream-card__stat">
                           <span className="recent-stream-card__stat-icon">❓</span>
-                          <span className="recent-stream-card__stat-value">{streamStats.questionCount}</span>
+                          <span className="recent-stream-card__stat-value">{streamStats.unreadQuestionCount || 0}</span>
                         </div>
                       </div>
-                    </GlassCard>
+                    </div>
                   </motion.div>
                 );
               })}
             </div>
           )}
 
-          <Button
-            variant="primary"
-            size="md"
-            fullWidth
-            leftIcon="➕"
+          <button
+            className="recent-streams__add-button"
             onClick={() => setShowAddStream(true)}
           >
+            <span className="recent-streams__add-icon">➕</span>
             {t('streams.add')}
-          </Button>
+          </button>
         </motion.div>
       </div>
 

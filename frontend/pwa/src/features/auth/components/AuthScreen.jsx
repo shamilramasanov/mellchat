@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { authAPI } from '@shared/services';
-import { Button } from '@shared/components';
+// import { Button } from '@shared/components'; // Удален - используем обычные button с glass эффектами
+import { PLATFORM_LOGOS } from '@shared/utils/constants';
 import './AuthScreen.css';
 
 const AuthScreen = () => {
@@ -57,24 +58,20 @@ const AuthScreen = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            leftIcon="🔐"
+          <button
+            className="auth-screen__button auth-screen__button--primary"
             onClick={handleGoogleLogin}
           >
+            <span className="auth-screen__button-icon">🔐</span>
             {t('auth.login')}
-          </Button>
+          </button>
 
-          <Button
-            variant="ghost"
-            size="lg"
-            fullWidth
+          <button
+            className="auth-screen__button auth-screen__button--ghost"
             onClick={handleSkip}
           >
             {t('auth.skip')}
-          </Button>
+          </button>
         </motion.div>
 
         {/* Platform Icons */}
@@ -84,9 +81,21 @@ const AuthScreen = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <span className="platform-icon">📺</span>
-          <span className="platform-icon">🎮</span>
-          <span className="platform-icon">⚡</span>
+          <img 
+            src={PLATFORM_LOGOS.youtube} 
+            alt="YouTube" 
+            className="platform-icon"
+          />
+          <img 
+            src={PLATFORM_LOGOS.kick} 
+            alt="Kick" 
+            className="platform-icon"
+          />
+          <img 
+            src={PLATFORM_LOGOS.twitch} 
+            alt="Twitch" 
+            className="platform-icon"
+          />
         </motion.div>
       </motion.div>
     </div>

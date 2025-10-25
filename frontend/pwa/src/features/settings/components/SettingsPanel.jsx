@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Button } from '@shared/components';
+// import { Modal, Button } from '@shared/components'; // Удалены - используем обычные элементы с glass эффектами
 import { useSettingsStore } from '../store/settingsStore';
 import { FONT_SIZES, DISPLAY_DENSITY, NICKNAME_COLOR_MODES, LANGUAGES, LANGUAGE_FLAGS } from '@shared/utils/constants';
 import './SettingsPanel.css';
@@ -42,14 +42,23 @@ const SettingsPanel = ({ isOpen, onClose }) => {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`⚙️ ${t('settings.title')}`}
-      size="md"
-    >
-      <div className="settings-panel">
+    <>
+      {/* Modal Overlay */}
+      <div className="settings-modal__overlay" onClick={onClose}>
+        <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+          {/* Modal Header */}
+          <div className="settings-modal__header">
+            <h2 className="settings-modal__title">{t('settings.title')}</h2>
+            <button className="settings-modal__close" onClick={onClose}>
+              ✕
+            </button>
+          </div>
+
+          {/* Modal Content */}
+          <div className="settings-panel">
         {/* Theme */}
         <div className="settings-section">
           <h3 className="settings-section__title">🌓 Тема</h3>
@@ -209,11 +218,16 @@ const SettingsPanel = ({ isOpen, onClose }) => {
         </div>
 
         {/* Close Button */}
-        <Button variant="primary" fullWidth onClick={onClose}>
+        <button 
+          className="settings-modal__button settings-modal__button--primary"
+          onClick={onClose}
+        >
           {t('settings.close')}
-        </Button>
+        </button>
+          </div>
+        </div>
       </div>
-    </Modal>
+    </>
   );
 };
 

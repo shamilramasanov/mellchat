@@ -14,16 +14,20 @@ const ChatContainer = ({ onAddStream }) => {
   // Subscribe to messages so component re-renders when messages change
   const messages = useChatStore((state) => state.messages);
   const getFilteredMessages = useChatStore((state) => state.getFilteredMessages);
+  const markMessagesAsRead = useChatStore((state) => state.markMessagesAsRead);
+  const lastReadMessageIds = useChatStore((state) => state.lastReadMessageIds);
   
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const scrollPositions = useRef({}); // Store scroll positions for each stream
   const lastMessageCounts = useRef({}); // Store last seen message count for each stream
+  const isManuallyScrolling = useRef(false); // Prevent auto-scroll when user manually interacts
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [showNewMessagesBtn, setShowNewMessagesBtn] = useState(false);
 
   // Get messages filtered by active stream (recalculates when messages change)
   const filteredMessages = getFilteredMessages(activeStreamId);
+  
   const hasMessages = filteredMessages.length > 0;
   const hasStreams = activeStreams.length > 0;
 
@@ -31,7 +35,10 @@ const ChatContainer = ({ onAddStream }) => {
   const isAtBottom = useCallback(() => {
     if (!messagesContainerRef.current) return true;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    return scrollHeight - scrollTop - clientHeight < 50; // 50px threshold
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // 50px threshold
+    
+    
+    return isAtBottom;
   }, []);
 
   // Save scroll position for current stream
@@ -58,6 +65,11 @@ const ChatContainer = ({ onAddStream }) => {
   const handleScroll = useCallback(() => {
     saveScrollPosition();
     
+    // Only update button state if not manually scrolling
+    if (isManuallyScrolling.current) {
+      return;
+    }
+    
     if (isAtBottom()) {
       setShowNewMessagesBtn(false);
       setNewMessageCount(0);
@@ -78,15 +90,60 @@ const ChatContainer = ({ onAddStream }) => {
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-      setShowNewMessagesBtn(false);
-      setNewMessageCount(0);
-      if (activeStreamId) {
-        lastMessageCounts.current[activeStreamId] = filteredMessages.length;
+    if (!messagesContainerRef.current) {
+      return;
+    }
+
+    isManuallyScrolling.current = true;
+    
+    // Update UI state immediately
+    setShowNewMessagesBtn(false);
+    setNewMessageCount(0);
+    
+    if (activeStreamId) {
+      lastMessageCounts.current[activeStreamId] = filteredMessages.length;
+      // Mark messages as read when scrolling to bottom
+      if (filteredMessages.length > 0) {
+        const lastMessage = filteredMessages[filteredMessages.length - 1];
+        markMessagesAsRead(activeStreamId, lastMessage.id);
       }
     }
-  }, [activeStreamId, filteredMessages.length]);
+    
+    // Force scroll to bottom with multiple methods for reliability
+    const container = messagesContainerRef.current;
+    const scrollHeight = container.scrollHeight;
+    
+    // Method 1: Instant scroll to bottom (no animation)
+    container.scrollTop = scrollHeight;
+    
+    // Method 2: Smooth scroll as backup
+    setTimeout(() => {
+      container.scrollTo({
+        top: scrollHeight,
+        behavior: 'smooth'
+      });
+    }, 50);
+    
+    // Method 3: Use scrollIntoView on messagesEndRef as final backup
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      }
+    }, 100);
+    
+    // Method 4: Force scroll again after a delay to ensure it worked
+    setTimeout(() => {
+      container.scrollTop = scrollHeight;
+    }, 300);
+    
+    // Reset flag after animation
+    setTimeout(() => {
+      isManuallyScrolling.current = false;
+    }, 1000);
+  }, [activeStreamId, filteredMessages.length, markMessagesAsRead]);
 
   // Handle new messages
   useEffect(() => {
@@ -95,24 +152,37 @@ const ChatContainer = ({ onAddStream }) => {
     // Initialize last message count if not exists
     if (lastMessageCounts.current[activeStreamId] === undefined) {
       lastMessageCounts.current[activeStreamId] = filteredMessages.length;
+      return; // Don't show button on first load
     }
 
-    // If user is at bottom, auto-scroll and update count
-    if (isAtBottom()) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const atBottom = isAtBottom();
+    const lastCount = lastMessageCounts.current[activeStreamId] || 0;
+    const newCount = Math.max(0, filteredMessages.length - lastCount);
+
+
+    // If user is at bottom, update count but don't auto-scroll if manually scrolling
+    if (atBottom && !isManuallyScrolling.current) {
       lastMessageCounts.current[activeStreamId] = filteredMessages.length;
       setShowNewMessagesBtn(false);
       setNewMessageCount(0);
+      
+      // Mark messages as read when user is at bottom
+      if (filteredMessages.length > 0) {
+        const lastMessage = filteredMessages[filteredMessages.length - 1];
+        markMessagesAsRead(activeStreamId, lastMessage.id);
+      }
     } else {
-      // Show new messages button
-      const lastCount = lastMessageCounts.current[activeStreamId] || 0;
-      const newCount = Math.max(0, filteredMessages.length - lastCount);
+      // Show new messages button when there are new messages
       if (newCount > 0) {
         setNewMessageCount(newCount);
         setShowNewMessagesBtn(true);
+      } else {
+        // Hide button if no new messages
+        setShowNewMessagesBtn(false);
+        setNewMessageCount(0);
       }
     }
-  }, [filteredMessages.length, activeStreamId, isAtBottom]);
+  }, [filteredMessages.length, activeStreamId, isAtBottom, markMessagesAsRead]);
 
   // Restore scroll position when switching streams
   useEffect(() => {
@@ -120,15 +190,24 @@ const ChatContainer = ({ onAddStream }) => {
       // Wait for DOM to update
       setTimeout(() => {
         restoreScrollPosition();
+        
         // Initialize message count for this stream
         if (lastMessageCounts.current[activeStreamId] === undefined) {
           lastMessageCounts.current[activeStreamId] = filteredMessages.length;
         }
+        
+        // If no lastReadId for this stream, mark all current messages as read
+        if (!lastReadMessageIds[activeStreamId] && filteredMessages.length > 0) {
+          const lastMessage = filteredMessages[filteredMessages.length - 1];
+          markMessagesAsRead(activeStreamId, lastMessage.id);
+        }
+        
+        // Always hide button when switching streams
         setShowNewMessagesBtn(false);
         setNewMessageCount(0);
       }, 0);
     }
-  }, [activeStreamId, restoreScrollPosition]);
+  }, [activeStreamId, restoreScrollPosition, filteredMessages.length, lastReadMessageIds, markMessagesAsRead]);
 
   return (
     <div className="chat-container">
@@ -170,19 +249,18 @@ const ChatContainer = ({ onAddStream }) => {
           </span>
         </button>
       )}
+      
 
       {/* Filters */}
       <Filters />
 
-      {/* FAB - Add Stream */}
+      {/* Add Stream Button */}
       <button
-        id="fab-btn"
-        className="chat-container__fab"
+        className="chat-container__add-stream"
         onClick={onAddStream}
-        aria-label={t('streams.add')}
-        title={t('streams.add')}
+        aria-label="Добавить стрим"
       >
-        <span style={{ position: 'relative', zIndex: 10 }}>➕</span>
+        ➕
       </button>
     </div>
   );

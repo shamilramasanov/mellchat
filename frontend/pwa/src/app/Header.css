@@ -3,10 +3,8 @@
   flex-shrink: 0;
   position: relative;
   z-index: var(--z-header);
-  background: transparent;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--glass-border);
   padding: 0 var(--spacing-lg);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
@@ -65,60 +63,21 @@
   gap: var(--spacing-sm);
 }
 
-/* Action Buttons - Liquid Glass Style */
+/* Action Buttons */
 .header__action {
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.75rem; /* Еще больше увеличиваем размер иконки */
   cursor: pointer;
-  border: none;
-  overflow: hidden;
-  isolation: isolate;
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
   padding: 0.5rem;
   border-radius: 1.5rem;
-  position: relative;
-}
-
-.header__action,
-.header__action > div {
-  border-radius: 1.5rem;
-}
-
-/* Liquid Glass Layers for Actions */
-.header__action::before {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  backdrop-filter: blur(3px);
-  filter: url(#glass-distortion);
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: inherit;
-}
-
-.header__action::after {
-  content: '';
-  z-index: 1;
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.25);
-  pointer-events: none;
-  border-radius: inherit;
-  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
-    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
-}
-
-/* ИСПРАВЛЕНИЕ: Иконки поверх всех слоев */
-.header__action > * {
-  position: relative;
-  z-index: 100;
-  color: black;
+  color: var(--text-primary);
 }
 
 .header__action:hover {
@@ -164,24 +123,4 @@
   }
 }
 
-/* iOS Safari - Enhanced glass effect */
-@supports (-webkit-touch-callout: none) {
-  .header {
-    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .header__action {
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .header__action::before {
-    -webkit-backdrop-filter: blur(25px) saturate(300%) brightness(1.4) !important;
-  }
-  
-  .header__action::after {
-    background: rgba(255, 255, 255, 0.5) !important;
-  }
-}
+/* iOS Safari glass effects removed */

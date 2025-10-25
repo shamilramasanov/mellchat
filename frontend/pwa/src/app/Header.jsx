@@ -52,7 +52,7 @@ const Header = () => {
               onClick={() => setShowSettings(true)}
               aria-label={t('settings.title')}
             >
-              <span style={{ position: 'relative', zIndex: 100 }}>⚙️</span>
+              <span style={{ position: 'relative', zIndex: 100 }}>⚙</span>
             </button>
           </div>
         </div>

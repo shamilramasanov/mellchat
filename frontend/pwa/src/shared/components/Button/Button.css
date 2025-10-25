@@ -15,35 +15,7 @@
   touch-action: manipulation;
 }
 
-/* True Liquid Glass Effect Layers */
-.button__glass-effect {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  backdrop-filter: blur(3px);
-  filter: url(#glass-distortion);
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: inherit;
-}
-
-.button__glass-tint {
-  z-index: 1;
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: inherit;
-}
-
-.button__glass-shine {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  overflow: hidden;
-  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
-    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
-  border-radius: inherit;
-}
+/* Glass effects removed - only FAB has glass */
 
 .button__content {
   position: relative;
@@ -101,51 +73,39 @@
   padding: calc(var(--spacing-md) + 0.15rem) calc(var(--spacing-xl) + 0.2rem);
 }
 
-/* Primary Variant - НЕЙТРАЛЬНЫЙ (БЕЗ СИНЕГО) */
-.button--primary .button__glass-tint {
-  background: rgba(255, 255, 255, 0.3);
+/* Primary Variant */
+.button--primary {
+  background: var(--color-primary);
+  color: white;
 }
 
-.button--primary .button__content {
-  color: var(--text-primary);
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-.button--primary .button__glass-shine {
-  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.6),
-    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.6);
+.button--primary:hover {
+  background: var(--color-primary);
+  opacity: 0.9;
 }
 
 /* Danger Variant */
-.button--danger .button__glass-tint {
-  background: rgba(239, 68, 68, 0.35);
-}
-
-.button--danger .button__content {
+.button--danger {
+  background: var(--color-error);
   color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.button--danger .button__glass-shine {
-  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
-    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+.button--danger:hover {
+  background: var(--color-error);
+  opacity: 0.9;
 }
 
-/* Secondary & Ghost - subtle glass */
-.button--secondary .button__content,
-.button--ghost .button__content {
+/* Secondary & Ghost */
+.button--secondary {
+  background: var(--bg-secondary);
   color: var(--text-primary);
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border);
 }
 
-.button--secondary .button__glass-tint,
-.button--ghost .button__glass-tint {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Ghost button - always visible glass effect */
-.button--ghost .button__glass-effect {
-  opacity: 1;
+.button--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
 }
 
 /* Full width */
@@ -220,23 +180,4 @@
   opacity: 0.75;
 }
 
-/* iOS Safari - Enhanced glass effect */
-@supports (-webkit-touch-callout: none) {
-  .button__glass-effect {
-    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .button__glass-tint {
-    background: rgba(255, 255, 255, 0.5) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .button__glass-shine {
-    opacity: 0.6;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-}
+/* iOS Safari glass effects removed */

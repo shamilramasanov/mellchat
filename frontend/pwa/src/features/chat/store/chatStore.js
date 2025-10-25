@@ -12,6 +12,7 @@ export const useChatStore = create(
       sortBy: SORT_OPTIONS.TIME,
       searchQuery: '',
       bookmarks: [],
+      lastReadMessageIds: {}, // Track last read message ID for each stream
 
       // Actions
       addMessage: (message) => {
@@ -87,9 +88,13 @@ export const useChatStore = create(
       // Computed
       getFilteredMessages: (streamId = null) => {
         const { messages, activeFilter, searchQuery, bookmarks, sortBy } = get();
+        
+        // Early return if no messages
+        if (!messages.length) return [];
+        
         let filtered = messages;
         
-        // Filter by stream
+        // Filter by stream first (most selective filter)
         if (streamId) {
           filtered = filtered.filter(m => m.streamId === streamId);
         }
@@ -120,11 +125,12 @@ export const useChatStore = create(
         
         // Apply search
         if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase();
-          filtered = filtered.filter(m =>
-            m.username.toLowerCase().includes(query) ||
-            m.text.toLowerCase().includes(query)
-          );
+          const query = searchQuery.toLowerCase().trim();
+          filtered = filtered.filter(m => {
+            const username = (m.username || '').toLowerCase();
+            const text = (m.text || '').toLowerCase();
+            return username.includes(query) || text.includes(query);
+          });
         }
         
         // Apply sorting
@@ -156,20 +162,57 @@ export const useChatStore = create(
         return bookmarks.includes(messageId);
       },
       
+      // Mark messages as read for a stream
+      markMessagesAsRead: (streamId, lastMessageId) => {
+        const { lastReadMessageIds } = get();
+        set({
+          lastReadMessageIds: {
+            ...lastReadMessageIds,
+            [streamId]: lastMessageId
+          }
+        });
+      },
+
       // Stream statistics
       getStreamStats: (streamId) => {
-        const { messages } = get();
+        const { messages, lastReadMessageIds } = get();
         const streamMessages = messages.filter(m => m.streamId === streamId);
         const questionCount = streamMessages.filter(m => isQuestion(m.text)).length;
+        
+        // Calculate unread messages
+        const lastReadId = lastReadMessageIds[streamId];
+        let unreadCount = 0;
+        let unreadQuestionCount = 0;
+        
+        if (lastReadId) {
+          // Find the index of the last read message
+          const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+          if (lastReadIndex !== -1) {
+            // Count messages after the last read message
+            const unreadMessages = streamMessages.slice(lastReadIndex + 1);
+            unreadCount = unreadMessages.length;
+            unreadQuestionCount = unreadMessages.filter(m => isQuestion(m.text)).length;
+          } else {
+            // If last read message not found, consider all messages as unread
+            unreadCount = streamMessages.length;
+            unreadQuestionCount = questionCount;
+          }
+        } else {
+          // If no lastReadId (first time viewing), consider all as unread
+          unreadCount = streamMessages.length;
+          unreadQuestionCount = questionCount;
+        }
         
         return {
           messageCount: streamMessages.length,
           questionCount,
+          unreadCount,
+          unreadQuestionCount,
         };
       },
       
       getAllStreamsStats: () => {
-        const { messages } = get();
+        const { messages, lastReadMessageIds } = get();
         const stats = {};
         
         messages.forEach(msg => {
@@ -179,12 +222,37 @@ export const useChatStore = create(
             stats[msg.streamId] = {
               messageCount: 0,
               questionCount: 0,
+              unreadCount: 0,
+              unreadQuestionCount: 0,
             };
           }
           
           stats[msg.streamId].messageCount++;
           if (isQuestion(msg.text)) {
             stats[msg.streamId].questionCount++;
+          }
+        });
+        
+        // Calculate unread messages for each stream
+        Object.keys(stats).forEach(streamId => {
+          const streamMessages = messages.filter(m => m.streamId === streamId);
+          const lastReadId = lastReadMessageIds[streamId];
+          
+          if (lastReadId) {
+            const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+            if (lastReadIndex !== -1) {
+              const unreadMessages = streamMessages.slice(lastReadIndex + 1);
+              stats[streamId].unreadCount = unreadMessages.length;
+              stats[streamId].unreadQuestionCount = unreadMessages.filter(m => isQuestion(m.text)).length;
+            } else {
+              // If last read message not found, consider all messages as unread
+              stats[streamId].unreadCount = stats[streamId].messageCount;
+              stats[streamId].unreadQuestionCount = stats[streamId].questionCount;
+            }
+          } else {
+            // If no lastReadId (first time viewing), consider all as unread
+            stats[streamId].unreadCount = stats[streamId].messageCount;
+            stats[streamId].unreadQuestionCount = stats[streamId].questionCount;
           }
         });
         
@@ -209,6 +277,7 @@ export const useChatStore = create(
       partialize: (state) => ({
         messages: state.messages,
         bookmarks: state.bookmarks,
+        lastReadMessageIds: state.lastReadMessageIds,
       }),
     }
   )

@@ -148,6 +148,7 @@
   line-height: 1;
   position: relative;
   color: black;
+  text-align: center;
 }
 
 .modal-close::before {

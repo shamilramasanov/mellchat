@@ -1,7 +1,7 @@
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
 import { PLATFORM_COLORS, PLATFORM_LOGOS } from '@shared/utils/constants';
-import { GlassCard } from '@shared/components';
+// import { GlassCard } from '@shared/components'; // Удален - используем обычные div с glass эффектами
 import './StreamCards.css';
 
 const StreamCards = () => {
@@ -24,12 +24,11 @@ const StreamCards = () => {
   return (
     <div className="stream-cards">
       {activeStreams.map((stream) => {
-        const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0 };
+        const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0, unreadCount: 0, unreadQuestionCount: 0 };
         
         return (
-          <GlassCard
+          <div
             key={stream.id}
-            interactive
             className={`stream-card ${activeStreamId === stream.id ? 'stream-card--active' : ''}`}
             onClick={() => setActiveStream(stream.id)}
           >
@@ -64,14 +63,14 @@ const StreamCards = () => {
             <div className="stream-card__stats">
               <div className="stream-card__stat">
                 <span className="stream-card__stat-icon">💬</span>
-                <span className="stream-card__stat-value">{streamStats.messageCount}</span>
+                <span className="stream-card__stat-value">{streamStats.unreadCount || 0}</span>
               </div>
               <div className="stream-card__stat">
                 <span className="stream-card__stat-icon">❓</span>
-                <span className="stream-card__stat-value">{streamStats.questionCount}</span>
+                <span className="stream-card__stat-value">{streamStats.unreadQuestionCount || 0}</span>
               </div>
             </div>
-          </GlassCard>
+          </div>
         );
       })}
     </div>

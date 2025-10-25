@@ -162,83 +162,36 @@ body.light-theme {
   background: #fff;
 }
 
+
 /* ===== Glass Effect Classes ===== */
 .glass {
-  background: var(--glass-white);
-  backdrop-filter: blur(var(--blur-md));
-  -webkit-backdrop-filter: blur(var(--blur-md));
-  border: 1px solid var(--glass-border);
+  /* Lightweight Mode */
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 
 .glass-sm {
-  backdrop-filter: blur(var(--blur-sm));
-  -webkit-backdrop-filter: blur(var(--blur-sm));
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
 
 .glass-lg {
-  backdrop-filter: blur(var(--blur-lg));
-  -webkit-backdrop-filter: blur(var(--blur-lg));
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+
 .glass-interactive {
-  transition: all var(--transition-base);
-  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .glass-interactive:hover {
-  background: var(--glass-white-hover);
-  border-color: var(--glass-border-hover);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.glass-interactive:active {
-  background: var(--glass-white-active);
-  transform: translateY(0) scale(0.98);
-}
-
-/* iOS Safari specific fixes for backdrop-filter */
-@supports (-webkit-touch-callout: none) {
-  /* iOS Safari requires EXTREME backdrop-filter settings */
-  .glass {
-    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
-    background: rgba(255, 255, 255, 0.25) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-    perspective: 1000px;
-    -webkit-perspective: 1000px;
-  }
-  
-  .glass-sm {
-    -webkit-backdrop-filter: blur(25px) saturate(300%) brightness(1.4) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .glass-lg {
-    -webkit-backdrop-filter: blur(40px) saturate(300%) brightness(1.4) !important;
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  /* Force hardware acceleration for all glass elements */
-  *[class*="glass"],
-  *[class*="__effect"],
-  *[class*="__tint"],
-  *[class*="liquidGlass"] {
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-    will-change: transform;
-    perspective: 1000px;
-    -webkit-perspective: 1000px;
-  }
-}
-
-/* Fallback for browsers without backdrop-filter support */
-@supports not (backdrop-filter: blur(1px)) {
-  .glass, .glass-sm, .glass-lg {
-    background: rgba(15, 15, 35, 0.85);
-  }
-}
 
 /* ===== Utility Classes ===== */
 .gradient-text {
@@ -305,9 +258,5 @@ a:focus-visible {
     color: black;
   }
   
-  .glass {
-    background: white;
-    backdrop-filter: none;
-    border: 1px solid #ccc;
-  }
+  /* Glass effects removed */
 }
