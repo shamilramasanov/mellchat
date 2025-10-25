@@ -97,3 +97,6 @@ Thumbs.db
 
 # Note: backend/ and browser-extension/ are needed for Railway and extension deployment
 # They are excluded from Vercel deployment via .vercelignore instead
+
+# Confidential documents
+STRATEGY.md
