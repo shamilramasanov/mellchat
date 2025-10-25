@@ -35,6 +35,8 @@ const allowedOrigins = [
   'http://192.168.88.22:5173', // Local network access (mobile testing)
   'https://mellchat.vercel.app', // Production Vercel
   'https://mellchat-v5y7.vercel.app', // Old Vercel (legacy)
+  'https://mellchat.live', // Custom domain
+  'https://www.mellchat.live', // Custom domain with www
   process.env.CORS_ORIGIN,
   process.env.FRONTEND_URL
 ].filter(Boolean);
