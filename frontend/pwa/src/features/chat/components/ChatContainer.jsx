@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useChatStore } from '../store/chatStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
+import { FILTERS } from '@shared/utils/constants';
 import MessageCard from './MessageCard';
 import Filters from './Filters';
 import './ChatContainer.css';
@@ -26,7 +27,10 @@ const ChatContainer = ({ onAddStream }) => {
   const [showNewMessagesBtn, setShowNewMessagesBtn] = useState(false);
 
   // Get messages filtered by active stream (recalculates when messages change)
-  const filteredMessages = getFilteredMessages(activeStreamId);
+  // For ALL_QUESTIONS filter, don't filter by stream
+  const activeFilter = useChatStore((state) => state.activeFilter);
+  const shouldFilterByStream = activeFilter !== FILTERS.ALL_QUESTIONS;
+  const filteredMessages = getFilteredMessages(shouldFilterByStream ? activeStreamId : null);
   
   const hasMessages = filteredMessages.length > 0;
   const hasStreams = activeStreams.length > 0;

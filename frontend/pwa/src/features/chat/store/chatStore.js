@@ -108,9 +108,9 @@ export const useChatStore = create(
             filtered = filtered.filter(m => bookmarks.includes(m.id));
             break;
           case FILTERS.ALL_QUESTIONS:
-            filtered = filtered.filter(m => isQuestion(m.text));
-            // Don't filter by stream for ALL_QUESTIONS
-            streamId = null;
+            // For ALL_QUESTIONS, we need to get ALL messages from ALL streams
+            // So we don't filter by streamId at all
+            filtered = messages.filter(m => isQuestion(m.text));
             break;
           case FILTERS.SPAM:
             filtered = filtered.filter(m => 
