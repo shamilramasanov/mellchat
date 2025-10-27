@@ -31,7 +31,14 @@ const RecentStreams = () => {
   
   // Загружаем сообщения для всех недавних стримов (кроме активных)
   useEffect(() => {
+    // НЕ загружаем если нет активных стримов (пользователь вышел из всех)
+    if (activeStreams.length === 0) {
+      console.log('🛑 Skipping recent streams loading - no active streams');
+      return;
+    }
+    
     const loadMessagesForRecentStreams = async () => {
+      console.log('🔄 Loading messages for recent streams:', streamsToShow.length);
       for (const stream of streamsToShow) {
         try {
           await loadMessagesAdaptive(stream.id, { forceReload: false });
@@ -44,13 +51,28 @@ const RecentStreams = () => {
     if (streamsToShow.length > 0) {
       loadMessagesForRecentStreams();
     }
-  }, [streamsToShow.length]); // Убираем loadMessagesAdaptive из зависимостей
+  }, [streamsToShow.length, activeStreams.length]); // Добавляем activeStreams.length в зависимости
 
   // Периодически обновляем сообщения для недавних стримов
   useEffect(() => {
     if (streamsToShow.length === 0) return;
+    
+    // НЕ обновляем если нет активных стримов (пользователь вышел из всех)
+    if (activeStreams.length === 0) {
+      console.log('🛑 Stopping recent streams updates - no active streams');
+      return;
+    }
+
+    console.log('🔄 Starting periodic updates for recent streams:', streamsToShow.length);
 
     const updateInterval = setInterval(async () => {
+      // Дополнительная проверка - если активных стримов нет, останавливаем обновления
+      if (activeStreams.length === 0) {
+        console.log('🛑 Stopping periodic updates - no active streams');
+        clearInterval(updateInterval);
+        return;
+      }
+      
       for (const stream of streamsToShow) {
         try {
           // Принудительно перезагружаем сообщения для обновления счетчиков
@@ -61,8 +83,11 @@ const RecentStreams = () => {
       }
     }, 5000); // Обновляем каждые 5 секунд
 
-    return () => clearInterval(updateInterval);
-  }, [streamsToShow]); // Убираем loadMessagesAdaptive из зависимостей
+    return () => {
+      console.log('🧹 Clearing recent streams update interval');
+      clearInterval(updateInterval);
+    };
+  }, [streamsToShow, activeStreams.length]); // Добавляем activeStreams.length в зависимости
 
   const handleStreamClick = (stream) => {
     // Always add stream to active (since we only show recent streams now)
