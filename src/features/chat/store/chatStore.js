@@ -349,8 +349,15 @@ export const useChatStore = create(
           console.log(`✅ Adaptive loading: Using cached ${existingMessages.length} messages for stream ${streamId}`);
           return { success: true, count: existingMessages.length, strategy: { strategy: 'cached' } };
         }
+
+        // Проверяем, не идет ли уже загрузка для этого стрима
+        const loadingKey = `loading_${streamId}`;
+        if (get()[loadingKey]) {
+          console.log(`⏳ Loading already in progress for stream ${streamId}`);
+          return { success: false, error: 'Loading in progress' };
+        }
         
-        set({ loading: true, error: null });
+        set({ loading: true, error: null, [loadingKey]: true });
         
         try {
           const deviceType = adaptiveMessagesService.detectDeviceType();
@@ -392,7 +399,8 @@ export const useChatStore = create(
               loading: false,
               loadingStrategy: response.strategy,
               sessionInfo: response.session,
-              hasMoreMessages: response.hasMore
+              hasMoreMessages: response.hasMore,
+              [loadingKey]: false
             });
             
             console.log(`✅ Adaptive loading: ${uniqueDbMessages.length} new messages loaded with ${response.strategy.strategy} strategy (${allMessages.length} total messages)`);
@@ -405,7 +413,8 @@ export const useChatStore = create(
           set({ 
             error: error.message, 
             loading: false,
-            databaseConnected: false 
+            databaseConnected: false,
+            [loadingKey]: false
           });
           return { success: false, error: error.message };
         }

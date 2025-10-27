@@ -18,7 +18,6 @@ function App() {
   const hasActiveStreams = useStreamsStore((state) => state.hasActiveStreams());
   const activeStreamId = useStreamsStore((state) => state.activeStreamId);
   const loadMessagesAdaptive = useChatStore((state) => state.loadMessagesAdaptive);
-  const messages = useChatStore((state) => state.messages);
   const isHome = useStreamsStore((state) => state.activeStreamId === null);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -46,16 +45,7 @@ function App() {
 
     // console.log('🚀 App: Loading messages adaptively for active stream:', activeStreamId);
     
-    // Проверяем, есть ли уже сообщения для этого стрима
-    const existingMessages = messages.filter(m => m.streamId === activeStreamId);
-    
-    // Если сообщения уже есть, не загружаем заново
-    if (existingMessages.length > 0) {
-      // console.log(`✅ App: Using cached ${existingMessages.length} messages for stream ${activeStreamId}`);
-      return;
-    }
-    
-    // Используем адаптивную загрузку только если сообщений нет
+    // Используем адаптивную загрузку - она сама проверит кэш
     loadMessagesAdaptive(activeStreamId).then((result) => {
       if (result.success) {
         console.log(`✅ App: Loaded ${result.count} messages with ${result.strategy.strategy} strategy`);
@@ -63,7 +53,7 @@ function App() {
         console.error('❌ App: Failed to load messages adaptively:', result.error);
       }
     });
-  }, [isAuth, hasActiveStreams, activeStreamId, loadMessagesAdaptive, messages]);
+  }, [isAuth, hasActiveStreams, activeStreamId, loadMessagesAdaptive]); // Убираем messages из зависимостей!
 
   if (isLoading) {
     return (
