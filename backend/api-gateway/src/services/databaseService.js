@@ -65,7 +65,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content,
+          text,
           platform,
           created_at,
           is_question
@@ -90,7 +90,7 @@ const databaseService = {
         streamId: message.streamId,
         username: message.username,
         text: message.text,
-        content: message.content,
+        text: message.text,
         platform: message.platform,
         isQuestion: message.isQuestion
       });
@@ -100,13 +100,12 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content,
+          text,
           platform,
           timestamp,
           is_question,
-          created_at,
-          user_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
+          created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
         ON CONFLICT (id) DO NOTHING
         RETURNING id
       `;
@@ -125,11 +124,10 @@ const databaseService = {
         message.id,
         message.streamId,
         message.username,
-        message.text || message.content,
+        message.text,
         message.platform,
         timestamp,
-        message.isQuestion || false,
-        message.userId || 'anonymous'
+        message.isQuestion || false
       ];
       
       logger.debug('saveMessage values:', { values });
@@ -154,8 +152,8 @@ const databaseService = {
       const placeholders = [];
       
       messages.forEach((message, index) => {
-        const baseIndex = index * 8;
-        placeholders.push(`($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, NOW(), $${baseIndex + 8})`);
+        const baseIndex = index * 7;
+        placeholders.push(`($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, NOW())`);
         
         // Преобразуем timestamp в число (bigint)
         let timestamp = message.timestamp;
@@ -171,11 +169,10 @@ const databaseService = {
           message.id,
           message.streamId,
           message.username,
-          message.text || message.content,
+          message.text,
           message.platform,
           timestamp,
-          message.isQuestion || false,
-          message.userId || 'anonymous'
+          message.isQuestion || false
         );
       });
       
@@ -184,12 +181,11 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content,
+          text,
           platform,
           timestamp,
           is_question,
-          created_at,
-          user_id
+          created_at
         ) VALUES ${placeholders.join(', ')}
         ON CONFLICT (id) DO NOTHING
         RETURNING id
@@ -235,7 +231,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content,
+          text,
           platform,
           created_at,
           is_question
@@ -260,7 +256,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content,
+          text,
           platform,
           created_at,
           is_question
@@ -268,7 +264,7 @@ const databaseService = {
         WHERE stream_id = $1 
         AND (
           LOWER(username) LIKE LOWER($2) 
-          OR LOWER(content) LIKE LOWER($2)
+          OR LOWER(text) LIKE LOWER($2)
         )
         ORDER BY created_at DESC 
         LIMIT $3 OFFSET $4
@@ -313,7 +309,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content,
+          text,
           platform,
           timestamp,
           created_at,
