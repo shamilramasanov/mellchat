@@ -49,10 +49,5 @@
     "VITE_APP_VERSION": "2.0.0",
     "VITE_ENABLE_ANALYTICS": "false",
     "VITE_ENABLE_DEBUG": "false"
-  },
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
   }
 }
