@@ -11,6 +11,7 @@ import './ChatContainer.css';
 
 // Флаг для включения/отключения логов скролла
 const ENABLE_SCROLL_LOGS = false;
+const ENABLE_DEBUG_LOGS = false;
 
 const THRESHOLD = 120; // px — когда считать "внизу"
 const SCROLL_RESET_DELAY = 500; // Увеличили с 200ms до 500ms
@@ -121,17 +122,21 @@ const ChatContainer = ({ onAddStream }) => {
       return;
     }
 
-    console.log('🚀 Force scrolling to bottom:', {
-      scrollHeight: el.scrollHeight,
-      scrollTop: el.scrollTop,
-      clientHeight: el.clientHeight,
-      behavior,
-      messagesCount: streamMessages?.length || 0
-    });
+    if (ENABLE_DEBUG_LOGS) {
+      console.log('🚀 Force scrolling to bottom:', {
+        scrollHeight: el.scrollHeight,
+        scrollTop: el.scrollTop,
+        clientHeight: el.clientHeight,
+        behavior,
+        messagesCount: streamMessages?.length || 0
+      });
+    }
 
     // Проверяем, что есть контент для скролла
     if (el.scrollHeight <= el.clientHeight) {
-      console.log('⚠️ No scrollable content, scrollHeight <= clientHeight');
+      if (ENABLE_DEBUG_LOGS) {
+        console.log('⚠️ No scrollable content, scrollHeight <= clientHeight');
+      }
       return;
     }
 

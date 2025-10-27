@@ -50,18 +50,8 @@ export const useChatStore = create(
         const { messages, searchQuery } = get();
         let streamMessages = messages.filter(m => m.streamId === streamId);
 
-        console.log('🔍 getStreamMessages:', {
-          streamId,
-          totalMessages: messages.length,
-          streamMessagesCount: streamMessages.length,
-          searchQuery: searchQuery.trim(),
-          firstFewStreamMessages: streamMessages.slice(0, 3).map(m => ({ id: m.id, timestamp: m.timestamp })),
-          allStreamIds: [...new Set(messages.map(m => m.streamId))],
-          streamIdCounts: messages.reduce((acc, m) => {
-            acc[m.streamId] = (acc[m.streamId] || 0) + 1;
-            return acc;
-          }, {})
-        });
+        // Отключено для уменьшения логов в консоли
+        // console.log('🔍 getStreamMessages:', { ... });
 
         // Применяем поиск если есть запрос
         if (searchQuery.trim()) {

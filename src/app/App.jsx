@@ -44,14 +44,14 @@ function App() {
   useEffect(() => {
     if (!isAuth || !hasActiveStreams || !activeStreamId) return;
 
-    console.log('🚀 App: Loading messages adaptively for active stream:', activeStreamId);
+    // console.log('🚀 App: Loading messages adaptively for active stream:', activeStreamId);
     
     // Проверяем, есть ли уже сообщения для этого стрима
     const existingMessages = messages.filter(m => m.streamId === activeStreamId);
     
     // Если сообщения уже есть, не загружаем заново
     if (existingMessages.length > 0) {
-      console.log(`✅ App: Using cached ${existingMessages.length} messages for stream ${activeStreamId}`);
+      // console.log(`✅ App: Using cached ${existingMessages.length} messages for stream ${activeStreamId}`);
       return;
     }
     
