@@ -1,10 +1,9 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "buildCommand": "cd frontend/pwa && npm run build",
+  "outputDirectory": "frontend/pwa/dist",
+  "devCommand": "cd frontend/pwa && npm run dev",
+  "installCommand": "cd frontend/pwa && npm install",
   "framework": "vite",
-  "nodeVersion": "22.20.0",
   "rewrites": [
     {
       "source": "/(.*)",
