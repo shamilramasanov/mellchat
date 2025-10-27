@@ -1,5 +1,5 @@
 # Exclude backend and browser-extension from Vercel deployment
-backend/
+backend/api-gateway/
 browser-extension/
 
 # Standard ignores

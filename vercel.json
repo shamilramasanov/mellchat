@@ -4,6 +4,11 @@
   "devCommand": "cd frontend/pwa && npm run dev",
   "installCommand": "cd frontend/pwa && npm install",
   "framework": "vite",
+  "functions": {
+    "frontend/pwa/src/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
