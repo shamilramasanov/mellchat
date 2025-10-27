@@ -13,6 +13,8 @@ export const useWebSocket = () => {
   const reconnectTimeoutRef = useRef(null);
   const maxReconnectAttempts = 5;
   const listeners = useRef(new Map());
+  const pingIntervalRef = useRef(null);
+  const currentConnectionId = useRef(null);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -27,11 +29,27 @@ export const useWebSocket = () => {
           setStatus(CONNECTION_STATUS.CONNECTED);
           reconnectAttempts.current = 0;
           toast.dismiss('ws-reconnecting');
+          
+          // Запускаем ping каждые 5 минут для поддержания активности
+          pingIntervalRef.current = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN && currentConnectionId.current) {
+              ws.send(JSON.stringify({ 
+                type: 'ping', 
+                connectionId: currentConnectionId.current 
+              }));
+            }
+          }, 5 * 60 * 1000); // 5 минут
         };
 
         // Connection closed
         ws.onclose = () => {
           setStatus(CONNECTION_STATUS.DISCONNECTED);
+          
+          // Очищаем ping интервал
+          if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current);
+            pingIntervalRef.current = null;
+          }
           
           // Attempt reconnection silently
           if (reconnectAttempts.current < maxReconnectAttempts) {
@@ -88,6 +106,9 @@ export const useWebSocket = () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
       if (socketRef.current) {
         socketRef.current.close();
       }
@@ -122,11 +143,15 @@ export const useWebSocket = () => {
 
   // Subscribe to a stream connection
   const subscribe = useCallback((connectionId) => {
+    currentConnectionId.current = connectionId;
     emit('subscribe', { connectionId });
   }, [emit]);
 
   // Unsubscribe from a stream connection
   const unsubscribe = useCallback((connectionId) => {
+    if (currentConnectionId.current === connectionId) {
+      currentConnectionId.current = null;
+    }
     emit('unsubscribe', { connectionId });
   }, [emit]);
 
