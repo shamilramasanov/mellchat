@@ -21,7 +21,7 @@ router.get('/stream/:streamId', async (req, res) => {
     const { limit = 50, offset = 0, isQuestion } = req.query;
     
     let query = `
-      SELECT id, stream_id, platform, user_id, username, content, 
+      SELECT id, stream_id, platform, user_id, username, text, 
              created_at, is_question
       FROM messages 
       WHERE stream_id = $1 AND is_deleted = false
@@ -63,7 +63,7 @@ router.get('/stream/:streamId/questions', async (req, res) => {
     
     const query = `
       SELECT q.id, q.message_id, q.stream_id, q.user_id, q.snippet, 
-             q.created_at, m.content, m.username, m.platform
+             q.created_at, m.text, m.username, m.platform
       FROM questions q
       JOIN messages m ON m.id = q.message_id
       WHERE q.stream_id = $1
