@@ -51,17 +51,25 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
+// Log allowed origins for debugging
+logger.info('CORS allowed origins:', { allowedOrigins });
+
 app.use(cors({
   origin: (origin, callback) => {
+    // Log CORS requests for debugging
+    logger.info('CORS request:', { origin, allowedOrigins });
+    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
+      logger.info('CORS allowed:', { origin });
       return callback(null, true);
     }
     
     // Allow any Vercel preview URL
     if (origin && origin.includes('.vercel.app')) {
+      logger.info('CORS allowed (Vercel):', { origin });
       return callback(null, true);
     }
     
@@ -69,9 +77,11 @@ app.use(cors({
     if (origin && (origin.startsWith('chrome-extension://') || 
                    origin.startsWith('moz-extension://') || 
                    origin.startsWith('safari-web-extension://'))) {
+      logger.info('CORS allowed (extension):', { origin });
       return callback(null, true);
     }
     
+    logger.warn('CORS blocked:', { origin });
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
