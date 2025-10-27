@@ -44,7 +44,7 @@ const RecentStreams = () => {
     if (streamsToShow.length > 0) {
       loadMessagesForRecentStreams();
     }
-  }, [streamsToShow.length, loadMessagesAdaptive]);
+  }, [streamsToShow.length]); // Убираем loadMessagesAdaptive из зависимостей
 
   // Периодически обновляем сообщения для недавних стримов
   useEffect(() => {
@@ -62,7 +62,7 @@ const RecentStreams = () => {
     }, 5000); // Обновляем каждые 5 секунд
 
     return () => clearInterval(updateInterval);
-  }, [streamsToShow, loadMessagesAdaptive]);
+  }, [streamsToShow]); // Убираем loadMessagesAdaptive из зависимостей
 
   const handleStreamClick = (stream) => {
     // Always add stream to active (since we only show recent streams now)

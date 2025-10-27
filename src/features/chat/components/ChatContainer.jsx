@@ -319,7 +319,7 @@ const ChatContainer = ({ onAddStream }) => {
         loadMessagesFromDatabase(activeStreamId, 100);
       }
     });
-  }, [activeStreamId, loadMessagesAdaptive, loadMessagesFromDatabase]); // Убираем зависимости автоскролла
+  }, [activeStreamId]); // Убираем функции из зависимостей для предотвращения бесконечных запросов
 
   // === Автоскролл при смене стрима ===
   useEffect(() => {
