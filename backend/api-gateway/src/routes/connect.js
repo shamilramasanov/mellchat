@@ -368,25 +368,32 @@ router.post('/disconnect', async (req, res, next) => {
       logger.info(`🔌 ${connection.platform} client disconnected for: ${connectionId}`);
     }
     
-    // For Kick connections, disconnect from activeKickConnections
+    // For Kick connections, also check activeKickConnections for client objects
     if (isKickConnection || connection.platform === 'kick') {
       const activeKickConnections = global.activeKickConnections;
       logger.info(`🔍 Disconnecting Kick connection: ${connectionId}`);
       
-      if (connection.kickSimpleClient) {
-        connection.kickSimpleClient.disconnect();
-        logger.info(`🔌 KickSimpleClient disconnected: ${connectionId}`);
+      // Get Kick connection from activeKickConnections if it exists
+      const kickConn = activeKickConnections.get(connectionId);
+      
+      if (kickConn) {
+        if (kickConn.kickSimpleClient) {
+          kickConn.kickSimpleClient.disconnect();
+          logger.info(`🔌 KickSimpleClient disconnected: ${connectionId}`);
+        }
+        if (kickConn.kickJsClient) {
+          kickConn.kickJsClient.disconnect();
+          logger.info(`🔌 KickJsClient disconnected: ${connectionId}`);
+        }
+        if (kickConn.wsClient) {
+          kickConn.wsClient.close();
+          logger.info(`🔌 Kick WebSocket closed: ${connectionId}`);
+        }
+        activeKickConnections.delete(connectionId);
+        logger.info(`🔌 Kick connection removed from activeKickConnections: ${connectionId}`);
+      } else {
+        logger.warn(`⚠️ Kick connection not found in activeKickConnections: ${connectionId}`);
       }
-      if (connection.kickJsClient) {
-        connection.kickJsClient.disconnect();
-        logger.info(`🔌 KickJsClient disconnected: ${connectionId}`);
-      }
-      if (connection.wsClient) {
-        connection.wsClient.close();
-        logger.info(`🔌 Kick WebSocket closed: ${connectionId}`);
-      }
-      activeKickConnections.delete(connectionId);
-      logger.info(`🔌 Kick connection removed from activeKickConnections: ${connectionId}`);
     }
     
     // Remove from activeConnections if it exists there

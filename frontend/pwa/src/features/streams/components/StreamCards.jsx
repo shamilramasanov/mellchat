@@ -8,7 +8,7 @@ const StreamCards = () => {
   const activeStreams = useStreamsStore((state) => state.activeStreams);
   const activeStreamId = useStreamsStore((state) => state.activeStreamId);
   const setActiveStream = useStreamsStore((state) => state.setActiveStream);
-  const removeStream = useStreamsStore((state) => state.removeStream);
+  const switchStream = useStreamsStore((state) => state.switchStream);
   
   // Subscribe to messages so component re-renders when messages change
   const messages = useChatStore((state) => state.messages);
@@ -37,12 +37,12 @@ const StreamCards = () => {
               onClick={async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('🔴 Closing stream:', stream.id);
+                console.log('🔄 Switching away from stream:', stream.id);
                 try {
-                  removeStream(stream.id);
-                  console.log('✅ Stream removed successfully');
+                  switchStream(stream.id);
+                  console.log('✅ Switched to another stream successfully');
                 } catch (error) {
-                  console.error('❌ Error removing stream:', error);
+                  console.error('❌ Error switching stream:', error);
                 }
               }}
               onMouseDown={(e) => {
@@ -51,7 +51,7 @@ const StreamCards = () => {
               onTouchStart={(e) => {
                 e.stopPropagation();
               }}
-              aria-label="Switch away from stream"
+              aria-label="Switch to another stream"
               style={{ zIndex: 1000 }}
             >
               ✕

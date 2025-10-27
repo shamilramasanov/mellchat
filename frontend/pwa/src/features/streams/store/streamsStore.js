@@ -88,8 +88,35 @@ export const useStreamsStore = create(
 
       // Switch stream without disconnect (from chat page)
       // Удалить стрим из активных
-      removeStream: (streamId) => {
+      removeStream: async (streamId) => {
         const { activeStreams, activeStreamId } = get();
+        
+        // Находим стрим для получения connectionId
+        const streamToRemove = activeStreams.find(s => s.id === streamId);
+        
+        // Отправляем запрос на бэкенд для закрытия соединения
+        if (streamToRemove?.connectionId) {
+          try {
+            console.log('🔌 Disconnecting from stream:', streamToRemove.connectionId);
+            const response = await fetch('/api/v1/connect/disconnect', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                connectionId: streamToRemove.connectionId
+              })
+            });
+            
+            if (response.ok) {
+              console.log('✅ Successfully disconnected from stream');
+            } else {
+              console.warn('⚠️ Failed to disconnect from stream:', response.status);
+            }
+          } catch (error) {
+            console.error('❌ Error disconnecting from stream:', error);
+          }
+        }
         
         // Удаляем стрим из списка активных
         const updatedStreams = activeStreams.filter(s => s.id !== streamId);
@@ -107,15 +134,58 @@ export const useStreamsStore = create(
         
         console.log(`🗑️ Removed stream ${streamId}, active stream: ${newActiveStreamId}`);
       },
+
+      // Принудительно закрыть все соединения
+      disconnectAllStreams: async () => {
+        const { activeStreams } = get();
+        
+        console.log('🔌 Disconnecting from all streams...');
+        
+        // Отправляем запросы на закрытие всех соединений
+        const disconnectPromises = activeStreams.map(async (stream) => {
+          if (stream.connectionId) {
+            try {
+              const response = await fetch('/api/v1/connect/disconnect', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  connectionId: stream.connectionId
+                })
+              });
+              
+              if (response.ok) {
+                console.log(`✅ Disconnected from ${stream.id}`);
+              } else {
+                console.warn(`⚠️ Failed to disconnect from ${stream.id}:`, response.status);
+              }
+            } catch (error) {
+              console.error(`❌ Error disconnecting from ${stream.id}:`, error);
+            }
+          }
+        });
+        
+        await Promise.all(disconnectPromises);
+        
+        // Очищаем все активные стримы
+        set({ 
+          activeStreams: [],
+          activeStreamId: null
+        });
+        
+        console.log('✅ All streams disconnected');
+      },
       
       switchStream: (streamId) => {
         const { activeStreams, activeStreamId } = get();
         
-        // If switching away from current stream, just change active
+        // If switching away from current stream, remove it and switch to another
         if (activeStreamId === streamId) {
           const otherStreams = activeStreams.filter(s => s.id !== streamId);
           const newActiveStreamId = otherStreams[0]?.id || null;
           set({ 
+            activeStreams: otherStreams, // Удаляем стрим из активных
             activeStreamId: newActiveStreamId,
             shouldAutoScroll: true // Устанавливаем флаг автоскролла при переключении
           });

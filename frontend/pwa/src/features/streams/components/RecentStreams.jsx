@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useStreamsStore } from '../store/streamsStore';
@@ -11,19 +11,58 @@ import './RecentStreams.css';
 const RecentStreams = () => {
   const { t } = useTranslation();
   const recentStreams = useStreamsStore((state) => state.recentStreams);
+  const activeStreams = useStreamsStore((state) => state.activeStreams);
   const addStream = useStreamsStore((state) => state.addStream);
   const removeFromRecent = useStreamsStore((state) => state.removeFromRecent);
   
   // Subscribe to messages so component re-renders when messages change
   const messages = useChatStore((state) => state.messages);
   const getAllStreamsStats = useChatStore((state) => state.getAllStreamsStats);
+  const loadMessagesAdaptive = useChatStore((state) => state.loadMessagesAdaptive);
   const [showAddStream, setShowAddStream] = useState(false);
+  
+  // Показываем только недавние стримы, исключая активные
+  const streamsToShow = recentStreams.filter(stream => 
+    !activeStreams.some(activeStream => activeStream.id === stream.id)
+  );
   
   // Recalculate stats whenever messages change
   const stats = getAllStreamsStats();
   
-  // Always show recent streams (no more active streams page)
-  const streamsToShow = recentStreams;
+  // Загружаем сообщения для всех недавних стримов (кроме активных)
+  useEffect(() => {
+    const loadMessagesForRecentStreams = async () => {
+      for (const stream of streamsToShow) {
+        try {
+          await loadMessagesAdaptive(stream.id, { forceReload: false });
+        } catch (error) {
+          console.warn(`Failed to load messages for stream ${stream.id}:`, error);
+        }
+      }
+    };
+    
+    if (streamsToShow.length > 0) {
+      loadMessagesForRecentStreams();
+    }
+  }, [streamsToShow.length, loadMessagesAdaptive]);
+
+  // Периодически обновляем сообщения для недавних стримов
+  useEffect(() => {
+    if (streamsToShow.length === 0) return;
+
+    const updateInterval = setInterval(async () => {
+      for (const stream of streamsToShow) {
+        try {
+          // Принудительно перезагружаем сообщения для обновления счетчиков
+          await loadMessagesAdaptive(stream.id, { forceReload: true });
+        } catch (error) {
+          console.warn(`Failed to update messages for stream ${stream.id}:`, error);
+        }
+      }
+    }, 5000); // Обновляем каждые 5 секунд
+
+    return () => clearInterval(updateInterval);
+  }, [streamsToShow, loadMessagesAdaptive]);
 
   const handleStreamClick = (stream) => {
     // Always add stream to active (since we only show recent streams now)
@@ -33,8 +72,44 @@ const RecentStreams = () => {
   const handleRemove = async (e, streamId) => {
     e.stopPropagation();
     if (confirm(t('streams.removeConfirm'))) {
-      // Always remove from recent (since we only show recent streams now)
+      // Находим стрим для получения connectionId (сначала в недавних, потом в активных)
+      let streamToRemove = recentStreams.find(s => s.id === streamId);
+      if (!streamToRemove) {
+        streamToRemove = activeStreams.find(s => s.id === streamId);
+      }
+      
+      // Отправляем запрос на бэкенд для закрытия соединения
+      if (streamToRemove?.connectionId) {
+        try {
+          console.log('🔌 Disconnecting from stream:', streamToRemove.connectionId);
+          const response = await fetch('/api/v1/connect/disconnect', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              connectionId: streamToRemove.connectionId
+            })
+          });
+          
+          if (response.ok) {
+            console.log('✅ Successfully disconnected from stream');
+          } else {
+            console.warn('⚠️ Failed to disconnect from stream:', response.status);
+          }
+        } catch (error) {
+          console.error('❌ Error disconnecting from stream:', error);
+        }
+      } else {
+        console.warn('⚠️ No connectionId found for stream:', streamId);
+      }
+      
+      // Удаляем из недавних стримов
       removeFromRecent(streamId);
+      
+      // Также удаляем из активных, если он там есть
+      const removeStream = useStreamsStore.getState().removeStream;
+      await removeStream(streamId);
     }
   };
 

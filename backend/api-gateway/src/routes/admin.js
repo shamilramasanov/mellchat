@@ -7,24 +7,62 @@ const messageQueueService = require('../services/messageQueueService');
 // Очистить все активные подключения
 router.post('/clear-all', (req, res) => {
   try {
-    // Очищаем глобальные подключения
+    // Сначала отключаем все Kick клиенты
     global.activeKickConnections = global.activeKickConnections || new Map();
+    for (const [connectionId, conn] of global.activeKickConnections.entries()) {
+      try {
+        if (conn.kickSimpleClient) {
+          conn.kickSimpleClient.disconnect();
+          logger.info(`🔌 KickSimpleClient disconnected: ${connectionId}`);
+        }
+        if (conn.kickJsClient) {
+          conn.kickJsClient.disconnect();
+          logger.info(`🔌 KickJsClient disconnected: ${connectionId}`);
+        }
+        if (conn.wsClient) {
+          conn.wsClient.close();
+          logger.info(`🔌 Kick WebSocket closed: ${connectionId}`);
+        }
+      } catch (error) {
+        logger.error(`Error disconnecting Kick client ${connectionId}:`, error);
+      }
+    }
     global.activeKickConnections.clear();
     
     // Очищаем другие подключения если есть
     if (global.activeTwitchConnections) {
+      for (const [connectionId, conn] of global.activeTwitchConnections.entries()) {
+        try {
+          if (conn.client) {
+            conn.client.disconnect();
+            logger.info(`🔌 Twitch client disconnected: ${connectionId}`);
+          }
+        } catch (error) {
+          logger.error(`Error disconnecting Twitch client ${connectionId}:`, error);
+        }
+      }
       global.activeTwitchConnections.clear();
     }
     
     if (global.activeYoutubeConnections) {
+      for (const [connectionId, conn] of global.activeYoutubeConnections.entries()) {
+        try {
+          if (conn.client) {
+            conn.client.disconnect();
+            logger.info(`🔌 YouTube client disconnected: ${connectionId}`);
+          }
+        } catch (error) {
+          logger.error(`Error disconnecting YouTube client ${connectionId}:`, error);
+        }
+      }
       global.activeYoutubeConnections.clear();
     }
     
-    logger.info('🧹 All active connections cleared');
+    logger.info('🧹 All active connections cleared and disconnected');
     
     res.json({
       success: true,
-      message: 'All active connections cleared'
+      message: 'All active connections cleared and disconnected'
     });
   } catch (error) {
     logger.error('Error clearing connections:', error);
