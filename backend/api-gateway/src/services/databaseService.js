@@ -6,7 +6,8 @@ let pool;
 function ensurePool() {
   if (pool) return pool;
   
-  const connectionString = process.env.POSTGRES_URL || 'postgresql://mellchat:mellchat_password@localhost:5432/mellchat';
+  // Поддержка Railway и других облачных провайдеров
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || 'postgresql://mellchat:mellchat_password@localhost:5432/mellchat';
   
   pool = new Pool({
     connectionString,

@@ -9,10 +9,16 @@ let redisConnection;
 let useBullMQ = false;
 
 try {
-  redisConnection = new IORedis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD,
+  // Поддержка как REDIS_URL, так и отдельных переменных
+  const redisConfig = process.env.REDIS_URL ? 
+    process.env.REDIS_URL : 
+    {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: process.env.REDIS_PORT || 6379,
+      password: process.env.REDIS_PASSWORD,
+    };
+
+  redisConnection = new IORedis(redisConfig, {
     maxRetriesPerRequest: 3,
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
