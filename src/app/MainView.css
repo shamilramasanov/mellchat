@@ -1,0 +1,39 @@
+.main-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0; /* Important for flexbox overflow */
+}
+
+.main-view__streams {
+  flex-shrink: 0;
+  padding: calc(var(--spacing-lg) - 1px) var(--spacing-md) var(--spacing-md) var(--spacing-md); /* Поднимаем на 1px вверх */
+  position: relative;
+  background: transparent;
+  z-index: 10;
+  min-height: 160px; /* Увеличиваем минимальную высоту для карточек */
+  width: 100%; /* Занимаем всю доступную ширину */
+  box-sizing: border-box; /* Включаем отступы в общую ширину */
+}
+
+/* Divider line between streams and chat - REMOVED */
+
+.main-view__chat {
+  flex: 1;
+  min-height: 0; /* Important for flexbox overflow */
+  display: flex;
+  flex-direction: column;
+  overflow: visible; /* Разрешаем видимость за пределами контейнера */
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .main-view__streams {
+    padding: calc(var(--spacing-md) - 1px) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm); /* Поднимаем на 1px вверх для мобильных */
+    min-height: 140px; /* Увеличиваем минимальную высоту для мобильных */
+    width: 100%; /* Занимаем всю доступную ширину */
+    box-sizing: border-box; /* Включаем отступы в общую ширину */
+  }
+}
+

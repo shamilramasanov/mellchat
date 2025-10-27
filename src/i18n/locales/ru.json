@@ -1,0 +1,125 @@
+{
+  "app": {
+    "name": "MellChat",
+    "tagline": "Мультиплатформенный Агрегатор Чатов"
+  },
+  "auth": {
+    "title": "Добро пожаловать в MellChat",
+    "subtitle": "Подключите ваши любимые платформы для стримов",
+    "login": "Войти через Google",
+    "skip": "Пропустить",
+    "logout": "Выйти"
+  },
+  "connection": {
+    "online": "Онлайн",
+    "offline": "Офлайн",
+    "reconnecting": "Переподключение...",
+    "connected": "Подключено",
+    "disconnected": "Отключено"
+  },
+        "search": {
+          "placeholder": "Поиск по сообщениям... (например: dyrachyo)",
+          "messages": "Поиск по сообщениям...",
+          "clear": "Очистить поиск"
+        },
+  "filters": {
+    "questions": "Вопросы",
+    "allQuestions": "Все Вопросы",
+    "spam": "Спам"
+  },
+  "sort": {
+    "time": "Время",
+    "popular": "Популярные",
+    "active": "Активные"
+  },
+  "chat": {
+    "noMessages": "Пока нет сообщений",
+    "connectStream": "Подключите стрим для начала",
+    "newMessage": "новое сообщение",
+    "newMessages": "новых сообщений",
+    "searchPlaceholder": "Поиск по никнейму или сообщению...",
+    "clearMessages": "Очистить Сообщения",
+    "clearConfirm": "Вы уверены, что хотите очистить все сообщения?"
+  },
+  "message": {
+    "like": "Нравится",
+    "dislike": "Не нравится",
+    "copy": "Копировать сообщение",
+    "copied": "Скопировано!",
+    "question": "Вопрос"
+  },
+  "streams": {
+    "add": "Добавить Стрим",
+    "recent": "Последние стримы",
+    "active": "Активные Стримы",
+    "recentSubtitle": "",
+    "urlPlaceholder": "Вставьте URL стрима сюда...",
+    "connect": "Подключить",
+    "disconnect": "Отключить",
+    "connecting": "Подключение...",
+    "cancel": "Отмена",
+    "remove": "Удалить из истории",
+    "removeConfirm": "Удалить этот стрим из истории?",
+    "noRecent": "",
+    "noRecentSubtitle": ""
+  },
+  "archive": {
+    "found": "Найден Архив Сообщений",
+    "description": "Для этого стрима сохранены предыдущие сообщения. Хотите загрузить архив или начать с чистого листа?",
+    "load": "Загрузить Архив",
+    "clear": "Начать с Нуля",
+    "message": "сообщение",
+    "messages": "сообщений"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык",
+    "autoTranslate": "Автоперевод",
+    "fontSize": "Размер Шрифта",
+    "fontSizeSmall": "Маленький",
+    "fontSizeMedium": "Средний",
+    "fontSizeLarge": "Большой",
+    "fontSizeXLarge": "Очень Большой",
+    "autoScroll": "Автопрокрутка",
+    "autoScrollDelay": "Задержка Автопрокрутки",
+    "displayDensity": "Плотность Отображения",
+    "densityCompact": "Компактная",
+    "densityComfortable": "Комфортная",
+    "densitySpacious": "Просторная",
+    "notifications": "Уведомления",
+    "notifyNewMessages": "Уведомлять о Новых Сообщениях",
+    "notifyQuestions": "Уведомлять о Вопросах",
+    "historyRetention": "Хранение Истории",
+    "historyDays": "{{count}} дней",
+    "nicknameColors": "Цвета Никнеймов",
+    "nicknameRandom": "Случайные",
+    "nicknamePlatform": "Платформа",
+    "nicknameMono": "Моно",
+    "close": "Закрыть"
+  },
+  "errors": {
+    "invalidUrl": "Неверный URL стрима",
+    "connectionFailed": "Ошибка подключения",
+    "streamNotFound": "Стрим не найден",
+    "unknownError": "Произошла неожиданная ошибка"
+  },
+  "platforms": {
+    "youtube": "YouTube",
+    "twitch": "Twitch",
+    "kick": "Kick"
+  },
+  "common": {
+    "ok": "ОК",
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "yes": "Да",
+    "no": "Нет",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно"
+  }
+}
+

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>True Liquid Glass - Ultimate Effect</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Animated flower background from Test */
+    .bg {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+    }
+
+    .bg img {
+      width: 100%;
+      display: block;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    /* True Liquid Glass Base */
+    .liquidGlass {
+      position: relative;
+      border-radius: 1rem;
+      padding: 2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      isolation: isolate;
+    }
+
+    /* Layer 1: Displacement + Blur Effect */
+    .liquidGlass-effect {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(255, 255, 255, 0.25);
+      border: 2px solid transparent;
+      box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.6),
+        inset 0 4px 8px rgba(255, 255, 255, 0.3),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.1),
+        0 16px 32px rgba(0, 0, 0, 0.12);
+      backdrop-filter: url(#frosted) blur(3px) saturate(150%);
+      -webkit-backdrop-filter: url(#frosted) blur(3px) saturate(150%);
+      z-index: -1;
+    }
+
+    /* Layer 2: Color Tint */
+    .liquidGlass-tint {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.05) 100%
+      );
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Layer 3: Shine/Highlight */
+    .liquidGlass-shine {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.4) 0%,
+        transparent 40%,
+        transparent 60%,
+        rgba(255, 255, 255, 0.1) 100%
+      );
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Content */
+    .liquidGlass-content {
+      position: relative;
+      z-index: 1;
+      color: #000;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+
+    /* Hover Animation */
+    .liquidGlass:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .liquidGlass:hover .liquidGlass-shine {
+      opacity: 1.2;
+    }
+
+    /* Button Variant */
+    .liquidGlass-btn {
+      min-width: 120px;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Card Variant */
+    .liquidGlass-card {
+      width: 300px;
+      min-height: 200px;
+    }
+
+    .liquidGlass-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .liquidGlass-card p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      opacity: 0.9;
+    }
+
+    /* Round Button (like Test copy) */
+    .liquidGlass-round {
+      width: 5rem;
+      height: 5rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .liquidGlass-round .liquidGlass-content::before,
+    .liquidGlass-round .liquidGlass-content::after {
+      content: "";
+      position: absolute;
+      width: 40%;
+      height: 3px;
+      background: #000;
+      border-radius: 3px;
+    }
+
+    .liquidGlass-round .liquidGlass-content::after {
+      transform: rotate(90deg);
+    }
+
+    /* Title */
+    h1 {
+      position: fixed;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-size: 2rem;
+      text-shadow: 
+        0 2px 10px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(76, 201, 240, 0.5);
+      z-index: 100;
+    }
+
+    /* Info box */
+    .info {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 1rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+
+    .info strong {
+      color: #4cc9f0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg">
+    <img src="https://i.ibb.co/bMvc7Zr6/Vibrant-Summer-Meadow-Watercolor.png" alt="">
+    <img src="https://i.ibb.co/ZRH04pV3/Vibrant-Summer-Meadow-Watercolor-1.png" alt="">
+    <img src="https://i.ibb.co/bMvc7Zr6/Vibrant-Summer-Meadow-Watercolor.png" alt="">
+  </div>
+
+  <h1>True Liquid Glass ✨</h1>
+
+  <!-- Button -->
+  <div class="liquidGlass liquidGlass-btn" id="btn">
+    <div class="liquidGlass-effect"></div>
+    <div class="liquidGlass-tint"></div>
+    <div class="liquidGlass-shine"></div>
+    <div class="liquidGlass-content">
+      BUTTON
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="liquidGlass liquidGlass-card">
+    <div class="liquidGlass-effect"></div>
+    <div class="liquidGlass-tint"></div>
+    <div class="liquidGlass-shine"></div>
+    <div class="liquidGlass-content">
+      <h3>Stream Card</h3>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vitae elit libero.</p>
+    </div>
+  </div>
+
+  <!-- Round Button (Plus) -->
+  <div class="liquidGlass liquidGlass-round" id="btnRound">
+    <div class="liquidGlass-effect"></div>
+    <div class="liquidGlass-tint"></div>
+    <div class="liquidGlass-shine"></div>
+    <div class="liquidGlass-content"></div>
+  </div>
+
+  <!-- Info -->
+  <div class="info">
+    <strong>Displacement Map</strong> + <strong>4 Layers</strong> + <strong>Animated Shine</strong>
+  </div>
+
+  <!-- SVG Filter with Displacement Map -->
+  <svg style="position:absolute;width:0;height:0">
+    <filter id="frosted" primitiveUnits="objectBoundingBox">
+      <feImage href="data:image/png;base64,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" x="0" y="0" width="1" height="1" result="map"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0.02" result="blur"/>
+      <feDisplacementMap id="disp" in="blur" in2="map" scale="1" xChannelSelector="R" yChannelSelector="G">
+        <animate attributeName="scale" to="1.4" dur="0.3s" begin="btn.mouseover" fill="freeze"/>
+        <animate attributeName="scale" to="1" dur="0.3s" begin="btn.mouseout" fill="freeze"/>
+        <animate attributeName="scale" to="1.4" dur="0.3s" begin="btnRound.mouseover" fill="freeze"/>
+        <animate attributeName="scale" to="1" dur="0.3s" begin="btnRound.mouseout" fill="freeze"/>
+      </feDisplacementMap>
+    </filter>
+  </svg>
+</body>
+</html>
+

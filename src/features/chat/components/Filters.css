@@ -1,0 +1,172 @@
+.filters {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm); /* Уменьшаем промежутки */
+  padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing-lg); /* Унифицируем отступы */
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+  isolation: isolate;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.2); /* Уменьшаем тень */
+  background: #1a1a2e;
+  /* Убираем верхнюю границу */
+  
+  /* Растягиваем фон до самого низа */
+  margin-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, var(--spacing-sm));
+}
+
+/* Glass effects removed */
+
+/* Gradient overlay at top - REMOVED */
+
+.filters__sort {
+  display: flex;
+  gap: var(--spacing-xs); /* Уменьшаем промежутки */
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 2;
+}
+
+.filters__sort::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sort Buttons - Glass Effect */
+.filters__sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: var(--spacing-xs) var(--spacing-sm); /* Уменьшаем отступы */
+  border-radius: 1rem; /* Уменьшаем радиус */
+  font-size: var(--font-size-xs); /* Уменьшаем размер шрифта */
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.filters__sort-btn:hover {
+  padding: calc(var(--spacing-xs) + 0.1rem) calc(var(--spacing-sm) + 0.1rem); /* Обновляем hover */
+}
+
+.filters__sort-btn--active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.filters__buttons {
+  display: flex;
+  gap: var(--spacing-xs); /* Уменьшаем промежутки */
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  position: relative;
+  z-index: 2;
+}
+
+.filters__buttons::-webkit-scrollbar {
+  display: none;
+}
+
+/* Filter Buttons - Glass Effect */
+.filters__btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem; /* Уменьшаем промежуток */
+  padding: var(--spacing-xs) var(--spacing-sm); /* Уменьшаем отступы */
+  border-radius: 1rem; /* Уменьшаем радиус */
+  font-size: var(--font-size-xs); /* Уменьшаем размер шрифта */
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.filters__btn-count {
+  padding: 0.125rem 0.375rem; /* Уменьшаем отступы */
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem; /* Уменьшаем радиус */
+  font-size: 0.625rem; /* Уменьшаем размер шрифта */
+  font-weight: var(--font-weight-bold);
+  min-width: 1.25rem; /* Уменьшаем минимальную ширину */
+  text-align: center;
+}
+
+.filters__btn:hover {
+  padding: calc(var(--spacing-xs) + 0.1rem) calc(var(--spacing-sm) + 0.15rem); /* Обновляем hover */
+}
+
+.filters__btn--active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Search Input */
+.filters__search {
+  position: relative;
+  padding: var(--spacing-xs); /* Уменьшаем отступы */
+  border-radius: var(--radius-xl); /* Исправляем название переменной */
+  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.filters__search:hover {
+  padding: calc(var(--spacing-xs) + 0.1rem); /* Обновляем hover */
+}
+
+.filters__search:focus-within {
+  padding: calc(var(--spacing-xs) + 0.15rem); /* Обновляем focus */
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.filters__search-input {
+  width: 100%;
+  padding: 0.125rem 0.375rem 0.125rem 2rem; /* Уменьшаем отступы */
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg); /* Исправляем название переменной */
+  font-size: var(--font-size-sm); /* Уменьшаем размер шрифта */
+  color: var(--text-primary);
+  font-weight: 500;
+  outline: none;
+  position: relative;
+  z-index: 100;
+}
+
+.filters__search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.filters__search-icon {
+  position: absolute;
+  left: 0.75rem; /* Уменьшаем отступ */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem; /* Уменьшаем размер иконки */
+  pointer-events: none;
+  z-index: 100;
+  color: var(--text-primary);
+}
+
+@media (max-width: 767px) {
+  .filters {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) var(--spacing-md); /* Симметричные отступы для мобильных */
+  }
+}
+
+/* iOS Safari glass effects removed */

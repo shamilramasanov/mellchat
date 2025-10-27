@@ -1,0 +1,167 @@
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.input-wrapper--full-width {
+  width: 100%;
+}
+
+.input-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  padding: 0.5rem;
+  border-radius: 2rem;
+}
+
+.input-container,
+.input-container > div {
+  border-radius: 2rem;
+}
+
+/* Liquid Glass Layers for Input */
+.input-container__glass-effect {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.input-container__glass-tint {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.input-container__glass-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.input-container:hover:not(.input-container--disabled) {
+  padding: 0.6rem;
+}
+
+.input-container:focus-within:not(.input-container--disabled) {
+  padding: 0.65rem;
+  box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3), 0 0 24px rgba(255, 255, 255, 0.15);
+}
+
+.input-container:focus-within:not(.input-container--disabled) .input-container__glass-tint {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.input-container--error .input-container__glass-tint {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.input-container--error {
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3), 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.input-container--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  font-weight: 500;
+  width: 100%;
+  position: relative;
+  z-index: 100;
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+}
+
+.input--has-left-icon {
+  padding-left: 0.25rem;
+}
+
+.input--has-right-icon {
+  padding-right: 0.25rem;
+}
+
+.input-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  padding: 0 0.25rem;
+  position: relative;
+  z-index: 100;
+  color: var(--text-primary);
+}
+
+.input-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: calc(var(--spacing-xs) * -0.5);
+}
+
+/* Autofill styles */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.3) inset;
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.9);
+  border-radius: var(--radius-md);
+}
+
+/* iOS Safari - Enhanced glass effect */
+@supports (-webkit-touch-callout: none) {
+  .input-container::before {
+    -webkit-backdrop-filter: blur(30px) saturate(300%) brightness(1.4) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+  
+  .input-container::after {
+    background: rgba(255, 255, 255, 0.5) !important;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+  
+  .input-container {
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+}

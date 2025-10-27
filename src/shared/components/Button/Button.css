@@ -1,0 +1,183 @@
+.button {
+  /* Base styles */
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  font-family: var(--font-family);
+  text-decoration: none;
+  border: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Glass effects removed - only FAB has glass */
+
+.button__content {
+  position: relative;
+  z-index: 10;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* Sizes with Demo-style hover effect (разбухание) */
+.button--sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 1.25rem;
+  font-size: var(--font-size-sm);
+}
+
+.button--sm,
+.button--sm > div {
+  border-radius: 1.25rem;
+}
+
+.button--sm:hover:not(:disabled) {
+  padding: calc(var(--spacing-sm) + 0.1rem) calc(var(--spacing-md) + 0.1rem);
+}
+
+.button--md {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 1.5rem;
+  font-size: var(--font-size-base);
+}
+
+.button--md,
+.button--md > div {
+  border-radius: 1.5rem;
+}
+
+.button--md:hover:not(:disabled) {
+  padding: calc(var(--spacing-sm) + 0.15rem) calc(var(--spacing-lg) + 0.2rem);
+}
+
+.button--lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: 1.5rem;
+  font-size: var(--font-size-lg);
+}
+
+.button--lg,
+.button--lg > div {
+  border-radius: 1.5rem;
+}
+
+.button--lg:hover:not(:disabled) {
+  padding: calc(var(--spacing-md) + 0.15rem) calc(var(--spacing-xl) + 0.2rem);
+}
+
+/* Primary Variant */
+.button--primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.button--primary:hover {
+  background: var(--color-primary);
+  opacity: 0.9;
+}
+
+/* Danger Variant */
+.button--danger {
+  background: var(--color-error);
+  color: white;
+}
+
+.button--danger:hover {
+  background: var(--color-error);
+  opacity: 0.9;
+}
+
+/* Secondary & Ghost */
+.button--secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+/* Full width */
+.button--full-width {
+  width: 100%;
+}
+
+/* States */
+.button--disabled,
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.button--loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.button--loading .button__text {
+  color: transparent;
+}
+
+.button__spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: currentColor;
+}
+
+/* Icons */
+.button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.button__icon--left {
+  margin-right: calc(var(--spacing-xs) * -1);
+}
+
+.button__icon--right {
+  margin-left: calc(var(--spacing-xs) * -1);
+}
+
+/* Focus styles - НЕЙТРАЛЬНЫЙ */
+.button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* Spin animation for loading */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Opacity utilities for SVG */
+.opacity-25 {
+  opacity: 0.25;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+/* iOS Safari glass effects removed */

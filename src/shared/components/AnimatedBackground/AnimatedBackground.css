@@ -1,0 +1,75 @@
+.animated-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Grid Background */
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(#fff 1px, transparent 1px),
+    linear-gradient(90deg, #fff 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: moveGrid 4s linear infinite;
+  opacity: 0.3;
+}
+
+@keyframes moveGrid {
+  from { 
+    background-position: 0 0; 
+  }
+  to { 
+    background-position: 50px 50px; 
+  }
+}
+
+/* Horizon Gradient - УБРАН */
+.horizon {
+  display: none;
+}
+
+/* Radial Pulse Effect */
+.grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 120%, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    transparent 50%);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 0.5; 
+  }
+  50% { 
+    opacity: 1; 
+  }
+}
+
+/* Light Theme */
+body.light-theme .animated-background {
+  background: #fff;
+}
+
+body.light-theme .grid-bg {
+  background-image: 
+    linear-gradient(#000 1px, transparent 1px),
+    linear-gradient(90deg, #000 1px, transparent 1px);
+}
+
+body.light-theme .horizon {
+  display: none;
+}
+
+body.light-theme .grid-bg::before {
+  background: radial-gradient(circle at 50% 120%, 
+    rgba(0, 0, 0, 0.08) 0%, 
+    transparent 50%);
+}
+

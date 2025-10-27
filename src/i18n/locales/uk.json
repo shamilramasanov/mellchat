@@ -1,0 +1,121 @@
+{
+  "app": {
+    "name": "MellChat",
+    "tagline": "Мультиплатформний Агрегатор Чатів"
+  },
+  "auth": {
+    "title": "Ласкаво просимо до MellChat",
+    "subtitle": "Підключіть ваші улюблені платформи для стрімів",
+    "login": "Увійти через Google",
+    "skip": "Пропустити",
+    "logout": "Вийти"
+  },
+  "connection": {
+    "online": "Онлайн",
+    "offline": "Офлайн",
+    "reconnecting": "Перепідключення...",
+    "connected": "Підключено",
+    "disconnected": "Відключено"
+  },
+  "filters": {
+    "all": "Всі",
+    "questions": "Питання",
+    "allQuestions": "Всі Питання",
+    "spam": "Спам"
+  },
+  "sort": {
+    "time": "Час",
+    "popular": "Популярні",
+    "active": "Активні"
+  },
+  "chat": {
+    "noMessages": "Поки немає повідомлень",
+    "connectStream": "Підключіть стрім для початку",
+    "newMessage": "нове повідомлення",
+    "newMessages": "нових повідомлень",
+    "searchPlaceholder": "Пошук за нікнеймом або повідомленням...",
+    "clearMessages": "Очистити Повідомлення",
+    "clearConfirm": "Ви впевнені, що хочете очистити всі повідомлення?"
+  },
+  "message": {
+    "like": "Подобається",
+    "dislike": "Не подобається",
+    "copy": "Копіювати повідомлення",
+    "copied": "Скопійовано!",
+    "question": "Питання"
+  },
+  "streams": {
+    "add": "Додати Стрім",
+    "recent": "Останні стріми",
+    "active": "Активні Стріми",
+    "recentSubtitle": "",
+    "urlPlaceholder": "Вставте URL стріму сюди...",
+    "connect": "Підключити",
+    "disconnect": "Відключити",
+    "connecting": "Підключення...",
+    "cancel": "Скасувати",
+    "remove": "Видалити з історії",
+    "removeConfirm": "Видалити цей стрім з історії?",
+    "noRecent": "",
+    "noRecentSubtitle": ""
+  },
+  "archive": {
+    "found": "Знайдено Архів Повідомлень",
+    "description": "Для цього стріму збережено попередні повідомлення. Бажаєте завантажити архів чи почати з чистого аркуша?",
+    "load": "Завантажити Архів",
+    "clear": "Почати з Нуля",
+    "message": "повідомлення",
+    "messages": "повідомлень"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "language": "Мова",
+    "autoTranslate": "Автопереклад",
+    "fontSize": "Розмір Шрифту",
+    "fontSizeSmall": "Маленький",
+    "fontSizeMedium": "Середній",
+    "fontSizeLarge": "Великий",
+    "fontSizeXLarge": "Дуже Великий",
+    "autoScroll": "Автопрокрутка",
+    "autoScrollDelay": "Затримка Автопрокрутки",
+    "displayDensity": "Щільність Відображення",
+    "densityCompact": "Компактна",
+    "densityComfortable": "Комфортна",
+    "densitySpacious": "Просторна",
+    "notifications": "Сповіщення",
+    "notifyNewMessages": "Сповіщати про Нові Повідомлення",
+    "notifyQuestions": "Сповіщати про Питання",
+    "historyRetention": "Зберігання Історії",
+    "historyDays": "{{count}} днів",
+    "nicknameColors": "Кольори Нікнеймів",
+    "nicknameRandom": "Випадкові",
+    "nicknamePlatform": "Платформа",
+    "nicknameMono": "Моно",
+    "close": "Закрити"
+  },
+  "errors": {
+    "invalidUrl": "Невірний URL стріму",
+    "connectionFailed": "Помилка підключення",
+    "streamNotFound": "Стрім не знайдено",
+    "unknownError": "Сталася неочікувана помилка"
+  },
+  "platforms": {
+    "youtube": "YouTube",
+    "twitch": "Twitch",
+    "kick": "Kick"
+  },
+  "common": {
+    "ok": "ОК",
+    "cancel": "Скасувати",
+    "close": "Закрити",
+    "save": "Зберегти",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "yes": "Так",
+    "no": "Ні",
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "success": "Успішно"
+  }
+}
+
