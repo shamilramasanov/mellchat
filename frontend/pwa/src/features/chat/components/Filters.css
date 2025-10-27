@@ -10,27 +10,16 @@
   isolation: isolate;
   box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.2); /* Уменьшаем тень */
   background: #1a1a2e;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  /* Убираем верхнюю границу */
+  
+  /* Растягиваем фон до самого низа */
+  margin-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, var(--spacing-sm));
 }
 
 /* Glass effects removed */
 
-/* Gradient overlay at top */
-.filters::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  z-index: 1;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-}
+/* Gradient overlay at top - REMOVED */
 
 .filters__sort {
   display: flex;
@@ -128,7 +117,7 @@
 .filters__search {
   position: relative;
   padding: var(--spacing-xs); /* Уменьшаем отступы */
-  border-radius: 1rem; /* Уменьшаем радиус */
+  border-radius: var(--radius-xl); /* Исправляем название переменной */
   border: 1px solid var(--glass-border);
   background: var(--bg-secondary);
   transition: all 0.3s ease;
@@ -150,7 +139,7 @@
   padding: 0.125rem 0.375rem 0.125rem 2rem; /* Уменьшаем отступы */
   background: transparent;
   border: none;
-  border-radius: inherit;
+  border-radius: var(--radius-lg); /* Исправляем название переменной */
   font-size: var(--font-size-sm); /* Уменьшаем размер шрифта */
   color: var(--text-primary);
   font-weight: 500;

@@ -83,7 +83,7 @@ class KickSimpleClient {
                   id: jsonDataSub.id || `kick-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
                   username: jsonDataSub.sender.username || 'Anonymous',
                   text: jsonDataSub.content || '',
-                  timestamp: new Date(jsonDataSub.created_at || Date.now()),
+                  timestamp: new Date(jsonDataSub.created_at || Date.now()).getTime(),
                   platform: 'kick',
                   color: this.generateColor(jsonDataSub.sender.username || 'Anonymous'),
                   reactions: { like: 0, dislike: 0 },
@@ -151,10 +151,15 @@ class KickSimpleClient {
 
   disconnect() {
     try {
+      logger.info(`🔌 KickSimpleClient.disconnect() called for ${this.channelName}`);
+      logger.info(`🔍 WebSocket state: ${this.ws ? this.ws.readyState : 'null'}`);
+      
       if (this.ws) {
         this.ws.close();
         this.isConnected = false;
         logger.info(`🔌 Kick client disconnected from ${this.channelName}`);
+      } else {
+        logger.warn(`⚠️ No WebSocket to disconnect for ${this.channelName}`);
       }
     } catch (error) {
       logger.error(`❌ Error disconnecting Kick client:`, error);

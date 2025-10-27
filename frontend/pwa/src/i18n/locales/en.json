@@ -17,10 +17,13 @@
     "connected": "Connected",
     "disconnected": "Disconnected"
   },
+        "search": {
+          "placeholder": "Search messages... (e.g.: dyrachyo)",
+          "messages": "Search messages...",
+          "clear": "Clear search"
+        },
   "filters": {
-    "all": "All",
     "questions": "Questions",
-    "bookmarks": "Bookmarks",
     "allQuestions": "All Questions",
     "spam": "Spam"
   },
@@ -41,7 +44,6 @@
   "message": {
     "like": "Like",
     "dislike": "Dislike",
-    "bookmark": "Bookmark",
     "copy": "Copy message",
     "copied": "Copied!",
     "question": "Question"

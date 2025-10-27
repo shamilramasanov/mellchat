@@ -1,13 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+// Initialize global connection maps
+global.activeKickConnections = global.activeKickConnections || new Map();
+
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
-const { createRateLimiter } = require('./middleware/rateLimiterCustom');
+const { rateLimiters, rateLimitStats } = require('./middleware/rateLimiter');
+const { metricsMiddleware, register } = require('./utils/metrics');
 const auth = require('./middleware/auth');
 const passport = require('./config/passport');
 
@@ -15,14 +18,21 @@ const passport = require('./config/passport');
 const healthRoutes = require('./routes/health');
 const connectRoutes = require('./routes/connect');
 const authRoutes = require('./routes/auth');
+const databaseRoutes = require('./routes/database');
+const adminRoutes = require('./routes/admin');
+const adaptiveMessagesRoutes = require('./routes/adaptiveMessages');
+const dateMessagesRoutes = require('./routes/dateMessages');
+const paginationMessagesRoutes = require('./routes/paginationMessages');
 let youtubeRoutesFactory = require('./routes/youtube');
 const twitchRoutes = require('./routes/twitch');
 let kickRoutesFactory = require('./routes/kick');
 const emojiRoutes = require('./routes/emoji');
+const messagesRoutes = require('./routes/messages');
 
 const app = express();
 const { createWsServer } = require('./ws/server');
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Security middleware
 app.use(helmet());
@@ -73,8 +83,12 @@ app.use(cors({
 // Handle preflight requests
 app.options('*', cors());
 
-// Base global limiter (dev-friendly)
-app.use('/api/', createRateLimiter({ windowMs: 60_000, max: 1000 }));
+// Rate limiting middleware (применяем перед body parsing)
+app.use(rateLimitStats); // Логируем статистику устройств
+app.use('/api/v1', rateLimiters.general); // Общий лимит для API
+
+// Metrics middleware
+app.use(metricsMiddleware);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -98,25 +112,48 @@ app.use((req, res, next) => {
 // Health check route (no auth required)
 app.use('/api/v1/health', healthRoutes);
 
-// Auth routes (OAuth)
-app.use('/api/v1/auth', authRoutes);
+// Metrics endpoint for Prometheus
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (error) {
+    logger.error('Failed to generate metrics', error);
+    res.status(500).end('Failed to generate metrics');
+  }
+});
 
-// Connect route (no auth required for demo)
-app.use('/api/v1/connect', connectRoutes);
+// Auth routes (OAuth) - строгий лимит
+app.use('/api/v1/auth', rateLimiters.auth, authRoutes);
 
-// YouTube Live Chat routes (tighter per-route guard)
+// Database routes - лимит для сообщений
+app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
+app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
+app.use('/api/v1/date-messages', rateLimiters.messages, dateMessagesRoutes);
+app.use('/api/v1/pagination-messages', rateLimiters.messages, paginationMessagesRoutes);
+
+// Admin routes - строгий лимит
+app.use('/api/v1/admin', rateLimiters.auth, adminRoutes);
+
+// Connect route - общий лимит
+app.use('/api/v1/connect', rateLimiters.general, connectRoutes);
+
+// YouTube Live Chat routes
 const youtubeRoutes = youtubeRoutesFactory(() => app.get('wsHub'));
-app.use('/api/v1/youtube', createRateLimiter({ windowMs: 10_000, max: 200 }), youtubeRoutes);
+app.use('/api/v1/youtube', rateLimiters.general, youtubeRoutes);
 
-// Twitch Chat routes (tighter per-route guard)
-app.use('/api/v1/twitch', createRateLimiter({ windowMs: 10_000, max: 200 }), twitchRoutes);
+// Twitch Chat routes
+app.use('/api/v1/twitch', rateLimiters.general, twitchRoutes);
 
-// Kick Chat routes (best-effort polling)
+// Kick Chat routes
 const kickRoutes = kickRoutesFactory(() => app.get('wsHub'));
-app.use('/api/v1/kick', createRateLimiter({ windowMs: 10_000, max: 200 }), kickRoutes);
+app.use('/api/v1/kick', rateLimiters.general, kickRoutes);
 
-// Emoji processing routes (no auth required for demo)
-app.use('/api/v1/emoji', createRateLimiter({ windowMs: 10_000, max: 100 }), emojiRoutes);
+// Emoji processing routes - лимит для поиска
+app.use('/api/v1/emoji', rateLimiters.search, emojiRoutes);
+
+// Messages routes - лимит для сообщений
+app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
@@ -132,8 +169,9 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-const httpServer = app.listen(PORT, () => {
-  logger.info(`API Gateway started on port ${PORT}`, {
+const httpServer = app.listen(PORT, HOST, () => {
+  logger.info(`API Gateway started on ${HOST}:${PORT}`, {
+    host: HOST,
     port: PORT,
     environment: process.env.NODE_ENV,
   });

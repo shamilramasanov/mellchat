@@ -77,7 +77,7 @@ class KickWsClient {
                 id: m.id || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
                 username: m?.sender?.username || m?.user?.username || m?.username || 'user',
                 message: m?.content || m?.message || m?.text || '',
-                timestamp: new Date(m?.created_at || m?.timestamp || Date.now())
+                timestamp: new Date(m?.created_at || m?.timestamp || Date.now()).getTime()
               };
               if (normalized.message && this.onMessage) this.onMessage(normalized);
             }
@@ -125,7 +125,7 @@ class KickWsClient {
     const id = payload?.id || payload?._id || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const ts = payload?.created_at || payload?.timestamp || Date.now();
     if (!username || !text) return null;
-    return { id, username, message: text, timestamp: new Date(ts) };
+    return { id, username, message: text, timestamp: new Date(ts).getTime() };
   }
 
   close() {

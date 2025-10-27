@@ -10,11 +10,8 @@ import './RecentStreams.css';
 
 const RecentStreams = () => {
   const { t } = useTranslation();
-  const activeStreams = useStreamsStore((state) => state.activeStreams);
   const recentStreams = useStreamsStore((state) => state.recentStreams);
-  const setActiveStream = useStreamsStore((state) => state.setActiveStream);
   const addStream = useStreamsStore((state) => state.addStream);
-  const removeStream = useStreamsStore((state) => state.removeStream);
   const removeFromRecent = useStreamsStore((state) => state.removeFromRecent);
   
   // Subscribe to messages so component re-renders when messages change
@@ -25,28 +22,19 @@ const RecentStreams = () => {
   // Recalculate stats whenever messages change
   const stats = getAllStreamsStats();
   
-  // Show active streams if any, otherwise show recent streams
-  const streamsToShow = activeStreams.length > 0 ? activeStreams : recentStreams;
-  const isShowingActive = activeStreams.length > 0;
+  // Always show recent streams (no more active streams page)
+  const streamsToShow = recentStreams;
 
   const handleStreamClick = (stream) => {
-    if (isShowingActive) {
-      // If it's an active stream, just switch to it
-      setActiveStream(stream.id);
-    } else {
-      // If it's from recent, add it to active
-      addStream(stream);
-    }
+    // Always add stream to active (since we only show recent streams now)
+    addStream(stream);
   };
 
-  const handleRemove = (e, streamId) => {
+  const handleRemove = async (e, streamId) => {
     e.stopPropagation();
     if (confirm(t('streams.removeConfirm'))) {
-      if (isShowingActive) {
-        removeStream(streamId);
-      } else {
-        removeFromRecent(streamId);
-      }
+      // Always remove from recent (since we only show recent streams now)
+      removeFromRecent(streamId);
     }
   };
 
@@ -60,10 +48,10 @@ const RecentStreams = () => {
         >
           <div className="recent-streams__header">
             <h2 className="recent-streams__title">
-              {isShowingActive ? t('streams.active') : t('streams.recent')}
+              {t('streams.recent')}
             </h2>
             <p className="recent-streams__subtitle">
-              {isShowingActive ? '' : t('streams.recentSubtitle')}
+              {t('streams.recentSubtitle')}
             </p>
           </div>
 

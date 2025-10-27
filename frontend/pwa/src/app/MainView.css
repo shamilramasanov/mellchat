@@ -8,47 +8,30 @@
 
 .main-view__streams {
   flex-shrink: 0;
-  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) var(--spacing-lg); /* Унифицируем отступы */
+  padding: calc(var(--spacing-lg) - 1px) var(--spacing-md) var(--spacing-md) var(--spacing-md); /* Поднимаем на 1px вверх */
   position: relative;
   background: transparent;
   z-index: 10;
-  min-height: 120px; /* Минимальная высота для карточек */
+  min-height: 160px; /* Увеличиваем минимальную высоту для карточек */
   width: 100%; /* Занимаем всю доступную ширину */
   box-sizing: border-box; /* Включаем отступы в общую ширину */
 }
 
-/* Divider line between streams and chat */
-.main-view__streams::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    rgba(255, 255, 255, 0.6),
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  border-radius: 1px;
-}
+/* Divider line between streams and chat - REMOVED */
 
 .main-view__chat {
   flex: 1;
   min-height: 0; /* Important for flexbox overflow */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible; /* Разрешаем видимость за пределами контейнера */
 }
 
 /* Mobile adjustments */
 @media (max-width: 767px) {
   .main-view__streams {
-    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-md); /* Симметричные отступы для мобильных */
-    min-height: 100px; /* Уменьшенная минимальная высота для мобильных */
+    padding: calc(var(--spacing-md) - 1px) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm); /* Поднимаем на 1px вверх для мобильных */
+    min-height: 140px; /* Увеличиваем минимальную высоту для мобильных */
     width: 100%; /* Занимаем всю доступную ширину */
     box-sizing: border-box; /* Включаем отступы в общую ширину */
   }

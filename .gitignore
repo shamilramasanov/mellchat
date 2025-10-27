@@ -100,3 +100,23 @@ Thumbs.db
 
 # Confidential documents
 STRATEGY.md
+Questions.md
+OPTIMIZATION_PLAN.md
+
+# Backup files
+*.tar.gz
+*.zip
+*.backup
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs directory
+backend/api-gateway/logs/
+backend/api-gateway/backend.log
+
+# Environment files
+backend/api-gateway/.env
+backend/api-gateway/env.example

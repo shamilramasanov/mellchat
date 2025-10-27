@@ -10,6 +10,7 @@ export const useStreamsStore = create(
       activeStreams: [], // Currently connected streams
       activeStreamId: null, // Currently viewing stream
       recentStreams: [], // History of streams
+      shouldAutoScroll: false, // Флаг для автоскролла при переходе со страницы последних стримов
       
       // Actions
       addStream: (stream) => {
@@ -28,14 +29,44 @@ export const useStreamsStore = create(
         set({ 
           activeStreams: newActiveStreams,
           activeStreamId: stream.id,
+          shouldAutoScroll: true, // Устанавливаем флаг автоскролла при добавлении стрима
         });
         
         // Add to recent streams
         get().addToRecent(stream);
       },
       
-      removeStream: (streamId) => {
+      // Remove stream with full disconnect (from active streams page)
+      removeStream: async (streamId) => {
         const { activeStreams, activeStreamId } = get();
+        const streamToRemove = activeStreams.find(s => s.id === streamId);
+        
+        if (!streamToRemove) return;
+        
+        // Call API to disconnect from platform
+        if (streamToRemove.connectionId) {
+          try {
+            const response = await fetch('http://localhost:3001/api/v1/connect/disconnect', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                connectionId: streamToRemove.connectionId
+              })
+            });
+            
+            if (response.ok) {
+              console.log('✅ Successfully disconnected from platform:', streamToRemove.connectionId);
+            } else {
+              console.warn('⚠️ Failed to disconnect from platform:', streamToRemove.connectionId);
+            }
+          } catch (error) {
+            console.error('❌ Error disconnecting from platform:', error);
+          }
+        }
+        
+        // Remove from active streams
         const newActiveStreams = activeStreams.filter(s => s.id !== streamId);
         
         // If removing active stream, set first stream as active
@@ -44,14 +75,64 @@ export const useStreamsStore = create(
             ? (newActiveStreams[0]?.id || null)
             : activeStreamId;
         
+        // Also remove from recent streams
+        const { recentStreams } = get();
+        const newRecentStreams = recentStreams.filter(s => s.id !== streamId);
+        
         set({ 
           activeStreams: newActiveStreams,
           activeStreamId: newActiveStreamId,
+          recentStreams: newRecentStreams,
         });
+      },
+
+      // Switch stream without disconnect (from chat page)
+      // Удалить стрим из активных
+      removeStream: (streamId) => {
+        const { activeStreams, activeStreamId } = get();
+        
+        // Удаляем стрим из списка активных
+        const updatedStreams = activeStreams.filter(s => s.id !== streamId);
+        
+        // Если удаляемый стрим был активным, переключаемся на другой
+        let newActiveStreamId = activeStreamId;
+        if (activeStreamId === streamId) {
+          newActiveStreamId = updatedStreams[0]?.id || null;
+        }
+        
+        set({ 
+          activeStreams: updatedStreams,
+          activeStreamId: newActiveStreamId
+        });
+        
+        console.log(`🗑️ Removed stream ${streamId}, active stream: ${newActiveStreamId}`);
+      },
+      
+      switchStream: (streamId) => {
+        const { activeStreams, activeStreamId } = get();
+        
+        // If switching away from current stream, just change active
+        if (activeStreamId === streamId) {
+          const otherStreams = activeStreams.filter(s => s.id !== streamId);
+          const newActiveStreamId = otherStreams[0]?.id || null;
+          set({ 
+            activeStreamId: newActiveStreamId,
+            shouldAutoScroll: true // Устанавливаем флаг автоскролла при переключении
+          });
+        } else {
+          // Switch to the selected stream
+          set({ 
+            activeStreamId: streamId,
+            shouldAutoScroll: true // Устанавливаем флаг автоскролла при переключении
+          });
+        }
       },
       
       setActiveStream: (streamId) => {
-        set({ activeStreamId: streamId });
+        set({ 
+          activeStreamId: streamId,
+          shouldAutoScroll: true // Устанавливаем флаг автоскролла при переключении стрима
+        });
       },
       
       // Navigate to home (show all streams)
@@ -61,6 +142,11 @@ export const useStreamsStore = create(
       
       clearActiveStreams: () => {
         set({ activeStreams: [], activeStreamId: null });
+      },
+      
+      // Сбросить флаг автоскролла
+      clearAutoScrollFlag: () => {
+        set({ shouldAutoScroll: false });
       },
       
       updateStream: (streamId, updates) => {

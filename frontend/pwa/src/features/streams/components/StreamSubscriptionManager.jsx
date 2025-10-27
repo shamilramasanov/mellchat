@@ -16,23 +16,15 @@ const StreamSubscriptionManager = () => {
   useEffect(() => {
     if (!isConnected) return;
 
-    console.log('🔔 Subscribing to streams:', activeStreams.map(s => ({ 
-      id: s.id, 
-      connectionId: s.connectionId,
-      platform: s.platform 
-    })));
-
     // Subscribe to all active streams using connectionId for WebSocket
     activeStreams.forEach((stream) => {
       if (stream.connectionId) {
-        console.log('✅ Subscribing to connectionId:', stream.connectionId, `(${stream.platform}, streamId: ${stream.id})`);
         subscribe(stream.connectionId);
       }
     });
 
     // Cleanup: unsubscribe from all streams
     return () => {
-      console.log('🔕 Unsubscribing from streams:', activeStreams.map(s => s.connectionId));
       activeStreams.forEach((stream) => {
         if (stream.connectionId) {
           unsubscribe(stream.connectionId);
@@ -47,12 +39,9 @@ const StreamSubscriptionManager = () => {
       // Data format: { connectionId, message }
       // where message is the payload from backend
       if (data && data.message && data.connectionId) {
-        console.log('💬 Received message from connectionId:', data.connectionId, 'Message:', data.message);
-        
         // Find stream by connectionId to get stable streamId
         const stream = activeStreams.find(s => s.connectionId === data.connectionId);
         if (!stream) {
-          console.warn('⚠️ Stream not found for connectionId:', data.connectionId);
           return;
         }
         
@@ -61,9 +50,9 @@ const StreamSubscriptionManager = () => {
           ...data.message,
           streamId: stream.id, // Use stable stream.id instead of connectionId
           timestamp: new Date(data.message.timestamp), // Convert string to Date if needed
+          isQuestion: data.message.isQuestion || false, // Ensure isQuestion is preserved
         };
         
-        console.log('✅ Adding message to store with streamId:', messageWithStreamId.streamId, `(connectionId: ${data.connectionId})`);
         addMessage(messageWithStreamId);
       }
     };

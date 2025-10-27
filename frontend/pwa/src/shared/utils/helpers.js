@@ -45,8 +45,38 @@ export const isQuestion = (text) => {
  * @returns {string}
  */
 export const formatRelativeTime = (timestamp) => {
+  if (!timestamp) return 'unknown time';
+  
   const now = new Date();
-  const date = new Date(timestamp);
+  let date;
+  
+  // Если timestamp - строка с числами (миллисекунды)
+  if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+    date = new Date(parseInt(timestamp));
+  } 
+  // Если timestamp - число (миллисекунды)
+  else if (typeof timestamp === 'number') {
+    date = new Date(timestamp);
+  }
+  // Если timestamp - строка с датой
+  else if (typeof timestamp === 'string') {
+    date = new Date(timestamp);
+  }
+  // Если timestamp - уже Date объект
+  else if (timestamp instanceof Date) {
+    date = timestamp;
+  }
+  else {
+    console.warn('Invalid timestamp format:', timestamp);
+    return 'invalid time';
+  }
+  
+  // Проверяем валидность даты
+  if (isNaN(date.getTime())) {
+    console.warn('Invalid date:', timestamp);
+    return 'invalid time';
+  }
+  
   const seconds = Math.floor((now - date) / 1000);
   
   if (seconds < 60) return 'just now';

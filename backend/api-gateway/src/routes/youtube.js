@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
+const messageHandler = require('../handlers/messageHandler');
 const youtubeManager = require('../services/youtubePersistentManager');
 const emojiService = require('../services/emojiService');
 
@@ -49,6 +50,13 @@ youtubeManager.on('message', async (msg) => {
   try {
     const connectionId = `youtube-${msg.channel}`;
     const wsHub = router.wsHubRef && router.wsHubRef();
+    
+    // Сохраняем в базу данных
+    try {
+      await messageHandler.addMessage(msg, connectionId);
+    } catch (error) {
+      logger.error('Error saving YouTube message to DB:', error);
+    }
     
     if (wsHub) {
       // Process emojis before sending to WebSocket

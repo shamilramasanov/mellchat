@@ -30,7 +30,7 @@ class KickJsClient {
             id: message.id || `kick-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
             username: message.sender?.username || 'Anonymous',
             text: message.content || '',
-            timestamp: new Date(message.created_at || Date.now()),
+            timestamp: new Date(message.created_at || Date.now()).getTime(),
             platform: 'kick',
             color: this.generateColor(message.sender?.username || 'Anonymous'),
             reactions: { like: 0, dislike: 0 },

@@ -6,4 +6,7 @@ export { default as Modal } from './Modal/Modal';
 export { default as AnimatedBackground } from './AnimatedBackground/AnimatedBackground';
 export { default as ThemeToggle } from './ThemeToggle/ThemeToggle';
 export { LiquidGlassButton } from './LiquidGlass';
+export { default as ServerErrorBanner } from './ServerErrorBanner/ServerErrorBanner';
+export { default as ApiErrorToast } from './ApiErrorToast/ApiErrorToast';
+export { default as PerformanceDashboard } from './PerformanceDashboard';
 

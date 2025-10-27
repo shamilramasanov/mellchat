@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
+const messageHandler = require('../handlers/messageHandler');
 
 // Global activeKickConnections to share between kick.js and connect.js
 global.activeKickConnections = global.activeKickConnections || new Map();
@@ -92,7 +93,7 @@ const startKickConnection = async (connectionId, channelName, wsHub) => {
     // Try to connect using the simple Kick client
     const kickSimpleClient = new KickSimpleClient({
       channelName: channelName,
-      onMessage: (msg) => {
+      onMessage: async (msg) => {
         const conn = activeKickConnections.get(connectionId);
         if (!conn) return;
         
@@ -100,6 +101,13 @@ const startKickConnection = async (connectionId, channelName, wsHub) => {
         if (!conn.messages) conn.messages = [];
         conn.messages.push(msg);
         conn.messages = conn.messages.slice(-200); // Keep last 200 messages
+        
+        // Сохраняем в базу данных
+        try {
+          await messageHandler.addMessage(msg, connectionId, 'Kick Client');
+        } catch (error) {
+          logger.error('Error saving Kick message to DB:', error);
+        }
         
         // Emit via WebSocket
         try { 
@@ -313,6 +321,9 @@ router.post('/disconnect', async (req, res, next) => {
   try {
     const { connectionId } = req.body;
     
+    logger.info(`🔌 Disconnect request for: ${connectionId}`);
+    logger.info(`📊 Active connections: ${Array.from(activeConnections.keys()).join(', ')}`);
+    
     if (!connectionId) {
       return res.status(400).json({
         error: {
@@ -322,9 +333,25 @@ router.post('/disconnect', async (req, res, next) => {
       });
     }
     
-    const connection = activeConnections.get(connectionId);
+    // Check both activeConnections and activeKickConnections
+    let connection = activeConnections.get(connectionId);
+    let isKickConnection = false;
     
     if (!connection) {
+      // Check if it's a Kick connection
+      const activeKickConnections = global.activeKickConnections;
+      const kickConn = activeKickConnections.get(connectionId);
+      if (kickConn) {
+        connection = kickConn;
+        isKickConnection = true;
+        logger.info(`✅ Found Kick connection: ${connectionId}`);
+      }
+    }
+    
+    if (!connection) {
+      logger.warn(`❌ Connection not found in activeConnections or activeKickConnections: ${connectionId}`);
+      logger.info(`📊 Active connections: ${Array.from(activeConnections.keys()).join(', ')}`);
+      logger.info(`📊 Active Kick connections: ${Array.from(global.activeKickConnections.keys()).join(', ')}`);
       return res.status(404).json({
         error: {
           code: 'NOT_FOUND',
@@ -333,33 +360,53 @@ router.post('/disconnect', async (req, res, next) => {
       });
     }
     
+    logger.info(`✅ Found connection: ${connectionId}, platform: ${connection.platform || 'kick'}, isKick: ${isKickConnection}`);
+    
     // Disconnect platform-specific client
     if (connection.client) {
       connection.client.disconnect();
       logger.info(`🔌 ${connection.platform} client disconnected for: ${connectionId}`);
     }
     
-    // For Kick connections, also disconnect from activeKickConnections
-    if (connection.platform === 'kick') {
+    // For Kick connections, disconnect from activeKickConnections
+    if (isKickConnection || connection.platform === 'kick') {
       const activeKickConnections = global.activeKickConnections;
-      const kickConn = activeKickConnections.get(connectionId);
-      if (kickConn) {
-        if (kickConn.kickSimpleClient) {
-          kickConn.kickSimpleClient.disconnect();
-        }
-        if (kickConn.kickJsClient) {
-          kickConn.kickJsClient.disconnect();
-        }
-        if (kickConn.wsClient) {
-          kickConn.wsClient.close();
-        }
-        activeKickConnections.delete(connectionId);
-        logger.info(`🔌 Kick connection disconnected: ${connectionId}`);
+      logger.info(`🔍 Disconnecting Kick connection: ${connectionId}`);
+      
+      if (connection.kickSimpleClient) {
+        connection.kickSimpleClient.disconnect();
+        logger.info(`🔌 KickSimpleClient disconnected: ${connectionId}`);
       }
+      if (connection.kickJsClient) {
+        connection.kickJsClient.disconnect();
+        logger.info(`🔌 KickJsClient disconnected: ${connectionId}`);
+      }
+      if (connection.wsClient) {
+        connection.wsClient.close();
+        logger.info(`🔌 Kick WebSocket closed: ${connectionId}`);
+      }
+      activeKickConnections.delete(connectionId);
+      logger.info(`🔌 Kick connection removed from activeKickConnections: ${connectionId}`);
     }
     
-    activeConnections.delete(connectionId);
+    // Remove from activeConnections if it exists there
+    if (activeConnections.has(connectionId)) {
+      activeConnections.delete(connectionId);
+      logger.info(`🔌 Connection removed from activeConnections: ${connectionId}`);
+    }
     logger.info(`🗑️ Connection removed: ${connectionId}`);
+    
+    // Final check - verify connection is really gone from both storages
+    const finalCheckActive = activeConnections.get(connectionId);
+    const finalCheckKick = global.activeKickConnections.get(connectionId);
+    
+    if (finalCheckActive || finalCheckKick) {
+      logger.error(`❌ CRITICAL: Connection still exists after deletion: ${connectionId}`);
+      logger.error(`❌ Still in activeConnections: ${!!finalCheckActive}`);
+      logger.error(`❌ Still in activeKickConnections: ${!!finalCheckKick}`);
+    } else {
+      logger.info(`✅ Connection successfully removed from all storages: ${connectionId}`);
+    }
     
     res.json({
       success: true,
@@ -395,6 +442,30 @@ router.get('/status', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+// Debug endpoint to view active connections
+router.get('/debug/connections', (req, res) => {
+  const activeConnectionsList = Array.from(activeConnections.entries()).map(([id, conn]) => ({
+    id,
+    platform: conn.platform,
+    channelName: conn.channelName,
+    connectedAt: conn.connectedAt
+  }));
+  
+  const activeKickConnectionsList = Array.from(global.activeKickConnections.entries()).map(([id, conn]) => ({
+    id,
+    platform: conn.platform || 'kick',
+    channel: conn.channel,
+    connectedAt: conn.connectedAt
+  }));
+  
+  res.json({
+    activeConnections: activeConnectionsList,
+    activeKickConnections: activeKickConnectionsList,
+    totalActive: activeConnections.size,
+    totalKick: global.activeKickConnections.size
+  });
 });
 
 module.exports = router;

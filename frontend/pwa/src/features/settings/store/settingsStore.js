@@ -14,8 +14,6 @@ export const useSettingsStore = create(
       // Language handled by i18n
       autoTranslate: false,
       fontSize: FONT_SIZES.MEDIUM,
-      autoScroll: true,
-      autoScrollDelay: 5, // seconds
       displayDensity: DISPLAY_DENSITY.COMFORTABLE,
       notifyNewMessages: false,
       notifyQuestions: true,
@@ -28,14 +26,6 @@ export const useSettingsStore = create(
       setFontSize: (size) => {
         if (Object.values(FONT_SIZES).includes(size)) {
           set({ fontSize: size });
-        }
-      },
-      
-      setAutoScroll: (value) => set({ autoScroll: value }),
-      
-      setAutoScrollDelay: (delay) => {
-        if (delay >= 3 && delay <= 15) {
-          set({ autoScrollDelay: delay });
         }
       },
       
@@ -64,15 +54,13 @@ export const useSettingsStore = create(
       // Reset to defaults
       resetToDefaults: () => {
         set({
-          autoTranslate: false,
-          fontSize: FONT_SIZES.MEDIUM,
-          autoScroll: true,
-          autoScrollDelay: 5,
-          displayDensity: DISPLAY_DENSITY.COMFORTABLE,
-          notifyNewMessages: false,
-          notifyQuestions: true,
-          historyRetention: LIMITS.HISTORY_RETENTION_DAYS,
-          nicknameColors: NICKNAME_COLOR_MODES.RANDOM,
+        autoTranslate: false,
+        fontSize: FONT_SIZES.MEDIUM,
+        displayDensity: DISPLAY_DENSITY.COMFORTABLE,
+        notifyNewMessages: false,
+        notifyQuestions: true,
+        historyRetention: LIMITS.HISTORY_RETENTION_DAYS,
+        nicknameColors: NICKNAME_COLOR_MODES.RANDOM,
         });
       },
     }),

@@ -60,7 +60,6 @@ export const PLATFORM_NAMES = {
 export const FILTERS = {
   ALL: 'all',
   QUESTIONS: 'questions',
-  BOOKMARKS: 'bookmarks',
   ALL_QUESTIONS: 'all_questions',
   SPAM: 'spam',
 };
@@ -140,7 +139,6 @@ export const STORAGE_KEYS = {
   LANGUAGE: 'language',
   SETTINGS: 'settings',
   RECENT_STREAMS: 'recent_streams',
-  BOOKMARKS: 'bookmarks',
   SKIP_AUTH: 'skip_auth',
 };
 

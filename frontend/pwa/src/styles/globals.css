@@ -102,7 +102,7 @@
   --z-tooltip: 4000;
   
   /* ===== Layout ===== */
-  --header-height: 64px;
+  --header-height: 48px; /* Уменьшаем высоту шапки */
   --stream-cards-height: 120px;
   --filters-height: 140px;
   --content-padding: var(--spacing-lg);
@@ -148,8 +148,8 @@ body {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-regular);
   color: var(--text-primary);
-  background: #000;
-  background-attachment: fixed;
+  background: #2a2a2a; /* Простой серый фон */
+  /* Убираем background-attachment: fixed */
   transition: background 0.3s ease, color 0.3s ease;
   
   /* iOS PWA - Prevent bounce/overscroll */
@@ -159,7 +159,7 @@ body {
 }
 
 body.light-theme {
-  background: #fff;
+  background: #e0e0e0; /* Простой светло-серый фон */
 }
 
 
@@ -228,7 +228,7 @@ body.light-theme .gradient-text {
 @media (max-width: 767px) {
   :root {
     --content-padding: var(--spacing-md);
-    --header-height: 56px;
+    --header-height: 44px; /* Уменьшаем высоту шапки для мобильных */
   }
 }
 

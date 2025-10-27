@@ -8,20 +8,15 @@ import { streamsAPI } from '@shared/services';
 import { isValidStreamURL } from '@shared/utils/validators';
 import { detectPlatform } from '@shared/utils/helpers';
 import { PLATFORM_LOGOS } from '@shared/utils/constants';
-import ArchivePromptModal from './ArchivePromptModal';
 import './AddStreamModal.css';
 
 const AddStreamModal = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingStream, setPendingStream] = useState(null);
-  const [showArchivePrompt, setShowArchivePrompt] = useState(false);
   
   const addStream = useStreamsStore((state) => state.addStream);
   const createStreamFromURL = useStreamsStore((state) => state.createStreamFromURL);
-  const hasArchive = useChatStore((state) => state.hasArchive);
-  const clearStreamMessages = useChatStore((state) => state.clearStreamMessages);
   const getStreamStats = useChatStore((state) => state.getStreamStats);
 
   const platform = url ? detectPlatform(url) : null;
@@ -35,7 +30,6 @@ const AddStreamModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       const response = await streamsAPI.connect(url);
-      console.log('✅ Stream connect response:', response);
       
       const stream = createStreamFromURL(url);
       if (stream && response?.connection) {
@@ -50,18 +44,11 @@ const AddStreamModal = ({ isOpen, onClose }) => {
           author: response.connection.channel || stream.streamId,
         };
         
-        // Check if archive exists for this stream
-        if (hasArchive(stream.id)) {
-          // Show archive prompt
-          setPendingStream(streamData);
-          setShowArchivePrompt(true);
-        } else {
-          // No archive - add stream directly
-          addStream(streamData);
-          toast.success(t('common.success'));
-          setUrl('');
-          onClose();
-        }
+        // Always add stream directly (no archive prompt)
+        addStream(streamData);
+        toast.success(t('common.success'));
+        setUrl('');
+        onClose();
       }
     } catch (error) {
       console.error('❌ Stream connect error:', error);
@@ -71,28 +58,6 @@ const AddStreamModal = ({ isOpen, onClose }) => {
     }
   };
   
-  const handleLoadArchive = () => {
-    if (pendingStream) {
-      addStream(pendingStream);
-      toast.success(t('common.success'));
-      setUrl('');
-      setPendingStream(null);
-      onClose();
-    }
-  };
-  
-  const handleClearArchive = () => {
-    if (pendingStream) {
-      // Clear old messages for this stream
-      clearStreamMessages(pendingStream.id);
-      addStream(pendingStream);
-      toast.success(t('common.success'));
-      setUrl('');
-      setPendingStream(null);
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -151,18 +116,6 @@ const AddStreamModal = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-      
-      {/* Archive Prompt Modal */}
-      {pendingStream && (
-        <ArchivePromptModal
-          isOpen={showArchivePrompt}
-          onClose={() => setShowArchivePrompt(false)}
-          onLoadArchive={handleLoadArchive}
-          onClearArchive={handleClearArchive}
-          stream={pendingStream}
-          messageCount={getStreamStats(pendingStream.id).messageCount}
-        />
-      )}
     </>
   );
 };

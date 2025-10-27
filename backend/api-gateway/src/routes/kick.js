@@ -88,7 +88,7 @@ async function pollKickMessages(connectionId, wsHub) {
           connectionId,
           username: item?.sender?.username || item?.user?.username || 'user',
           message: item?.content || item?.message || '',
-          timestamp: new Date(item?.created_at || item?.timestamp || Date.now())
+          timestamp: new Date(item?.created_at || item?.timestamp || Date.now()).getTime()
         };
         newMsgs.push(msg);
         try { wsHub && wsHub.emitMessage(connectionId, msg); } catch {}

@@ -34,11 +34,25 @@ const StreamCards = () => {
           >
             <button
               className="stream-card__close"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                removeStream(stream.id);
+                e.preventDefault();
+                console.log('🔴 Closing stream:', stream.id);
+                try {
+                  removeStream(stream.id);
+                  console.log('✅ Stream removed successfully');
+                } catch (error) {
+                  console.error('❌ Error removing stream:', error);
+                }
               }}
-              aria-label="Remove stream"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              aria-label="Switch away from stream"
+              style={{ zIndex: 1000 }}
             >
               ✕
             </button>

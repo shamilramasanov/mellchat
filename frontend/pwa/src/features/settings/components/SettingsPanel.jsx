@@ -12,10 +12,6 @@ const SettingsPanel = ({ isOpen, onClose }) => {
   const setFontSize = useSettingsStore((state) => state.setFontSize);
   const displayDensity = useSettingsStore((state) => state.displayDensity);
   const setDisplayDensity = useSettingsStore((state) => state.setDisplayDensity);
-  const autoScroll = useSettingsStore((state) => state.autoScroll);
-  const setAutoScroll = useSettingsStore((state) => state.setAutoScroll);
-  const autoScrollDelay = useSettingsStore((state) => state.autoScrollDelay);
-  const setAutoScrollDelay = useSettingsStore((state) => state.setAutoScrollDelay);
   const nicknameColors = useSettingsStore((state) => state.nicknameColors);
   const setNicknameColors = useSettingsStore((state) => state.setNicknameColors);
   const notifyQuestions = useSettingsStore((state) => state.notifyQuestions);
@@ -153,31 +149,7 @@ const SettingsPanel = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Auto Scroll */}
-        <div className="settings-section">
-          <div className="settings-toggle">
-            <label htmlFor="autoScroll">{t('settings.autoScroll')}</label>
-            <input
-              id="autoScroll"
-              type="checkbox"
-              checked={autoScroll}
-              onChange={(e) => setAutoScroll(e.target.checked)}
-            />
-          </div>
-          
-          {autoScroll && (
-            <div className="settings-slider">
-              <label>{t('settings.autoScrollDelay')}: {autoScrollDelay}s</label>
-              <input
-                type="range"
-                min="3"
-                max="15"
-                value={autoScrollDelay}
-                onChange={(e) => setAutoScrollDelay(Number(e.target.value))}
-              />
-            </div>
-          )}
-        </div>
+        {/* Auto Scroll - REMOVED to avoid conflicts with ChatContainer logic */}
 
         {/* Nickname Colors */}
         <div className="settings-section">

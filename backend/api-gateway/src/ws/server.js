@@ -1,6 +1,7 @@
 const http = require('http');
 const WebSocket = require('ws');
 const logger = require('../utils/logger');
+const messageHandler = require('../handlers/messageHandler');
 
 // Simple WS hub with per-connectionId subscriptions
 class WsHub {
@@ -51,12 +52,39 @@ class WsHub {
     interval.unref();
   }
 
-  emitMessage(connectionId, payload) {
+  async emitMessage(connectionId, payload) {
     const set = this.subscribers.get(connectionId);
     if (!set || set.size === 0) {
       logger.debug(`No subscribers for ${connectionId}, message not sent`);
       return;
     }
+    
+    // Обрабатываем сообщение через messageHandler
+    try {
+      logger.debug('WebSocket emitMessage calling messageHandler:', { 
+        connectionId, 
+        payloadId: payload.id,
+        username: payload.username 
+      });
+      
+      const result = await messageHandler.addMessage({
+        id: payload.id,
+        username: payload.username,
+        text: payload.text || payload.content,
+        timestamp: payload.timestamp || Date.now(),
+        platform: connectionId.split('-')[0] // Извлекаем платформу
+      }, connectionId, 'WebSocket Client');
+      
+      // Добавляем isQuestion к payload если определилось
+      if (result && result.isQuestion !== undefined) {
+        payload.isQuestion = result.isQuestion;
+        logger.debug(`📤 WebSocket payload updated: isQuestion=${payload.isQuestion} for message ${payload.id}`);
+      }
+    } catch (error) {
+      logger.error('Error processing WebSocket message:', error);
+      payload.isQuestion = false; // По умолчанию не вопрос
+    }
+    
     const data = JSON.stringify({ type: 'message', connectionId, payload });
     logger.debug(`Emitting message to ${set.size} subscribers of ${connectionId}`);
     for (const ws of set) {

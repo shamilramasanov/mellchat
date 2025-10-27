@@ -48,7 +48,6 @@ const Filters = () => {
     { id: FILTERS.QUESTIONS, label: t('filters.questions'), count: totalQuestions },
     { id: FILTERS.ALL_QUESTIONS, label: t('filters.allQuestions') },
     { id: FILTERS.SPAM, label: t('filters.spam') },
-    { id: FILTERS.BOOKMARKS, label: t('filters.bookmarks') },
   ];
 
   const sorts = [

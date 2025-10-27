@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
+const messageHandler = require('../handlers/messageHandler');
 
 // Twitch API configuration
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
@@ -22,19 +23,57 @@ const startTwitchIRC = (connectionId, channelLogin, wsHub) => {
     channels: [channelLogin]
   });
 
-  client.on('message', (channel, tags, message, self) => {
+  client.on('message', async (channel, tags, message, self) => {
     if (self) return;
+    
+    logger.debug('Twitch message received:', { 
+      connectionId, 
+      channel, 
+      username: tags['display-name'] || tags['username'], 
+      message: message.substring(0, 50) + '...' 
+    });
+    
     const msg = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
       username: tags['display-name'] || tags['username'] || 'unknown',
-      message,
-      timestamp: new Date(),
+      text: message,
+      timestamp: Date.now(),
       platform: 'twitch',
       connectionId
     };
+    
+    logger.debug('Twitch message normalized:', { 
+      id: msg.id,
+      username: msg.username,
+      text: msg.text.substring(0, 50) + '...',
+      platform: msg.platform,
+      connectionId: msg.connectionId
+    });
+    
     const conn = activeTwitchConnections.get(connectionId);
-    if (!conn) return;
+    if (!conn) {
+      logger.warn('Twitch connection not found:', { connectionId });
+      return;
+    }
+    
+    // Сохраняем в память
     conn.messages = [...(conn.messages || []), msg].slice(-200);
+    
+    // Сохраняем в базу данных
+    try {
+      logger.debug('Calling messageHandler.addMessage:', { 
+        messageId: msg.id,
+        connectionId: connectionId,
+        userAgent: 'Twitch IRC Client'
+      });
+      
+      await messageHandler.addMessage(msg, connectionId, 'Twitch IRC Client');
+      
+      logger.debug('Message saved to DB successfully:', { messageId: msg.id });
+    } catch (error) {
+      logger.error('Error saving Twitch message to DB:', error);
+    }
+    
     // Push to WS subscribers if hub exists
     try { wsHub && wsHub.emitMessage(connectionId, msg); } catch {}
   });

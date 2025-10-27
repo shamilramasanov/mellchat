@@ -17,10 +17,13 @@
     "connected": "Подключено",
     "disconnected": "Отключено"
   },
+        "search": {
+          "placeholder": "Поиск по сообщениям... (например: dyrachyo)",
+          "messages": "Поиск по сообщениям...",
+          "clear": "Очистить поиск"
+        },
   "filters": {
-    "all": "Все",
     "questions": "Вопросы",
-    "bookmarks": "Закладки",
     "allQuestions": "Все Вопросы",
     "spam": "Спам"
   },
@@ -41,7 +44,6 @@
   "message": {
     "like": "Нравится",
     "dislike": "Не нравится",
-    "bookmark": "Закладка",
     "copy": "Копировать сообщение",
     "copied": "Скопировано!",
     "question": "Вопрос"
