@@ -110,12 +110,15 @@ class AdaptiveSpamDetector {
     // Быстрые проверки
     if (features.length < 3) return true;
     
-    // ✅ ПРОВЕРКА ПОВТОРЯЮЩИХСЯ СЛОВ (новый способ обнаружения спама)
+    // ✅ ПРОВЕРКА ПОВТОРЯЮЩИХСЯ И ПОХОЖИХ СЛОВ
     // Пример: "DinoDance DinoDance DinoDance" = спам
-    // Пример: "evelon1Angry evelon1Angry evelon1Angry" = спам
+    // Пример: "evelon1Angry evelon1Angry" = спам
+    // Пример: "user123 user123" = спам
     const words = text.trim().split(/\s+/);
     if (words.length > 1) {
       const wordCounts = {};
+      
+      // Подсчитываем точные повторения
       words.forEach(word => {
         wordCounts[word] = (wordCounts[word] || 0) + 1;
       });
@@ -123,11 +126,34 @@ class AdaptiveSpamDetector {
       // Если одно слово повторяется >= 3 раза - это спам
       const maxRepeat = Math.max(...Object.values(wordCounts));
       if (maxRepeat >= 3 && words.length >= 3) {
-        logger.debug('🚫 Spam detected by word repetition:', { text: text.substring(0, 50), maxRepeat, words });
+        logger.debug('🚫 Spam detected by exact word repetition:', { text: text.substring(0, 50), maxRepeat });
         return true;
       }
       
-      // Если большинство слов одинаковые (>= 50% повторений) - строже для коротких сообщений
+      // Проверяем похожие слова (по префиксу и суффиксу)
+      // Пример: "evelon1Angry", "evelon1Happy", "evelon1Cool" - похожи
+      if (words.length >= 3) {
+        const similarityGroups = {};
+        words.forEach(word => {
+          // Извлекаем базовую часть (без последнего слова)
+          const parts = word.split(/(?=[A-Z])|(?=\d)/);
+          if (parts.length > 1) {
+            const base = parts[0]; // Первая часть (например, "evelon1")
+            if (base.length >= 4) { // Только если достаточно длинная
+              similarityGroups[base] = (similarityGroups[base] || 0) + 1;
+            }
+          }
+        });
+        
+        // Если много слов с одинаковой базой - это спам
+        const maxSimilar = Math.max(...Object.values(similarityGroups));
+        if (maxSimilar >= 3) {
+          logger.debug('🚫 Spam detected by similar word patterns:', { text: text.substring(0, 50), maxSimilar });
+          return true;
+        }
+      }
+      
+      // Если большинство слов одинаковые (>= 50% повторений)
       const totalRepeats = Object.values(wordCounts).filter(count => count > 1).reduce((sum, count) => sum + count, 0);
       
       // Для 3+ слов: если >= 50% повторений
