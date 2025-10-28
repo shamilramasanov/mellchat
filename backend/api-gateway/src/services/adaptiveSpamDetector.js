@@ -112,6 +112,7 @@ class AdaptiveSpamDetector {
     
     // ✅ ПРОВЕРКА ПОВТОРЯЮЩИХСЯ СЛОВ (новый способ обнаружения спама)
     // Пример: "DinoDance DinoDance DinoDance" = спам
+    // Пример: "evelon1Angry evelon1Angry evelon1Angry" = спам
     const words = text.trim().split(/\s+/);
     if (words.length > 1) {
       const wordCounts = {};
@@ -126,10 +127,18 @@ class AdaptiveSpamDetector {
         return true;
       }
       
-      // Если большинство слов одинаковые (>= 50% повторений)
+      // Если большинство слов одинаковые (>= 50% повторений) - строже для коротких сообщений
       const totalRepeats = Object.values(wordCounts).filter(count => count > 1).reduce((sum, count) => sum + count, 0);
-      if (words.length > 4 && totalRepeats / words.length >= 0.5) {
+      
+      // Для 3+ слов: если >= 50% повторений
+      if (words.length >= 3 && totalRepeats / words.length >= 0.5) {
         logger.debug('🚫 Spam detected by high repetition ratio:', { text: text.substring(0, 50), ratio: totalRepeats / words.length });
+        return true;
+      }
+      
+      // Строже для 4-7 слов: если >= 40% повторений
+      if (words.length >= 4 && words.length <= 7 && totalRepeats / words.length >= 0.4) {
+        logger.debug('🚫 Spam detected by moderate repetition ratio:', { text: text.substring(0, 50), ratio: totalRepeats / words.length });
         return true;
       }
     }
