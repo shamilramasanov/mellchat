@@ -63,6 +63,12 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // ВРЕМЕННО: Разрешаем все запросы для отладки CORS на Railway
+    if (process.env.NODE_ENV === 'production' && origin && (origin.includes('mellchat.live') || origin.includes('.vercel.app'))) {
+      logger.info('CORS allowed (production wildcard):', { origin });
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.includes(origin)) {
       logger.info('CORS allowed:', { origin });
       return callback(null, true);
