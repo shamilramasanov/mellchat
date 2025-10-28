@@ -73,10 +73,10 @@
   filter: brightness(1);
 }
 
-.stream-card__close {
+.stream-card__collapse {
   position: absolute;
-  top: 0.5rem; /* 8px від верхнього правого кута */
-  right: 0.5rem; /* 8px від верхнього правого кута */
+  top: 0.5rem;
+  right: 0.5rem;
   width: 24px;
   height: 24px;
   display: flex;
@@ -85,22 +85,46 @@
   background: rgba(15, 15, 35, 0.9);
   border: 1px solid var(--glass-border);
   border-radius: 50%;
-  font-size: 0.875rem;
-  color: white;
+  font-size: 1rem;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
-  z-index: 1000; /* Увеличиваем z-index для гарантированной кликабельности */
-  pointer-events: auto; /* Гарантируем кликабельность */
-  font-weight: bold;
+  z-index: 1000;
+  pointer-events: auto;
+  font-weight: 600;
   line-height: 1;
   text-align: center;
 }
 
-.stream-card__close:hover {
-  background: var(--color-error);
-  color: white;
+.stream-card__collapse:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   transform: scale(1.1);
-  border-color: var(--color-error);
+  border-color: var(--glass-border-hover);
+}
+
+/* Collapsed indicator */
+.stream-cards__collapsed-indicator {
+  min-width: 40px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 15, 35, 0.6);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  cursor: help;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.stream-cards__collapsed-indicator:hover {
+  background: rgba(15, 15, 35, 0.8);
+  border-color: var(--glass-border-hover);
+  color: var(--text-primary);
 }
 
 .stream-card__header {
@@ -109,8 +133,9 @@
   justify-content: space-between;
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-xs);
+  margin-right: 32px; /* Сдвигаем влево, чтобы не перекрывало кнопку collapse */
   position: relative;
-  z-index: 10;
+  z-index: 5; /* Ниже кнопки collapse */
 }
 
 .stream-card__logo {

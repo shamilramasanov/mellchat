@@ -7,8 +7,9 @@ import './StreamCards.css';
 const StreamCards = () => {
   const activeStreams = useStreamsStore((state) => state.activeStreams);
   const activeStreamId = useStreamsStore((state) => state.activeStreamId);
+  const collapsedStreamIds = useStreamsStore((state) => state.collapsedStreamIds);
   const setActiveStream = useStreamsStore((state) => state.setActiveStream);
-  const switchStream = useStreamsStore((state) => state.switchStream);
+  const toggleStreamCard = useStreamsStore((state) => state.toggleStreamCard);
   
   // Subscribe to messages so component re-renders when messages change
   const messages = useChatStore((state) => state.messages);
@@ -16,14 +17,17 @@ const StreamCards = () => {
   
   // Recalculate stats whenever messages change
   const stats = getAllStreamsStats();
+  
+  // Filter out collapsed streams
+  const visibleStreams = activeStreams.filter(s => !collapsedStreamIds.includes(s.id));
 
-  if (activeStreams.length === 0) {
+  if (visibleStreams.length === 0) {
     return null;
   }
 
   return (
     <div className="stream-cards">
-      {activeStreams.map((stream) => {
+      {visibleStreams.map((stream) => {
         const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0, unreadCount: 0, unreadQuestionCount: 0 };
         
         return (
@@ -32,29 +36,17 @@ const StreamCards = () => {
             className={`stream-card ${activeStreamId === stream.id ? 'stream-card--active' : ''}`}
             onClick={() => setActiveStream(stream.id)}
           >
+            {/* Collapse button */}
             <button
-              className="stream-card__close"
-              onClick={async (e) => {
+              className="stream-card__collapse"
+              onClick={(e) => {
                 e.stopPropagation();
-                e.preventDefault();
-                console.log('🔄 Switching away from stream:', stream.id);
-                try {
-                  switchStream(stream.id);
-                  console.log('✅ Switched to another stream successfully');
-                } catch (error) {
-                  console.error('❌ Error switching stream:', error);
-                }
+                toggleStreamCard(stream.id);
               }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-              }}
-              aria-label="Switch to another stream"
-              style={{ zIndex: 1000 }}
+              title="Collapse"
+              aria-label="Collapse stream"
             >
-              ✕
+              −
             </button>
             
             {/* Platform Logo */}

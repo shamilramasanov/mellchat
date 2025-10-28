@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useWebSocket } from '@shared/hooks';
+import { useEffect, useRef } from 'react';
+import { useWebSocketContext } from '@shared/components/WebSocketProvider';
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '../../chat/store/chatStore';
 
@@ -9,29 +9,40 @@ import { useChatStore } from '../../chat/store/chatStore';
  * and handles incoming messages
  */
 const StreamSubscriptionManager = () => {
-  const { subscribe, unsubscribe, on, off, isConnected } = useWebSocket();
+  const { subscribe, unsubscribe, on, off, isConnected } = useWebSocketContext();
   const activeStreams = useStreamsStore((state) => state.activeStreams);
   const addMessage = useChatStore((state) => state.addMessage);
+  const activeStreamsRef = useRef(activeStreams);
+
+  // Всегда держим актуальный список activeStreams
+  useEffect(() => {
+    activeStreamsRef.current = activeStreams;
+  }, [activeStreams]);
 
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected) {
+      return;
+    }
 
-    // Subscribe to all active streams using connectionId for WebSocket
-    activeStreams.forEach((stream) => {
-      if (stream.connectionId) {
-        subscribe(stream.connectionId);
-      }
+    if (activeStreams.length === 0) {
+      return;
+    }
+
+    // Получаем все connectionIds из activeStreams
+    const connectionIds = activeStreams
+      .map(s => s.connectionId)
+      .filter(Boolean);
+
+    // Подписываемся на все стримы
+    connectionIds.forEach(connectionId => {
+      subscribe(connectionId);
     });
 
-    // Cleanup: unsubscribe from all streams
+    // НЕ отписываемся - подписки управляются через unsubscribe() в других местах
     return () => {
-      activeStreams.forEach((stream) => {
-        if (stream.connectionId) {
-          unsubscribe(stream.connectionId);
-        }
-      });
+      // Ничего не делаем - подписки сохраняются
     };
-  }, [isConnected, activeStreams, subscribe, unsubscribe]);
+  }, [isConnected, activeStreams, subscribe]);
 
   useEffect(() => {
     // Listen for incoming messages
@@ -40,8 +51,10 @@ const StreamSubscriptionManager = () => {
       // where message is the payload from backend
       if (data && data.message && data.connectionId) {
         // Find stream by connectionId to get stable streamId
-        const stream = activeStreams.find(s => s.connectionId === data.connectionId);
+        const stream = activeStreamsRef.current.find(s => s.connectionId === data.connectionId);
+        
         if (!stream) {
+          // Silently ignore messages for removed streams
           return;
         }
         
@@ -53,7 +66,14 @@ const StreamSubscriptionManager = () => {
           isQuestion: data.message.isQuestion || false, // Ensure isQuestion is preserved
         };
         
+        console.log('📨 StreamSubscriptionManager: Adding message for stream:', stream.id, {
+          messageId: messageWithStreamId.id,
+          text: messageWithStreamId.text?.substring(0, 50)
+        });
+        
         addMessage(messageWithStreamId);
+      } else {
+        console.warn('⚠️ StreamSubscriptionManager: Invalid message format:', data);
       }
     };
 
@@ -62,7 +82,7 @@ const StreamSubscriptionManager = () => {
     return () => {
       off('message', handleMessage);
     };
-  }, [on, off, addMessage, activeStreams]);
+  }, [on, off, addMessage]);
 
   return null; // This component doesn't render anything
 };

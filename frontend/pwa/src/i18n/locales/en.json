@@ -108,6 +108,20 @@
     "twitch": "Twitch",
     "kick": "Kick"
   },
+  "mood": {
+    "title": "Chat Mood",
+    "label": "Mood",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "toggle": "Toggle mood analysis",
+    "noData": "No data",
+    "happy": "Happy",
+    "neutral": "Neutral",
+    "sad": "Sad",
+    "total": "Total messages",
+    "msgs": "msgs",
+    "dominant": "Dominant"
+  },
   "common": {
     "ok": "OK",
     "cancel": "Cancel",

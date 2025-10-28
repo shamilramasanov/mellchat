@@ -2,26 +2,44 @@ const { createClient } = require('redis');
 const logger = require('../utils/logger');
 
 let client;
+let connecting = false;
 
-function ensureClient() {
-  if (client) return client;
+async function ensureClient() {
+  if (client?.isOpen) return client;
+  if (connecting) {
+    // Wait for connection to complete
+    while (connecting) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return client;
+  }
+  
+  connecting = true;
   const url = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
   client = createClient({ url });
   client.on('error', (err) => logger.error('Redis Client Error', { error: err.message }));
-  client.connect().catch((err) => logger.error('Redis connect failed', { error: err.message }));
+  
+  try {
+    await client.connect();
+    logger.info('Redis client connected');
+  } catch (err) {
+    logger.error('Redis connect failed', { error: err.message });
+  }
+  
+  connecting = false;
   return client;
 }
 
 const redisService = {
   async get(key) {
     try {
-      const c = ensureClient();
+      const c = await ensureClient();
       return await c.get(key);
     } catch (e) { logger.error('redis.get error', { error: e.message }); return null; }
   },
   async set(key, value, ttlSeconds) {
     try {
-      const c = ensureClient();
+      const c = await ensureClient();
       if (ttlSeconds) {
         await c.set(key, value, { EX: ttlSeconds });
       } else {
@@ -32,21 +50,23 @@ const redisService = {
   },
   async setex(key, ttlSeconds, value) {
     try {
-      const c = ensureClient();
+      const c = await ensureClient();
       await c.set(key, value, { EX: ttlSeconds });
       return true;
     } catch (e) { logger.error('redis.setex error', { error: e.message }); return false; }
   },
   async del(key) {
-    try { const c = ensureClient(); await c.del(key); return true; }
+    try { const c = await ensureClient(); await c.del(key); return true; }
     catch (e) { logger.error('redis.del error', { error: e.message }); return false; }
   },
   async keys(pattern) {
-    try { const c = ensureClient(); return await c.keys(pattern); }
-    catch (e) { logger.error('redis.keys error', { error: e.message }); return []; }
+    try {
+      const c = await ensureClient();
+      return await c.keys(pattern);
+    } catch (e) { logger.error('redis.keys error', { error: e.message }); return []; }
   },
   async publish(channel, message) {
-    try { const c = ensureClient(); await c.publish(channel, typeof message === 'string' ? message : JSON.stringify(message)); return true; }
+    try { const c = await ensureClient(); await c.publish(channel, typeof message === 'string' ? message : JSON.stringify(message)); return true; }
     catch (e) { logger.error('redis.publish error', { error: e.message }); return false; }
   },
   async subscribe(channel, callback) {
@@ -59,10 +79,9 @@ const redisService = {
       });
       return true;
     } catch (e) { logger.error('redis.subscribe error', { error: e.message }); return false; }
-  }
-  ,
+  },
   async ping() {
-    try { const c = ensureClient(); return await c.ping(); }
+    try { const c = await ensureClient(); return await c.ping(); }
     catch (e) { throw e; }
   }
 };

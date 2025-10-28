@@ -4,6 +4,7 @@ import { useChatStore } from '../store/chatStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import VirtualizedMessageList from '@shared/components/VirtualizedMessageList';
 import SearchBar from './SearchBar';
+import { useWebSocketContext } from '@shared/components/WebSocketProvider';
 // import DatabaseStatus from './DatabaseStatus'; // Убрали для продакшена
 import { useAdaptiveUpdates, usePerformanceMonitor } from '@shared/hooks/useOptimization';
 import deviceDetection from '@shared/utils/deviceDetection';
@@ -36,6 +37,8 @@ const ChatContainer = ({ onAddStream }) => {
   const loadingStrategy = useChatStore((s) => s.loadingStrategy) || { enablePagination: false };
   const setActiveStreamId = useChatStore((s) => s.setActiveStreamId);
   const clearSearchTimeout = useChatStore((s) => s.clearSearchTimeout);
+  const setCurrentMood = useChatStore((s) => s.setCurrentMood);
+  const moodEnabled = useChatStore((s) => s.moodEnabled);
   
   // Новые методы для работы с датами
   const loadOlderMessages = useChatStore((s) => s.loadOlderMessages);
@@ -59,6 +62,9 @@ const ChatContainer = ({ onAddStream }) => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // === WebSocket Hook ===
+  const { on, off } = useWebSocketContext();
+  
   // === Оптимизированные хуки ===
   const { measureRender } = usePerformanceMonitor();
   const adaptiveSettings = deviceDetection.getAdaptiveSettings() || {
@@ -71,7 +77,7 @@ const ChatContainer = ({ onAddStream }) => {
     if (!activeStreamId) return [];
     const messages = getStreamMessages(activeStreamId);
     return Array.isArray(messages) ? messages : [];
-  }, [getStreamMessages, activeStreamId, messages, searchQuery]);
+  }, [getStreamMessages, activeStreamId, messages, searchQuery, moodEnabled]);
 
   const hasMessages = streamMessages.length > 0;
   const hasStreams = activeStreams.length > 0;
@@ -117,8 +123,7 @@ const ChatContainer = ({ onAddStream }) => {
   const forceScrollToBottom = useCallback((behavior = 'instant') => {
     const el = containerRef.current;
     if (!el) {
-      console.warn('⚠️ Container ref not available for force scroll');
-      return;
+      return; // Ref can be null on first render
     }
 
     console.log('🚀 Force scrolling to bottom:', {
@@ -244,15 +249,20 @@ const ChatContainer = ({ onAddStream }) => {
         console.log('🔝 User scrolled up - showing new messages button');
       }
     } else if (!wasAtBottom && nowAtBottom) {
-      setShowNewBtn(false);
-      setNewMsgCount(0);
+      // ✅ Помечаем как прочитано при скролле вниз
+      if (activeStreamId && streamMessages.length > 0) {
+        const lastMsg = streamMessages[streamMessages.length - 1];
+        markMessagesAsRead(activeStreamId, lastMsg.id);
+        
+        // Принудительно сбрасываем счетчик
+        setNewMsgCount(0);
+        setShowNewBtn(false);
+      }
+      
       autoLoadTriggeredRef.current = false; // Сбрасываем флаг при скролле вниз
       if (ENABLE_SCROLL_LOGS) {
         console.log('🔽 User scrolled to bottom - hiding new messages button');
       }
-      
-      // НЕ помечаем как прочитано при скролле вниз
-      // Пользователь должен сам нажать кнопку "новые сообщения"
     }
     
     // Автоматическая загрузка старых сообщений при скролле вверх
@@ -289,8 +299,21 @@ const ChatContainer = ({ onAddStream }) => {
   useEffect(() => {
     if (activeStreamId) {
       setActiveStreamId(activeStreamId);
+      
+      // Когда открываем стрим - помечаем ВСЕ сообщения как прочитанные
+      // Добавляем небольшую задержку чтобы сообщения успели загрузиться
+      const timer = setTimeout(() => {
+        const msgs = getStreamMessages(activeStreamId);
+        if (msgs.length > 0) {
+          const lastMsg = msgs[msgs.length - 1];
+          markMessagesAsRead(activeStreamId, lastMsg.id);
+          console.log('✅ Marked all messages as read for stream:', activeStreamId);
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
-  }, [activeStreamId, setActiveStreamId]);
+  }, [activeStreamId, setActiveStreamId, getStreamMessages, markMessagesAsRead]);
 
   // === Загрузка сообщений из базы данных ===
   useEffect(() => {
@@ -301,13 +324,13 @@ const ChatContainer = ({ onAddStream }) => {
     lastLoadedMessageIdRef.current = null;
     lastLoadMoreTimeRef.current = 0;
 
-    console.log('🔄 Loading NEW messages for stream:', activeStreamId);
+    console.log('🔄 Loading messages for stream:', activeStreamId);
     
-    // Загружаем только новые сообщения (с момента последнего просмотра)
-    // Это обеспечивает "с чистого листа" поведение
+    // Загружаем сообщения (loadMessagesAdaptive использует кэш если есть)
+    // Сообщения уже приходят через WebSocket, эта функция просто обновит список
     loadMessagesAdaptive(activeStreamId).then((result) => {
       if (result.success) {
-        console.log(`✅ Loaded ${result.count} NEW messages with ${result.strategy.strategy} strategy`);
+        console.log(`✅ Loaded messages with ${result.strategy.strategy} strategy (${result.count} new)`);
       } else {
         console.error('❌ Failed to load messages adaptively:', result.error);
         // Fallback к обычной загрузке
@@ -397,7 +420,7 @@ const ChatContainer = ({ onAddStream }) => {
     const timeoutId = setTimeout(() => {
       const el = containerRef.current;
       if (!el) {
-        console.warn('⚠️ Container ref not available in useEffect');
+        // Ref can be null on first render - это нормально
         return;
       }
 
@@ -475,25 +498,32 @@ const ChatContainer = ({ onAddStream }) => {
       requestAnimationFrame(() => {
         el.scrollTop = el.scrollHeight;
         wasAtBottomRef.current = true;
-        setShowNewBtn(false);
-        setNewMsgCount(0);
         
-        // НЕ помечаем сообщения как прочитанные при автоскролле
-        // Пользователь должен сам нажать кнопку "новые сообщения"
+        // ✅ Помечаем сообщения как прочитанные при автоскролле
+        // Небольшая задержка чтобы убедиться что скролл произошел
+        setTimeout(() => {
+          if (activeStreamId && streamMessages.length > 0) {
+            const lastMsg = streamMessages[streamMessages.length - 1];
+            markMessagesAsRead(activeStreamId, lastMsg.id);
+            console.log('✅ Auto-scroll: Marked message as read:', lastMsg.id);
+            
+            // Принудительно сбрасываем счетчик
+            setNewMsgCount(0);
+            setShowNewBtn(false);
+          }
+        }, 100);
       });
     } else if (!wasAtBottom || !actuallyAtBottom) {
       // Показываем кнопку новых сообщений только если пользователь НЕ был внизу
-      console.log('🔔 Showing new messages button');
       const stats = getStreamStats(activeStreamId);
-      console.log('📊 Stream stats:', { 
-        streamId: activeStreamId, 
-        unreadCount: stats.unreadCount,
-        totalMessages: streamMessages.length,
-        lastReadId: stats.lastReadId 
-      });
+      
+      // Показываем кнопку если есть непрочитанные
       if (stats.unreadCount > 0) {
         setNewMsgCount(stats.unreadCount);
         setShowNewBtn(true);
+      } else {
+        setNewMsgCount(0);
+        setShowNewBtn(false);
       }
     } else {
       if (ENABLE_SCROLL_LOGS) {
@@ -502,8 +532,54 @@ const ChatContainer = ({ onAddStream }) => {
     }
 
     prevMsgCountRef.current = newCount;
-  }, [streamMessages?.length || 0, activeStreamId, getStreamStats, markMessagesAsRead]);
+  }, [streamMessages?.length || 0, activeStreamId, getStreamStats, markMessagesAsRead, streamMessages]);
 
+
+  // === Обновление счетчика непрочитанных при изменении scroll ===
+  useEffect(() => {
+    if (!activeStreamId) {
+      return;
+    }
+    
+    // Получаем статистику
+    const stats = getStreamStats(activeStreamId);
+    
+    // Проверяем реальную позицию скролла
+    const el = containerRef.current;
+    const actuallyAtBottom = el ? (el.scrollHeight - el.scrollTop - el.clientHeight <= THRESHOLD) : true;
+    
+    // Если действительно внизу - скрываем кнопку
+    if (actuallyAtBottom) {
+      setNewMsgCount(0);
+      setShowNewBtn(false);
+      return;
+    }
+    
+    // Если не внизу И есть непрочитанные - показываем кнопку
+    if (stats.unreadCount > 0) {
+      setNewMsgCount(stats.unreadCount);
+      setShowNewBtn(true);
+    } else {
+      setNewMsgCount(0);
+      setShowNewBtn(false);
+    }
+  }, [activeStreamId, getStreamStats, messages.length, isAtBottom, checkIsAtBottom]);
+
+  // === WebSocket Mood Updates ===
+  useEffect(() => {
+    const handleMoodUpdate = (data) => {
+      if (data.type === 'mood_update' && data.data) {
+        setCurrentMood(data.data); // Сохраняем в store
+        console.log('🎭 Mood updated:', data.data);
+      }
+    };
+    
+    on('mood_update', handleMoodUpdate);
+    
+    return () => {
+      off('mood_update', handleMoodUpdate);
+    };
+  }, [on, off, setCurrentMood]); // Add setCurrentMood to dependencies
 
   // === Очистка ===
   useEffect(() => {

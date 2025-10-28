@@ -11,6 +11,7 @@ export const useStreamsStore = create(
       activeStreamId: null, // Currently viewing stream
       recentStreams: [], // History of streams
       shouldAutoScroll: false, // Флаг для автоскролла при переходе со страницы последних стримов
+      collapsedStreamIds: [], // Streams that are collapsed from cards view
       
       // Actions
       addStream: (stream) => {
@@ -19,20 +20,20 @@ export const useStreamsStore = create(
         // Check if stream already exists
         const exists = activeStreams.find(s => s.id === stream.id);
         if (exists) {
-          // Just set it as active
+          // Just set it as active - НЕ перезаписываем стрим!
           set({ activeStreamId: stream.id });
-          return;
+          console.log('✅ Stream already in activeStreams, just setting as active');
+        } else {
+          // Add to active streams
+          const newActiveStreams = [...activeStreams, stream];
+          set({ 
+            activeStreams: newActiveStreams,
+            activeStreamId: stream.id,
+            shouldAutoScroll: true, // Устанавливаем флаг автоскролла при добавлении стрима
+          });
         }
         
-        // Add to active streams
-        const newActiveStreams = [...activeStreams, stream];
-        set({ 
-          activeStreams: newActiveStreams,
-          activeStreamId: stream.id,
-          shouldAutoScroll: true, // Устанавливаем флаг автоскролла при добавлении стрима
-        });
-        
-        // Add to recent streams
+        // Add to recent streams (всегда, даже если уже в activeStreams)
         get().addToRecent(stream);
       },
       
@@ -86,7 +87,55 @@ export const useStreamsStore = create(
         });
       },
 
-      // Switch stream without disconnect (from chat page)
+      // Collapse/expand stream card
+      toggleStreamCard: (streamId) => {
+        const { collapsedStreamIds, activeStreamId } = get();
+        
+        if (collapsedStreamIds.includes(streamId)) {
+          // Expand - разворачиваем карточку
+          set({ 
+            collapsedStreamIds: collapsedStreamIds.filter(id => id !== streamId) 
+          });
+        } else {
+          // Collapse - сворачиваем карточку
+          set({ 
+            collapsedStreamIds: [...collapsedStreamIds, streamId] 
+          });
+          
+          // Если скрыли активный стрим - открываем модалку RecentStreams
+          if (activeStreamId === streamId) {
+            set({ activeStreamId: null });
+          }
+        }
+      },
+
+      // Close stream card - просто открываем модалку RecentStreams
+      closeStream: (streamId) => {
+        const { activeStreamId } = get();
+        
+        // Сохраняем последнее прочитанное сообщение
+        const chatStore = require('@features/chat/store/chatStore').useChatStore.getState();
+        const streamMessages = chatStore.getStreamMessages(streamId);
+        
+        if (streamMessages.length > 0) {
+          const lastMessage = streamMessages[streamMessages.length - 1];
+          chatStore.markMessagesAsRead(streamId, lastMessage.id);
+        }
+        
+        // Если закрываем активный стрим - открываем модалку
+        if (activeStreamId === streamId) {
+          set({ activeStreamId: null });
+        }
+      },
+
+      // Switch stream without disconnect
+      switchStream: (streamId) => {
+        set({ 
+          activeStreamId: streamId,
+          shouldAutoScroll: true
+        });
+      },
+      
       // Удалить стрим из активных
       removeStream: async (streamId) => {
         const { activeStreams, activeStreamId } = get();
@@ -118,7 +167,7 @@ export const useStreamsStore = create(
           }
         }
         
-        // Удаляем стрим из списка активных
+        // Удаляем из activeStreams СРАЗУ, чтобы сообщения перестали обрабатываться
         const updatedStreams = activeStreams.filter(s => s.id !== streamId);
         
         // Если удаляемый стрим был активным, переключаемся на другой
@@ -127,12 +176,12 @@ export const useStreamsStore = create(
           newActiveStreamId = updatedStreams[0]?.id || null;
         }
         
+        console.log(`🗑️ Removed stream ${streamId}, active stream: ${newActiveStreamId}`);
+        
         set({ 
           activeStreams: updatedStreams,
           activeStreamId: newActiveStreamId
         });
-        
-        console.log(`🗑️ Removed stream ${streamId}, active stream: ${newActiveStreamId}`);
       },
 
       // Принудительно закрыть все соединения
@@ -177,27 +226,6 @@ export const useStreamsStore = create(
         console.log('✅ All streams disconnected');
       },
       
-      switchStream: (streamId) => {
-        const { activeStreams, activeStreamId } = get();
-        
-        // If switching away from current stream, remove it and switch to another
-        if (activeStreamId === streamId) {
-          const otherStreams = activeStreams.filter(s => s.id !== streamId);
-          const newActiveStreamId = otherStreams[0]?.id || null;
-          set({ 
-            activeStreams: otherStreams, // Удаляем стрим из активных
-            activeStreamId: newActiveStreamId,
-            shouldAutoScroll: true // Устанавливаем флаг автоскролла при переключении
-          });
-        } else {
-          // Switch to the selected stream
-          set({ 
-            activeStreamId: streamId,
-            shouldAutoScroll: true // Устанавливаем флаг автоскролла при переключении
-          });
-        }
-      },
-      
       setActiveStream: (streamId) => {
         set({ 
           activeStreamId: streamId,
@@ -227,6 +255,14 @@ export const useStreamsStore = create(
             : stream
         );
         set({ activeStreams: updated });
+      },
+      
+      // DEBUG: Получить connectionId для стрима
+      getConnectionId: (streamId) => {
+        const { activeStreams } = get();
+        const stream = activeStreams.find(s => s.id === streamId);
+        console.log('🔍 getConnectionId:', { streamId, stream, connectionId: stream?.connectionId });
+        return stream?.connectionId;
       },
       
       // Recent streams
@@ -298,9 +334,25 @@ export const useStreamsStore = create(
     {
       name: 'streams-storage',
       partialize: (state) => ({
-        activeStreams: state.activeStreams,
+        activeStreams: state.activeStreams.map(s => ({ 
+          id: s.id, 
+          streamId: s.streamId,
+          author: s.author,
+          title: s.title,
+          platform: s.platform,
+          isLive: s.isLive,
+          connectionId: s.connectionId // Сохраняем connectionId
+        })),
         activeStreamId: state.activeStreamId,
-        recentStreams: state.recentStreams,
+        recentStreams: state.recentStreams.map(s => ({
+          id: s.id,
+          streamId: s.streamId,
+          author: s.author,
+          title: s.title,
+          platform: s.platform,
+          isLive: s.isLive,
+          lastViewed: s.lastViewed
+        })),
       }),
     }
   )

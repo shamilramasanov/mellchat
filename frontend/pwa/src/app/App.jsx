@@ -4,6 +4,7 @@ import { useAuthStore } from '@features/auth/store/authStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
 import { AnimatedBackground, ServerErrorBanner, ApiErrorToast } from '@shared/components';
+// import PerformanceDashboard from '@shared/components/PerformanceDashboard';
 import AuthScreen from '@features/auth/components/AuthScreen';
 import RecentStreams from '@features/streams/components/RecentStreams';
 import StreamSubscriptionManager from '@features/streams/components/StreamSubscriptionManager';
@@ -20,6 +21,8 @@ function App() {
   const loadMessagesAdaptive = useChatStore((state) => state.loadMessagesAdaptive);
   const messages = useChatStore((state) => state.messages);
   const isHome = useStreamsStore((state) => state.activeStreamId === null);
+  const disconnectAllStreams = useStreamsStore((state) => state.disconnectAllStreams);
+  const activeStreams = useStreamsStore((state) => state.activeStreams);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,6 +42,29 @@ function App() {
       setIsLoading(false);
     }, 500);
   }, []);
+
+  // Disconnect all streams when user closes the browser tab
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Log disconnect attempt
+      if ('sendBeacon' in navigator) {
+        // Use sendBeacon for reliable delivery during page unload
+        activeStreams.forEach(stream => {
+          const data = JSON.stringify({ connectionId: stream.connectionId });
+          navigator.sendBeacon('/api/v1/connect/disconnect', data);
+        });
+      }
+      
+      // Also call disconnectAllStreams
+      disconnectAllStreams();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [disconnectAllStreams, activeStreams]);
 
   // Load messages from database when active stream changes
   useEffect(() => {
@@ -63,7 +89,7 @@ function App() {
         console.error('❌ App: Failed to load messages adaptively:', result.error);
       }
     });
-  }, [isAuth, hasActiveStreams, activeStreamId, loadMessagesAdaptive, messages]);
+  }, [isAuth, hasActiveStreams, activeStreamId, loadMessagesAdaptive]);
 
   if (isLoading) {
     return (
@@ -89,22 +115,7 @@ function App() {
     );
   }
 
-  // Show recent streams if on home page (no active stream selected)
-  if (isHome) {
-    return (
-      <>
-        <AnimatedBackground />
-        <ServerErrorBanner />
-        <ApiErrorToast />
-        <div className="app">
-          <Header />
-          <RecentStreams />
-        </div>
-      </>
-    );
-  }
-
-  // Show main view
+  // Always show main view with modal overlay
   return (
     <>
       <AnimatedBackground />
@@ -115,7 +126,7 @@ function App() {
         <Header />
         <MainView />
       </div>
-      {/* PerformanceDashboard отключен - не рендерится */}
+      {/* <PerformanceDashboard /> */}
     </>
   );
 }

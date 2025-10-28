@@ -13,9 +13,8 @@ const MainView = () => {
   const setActiveStream = useStreamsStore((state) => state.setActiveStream);
   const [showAddStream, setShowAddStream] = useState(false);
   
-  // If no active stream selected, show home page with all streams
-  // Otherwise show chat view with stream cards on top
-  const isHome = activeStreamId === null;
+  // Always show chat, but overlay RecentStreams modal when no stream selected or no streams at all
+  const shouldShowRecentStreams = activeStreamId === null || activeStreams.length === 0;
   
   // Swipe navigation between chats
   const handleSwipeLeft = () => {
@@ -43,22 +42,23 @@ const MainView = () => {
   return (
     <>
       <main className="main-view">
-        {isHome ? (
-          // Home View - Show all active/recent streams
-          <RecentStreams />
-        ) : (
-          // Chat View - Show stream cards + chat
-          <>
-            {/* Stream Cards */}
-            <div className="main-view__streams">
-              <StreamCards />
-            </div>
+        {/* Stream Cards */}
+        {activeStreams.length > 0 && (
+          <div className="main-view__streams">
+            <StreamCards />
+          </div>
+        )}
 
-            {/* Chat Container with Swipe Navigation */}
-            <div className="main-view__chat" {...swipeHandlers}>
-              <ChatContainer onAddStream={() => setShowAddStream(true)} />
-            </div>
-          </>
+        {/* Chat Container with Swipe Navigation - ALWAYS visible */}
+        <div className="main-view__chat" {...swipeHandlers}>
+          <ChatContainer onAddStream={() => setShowAddStream(true)} />
+        </div>
+
+        {/* Recent Streams Modal - Overlay on top */}
+        {shouldShowRecentStreams && (
+          <div className="main-view__overlay">
+            <RecentStreams />
+          </div>
         )}
       </main>
 

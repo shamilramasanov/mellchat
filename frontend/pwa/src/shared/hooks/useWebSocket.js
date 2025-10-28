@@ -14,11 +14,12 @@ export const useWebSocket = () => {
   const maxReconnectAttempts = 5;
   const listeners = useRef(new Map());
   const pingIntervalRef = useRef(null);
-  const currentConnectionId = useRef(null);
+  const currentConnectionIds = useRef(new Set()); // Храним множество подписок
 
   // Initialize WebSocket connection
   useEffect(() => {
     const connect = () => {
+      console.log('🔌 WebSocket: Creating new connection...');
       try {
         // Create WebSocket instance
         const ws = new WebSocket(WS_URL);
@@ -30,19 +31,36 @@ export const useWebSocket = () => {
           reconnectAttempts.current = 0;
           toast.dismiss('ws-reconnecting');
           
+          // Восстанавливаем все подписки после переподключения
+          if (currentConnectionIds.current.size > 0) {
+            console.log('🔄 Restoring', currentConnectionIds.current.size, 'subscriptions after reconnect');
+            currentConnectionIds.current.forEach(connectionId => {
+              ws.send(JSON.stringify({ type: 'subscribe', connectionId }));
+            });
+          }
+          
           // Запускаем ping каждые 5 минут для поддержания активности
           pingIntervalRef.current = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN && currentConnectionId.current) {
-              ws.send(JSON.stringify({ 
-                type: 'ping', 
-                connectionId: currentConnectionId.current 
-              }));
+            if (ws.readyState === WebSocket.OPEN && currentConnectionIds.current.size > 0) {
+              // Отправляем ping для каждой активной подписки
+              currentConnectionIds.current.forEach(connectionId => {
+                ws.send(JSON.stringify({ 
+                  type: 'ping', 
+                  connectionId 
+                }));
+              });
             }
           }, 5 * 60 * 1000); // 5 минут
         };
 
         // Connection closed
-        ws.onclose = () => {
+        ws.onclose = (event) => {
+          console.log('🔌 WebSocket: Connection closed', {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+            currentSubscriptions: currentConnectionIds.current.size
+          });
           setStatus(CONNECTION_STATUS.DISCONNECTED);
           
           // Очищаем ping интервал
@@ -56,6 +74,7 @@ export const useWebSocket = () => {
             reconnectAttempts.current += 1;
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 16000);
             setStatus(CONNECTION_STATUS.RECONNECTING);
+            console.log(`🔄 WebSocket: Reconnecting... attempt ${reconnectAttempts.current}`);
             
             reconnectTimeoutRef.current = setTimeout(() => {
               connect();
@@ -73,21 +92,20 @@ export const useWebSocket = () => {
           try {
             const data = JSON.parse(event.data);
             
-            // Notify all listeners for this event type
-            const eventListeners = listeners.current.get(data.type);
-            if (eventListeners) {
-              eventListeners.forEach(callback => callback(data));
-            }
-            
-            // Also emit 'message' event with full data (including connectionId)
+            // Handle 'message' type specially - transform to {connectionId, message}
             if (data.type === 'message') {
               const messageListeners = listeners.current.get('message');
               if (messageListeners) {
-                // Pass full data object so we have access to connectionId and payload
                 messageListeners.forEach(callback => callback({
                   connectionId: data.connectionId,
                   message: data.payload
                 }));
+              }
+            } else {
+              // Notify all listeners for other event types
+              const eventListeners = listeners.current.get(data.type);
+              if (eventListeners) {
+                eventListeners.forEach(callback => callback(data));
               }
             }
           } catch (error) {
@@ -103,6 +121,7 @@ export const useWebSocket = () => {
 
     // Cleanup on unmount
     return () => {
+      console.log('🗑️ WebSocket: Cleaning up on unmount');
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
@@ -110,6 +129,7 @@ export const useWebSocket = () => {
         clearInterval(pingIntervalRef.current);
       }
       if (socketRef.current) {
+        console.log('🔌 WebSocket: Closing connection on unmount');
         socketRef.current.close();
       }
       listeners.current.clear();
@@ -143,16 +163,20 @@ export const useWebSocket = () => {
 
   // Subscribe to a stream connection
   const subscribe = useCallback((connectionId) => {
-    currentConnectionId.current = connectionId;
-    emit('subscribe', { connectionId });
+    if (!currentConnectionIds.current.has(connectionId)) {
+      currentConnectionIds.current.add(connectionId);
+      emit('subscribe', { connectionId });
+      console.log('🔌 Subscribed to:', connectionId, 'Total subscriptions:', currentConnectionIds.current.size);
+    }
   }, [emit]);
 
   // Unsubscribe from a stream connection
   const unsubscribe = useCallback((connectionId) => {
-    if (currentConnectionId.current === connectionId) {
-      currentConnectionId.current = null;
+    if (currentConnectionIds.current.has(connectionId)) {
+      currentConnectionIds.current.delete(connectionId);
+      emit('unsubscribe', { connectionId });
+      console.log('🔌 Unsubscribed from:', connectionId, 'Total subscriptions:', currentConnectionIds.current.size);
     }
-    emit('unsubscribe', { connectionId });
   }, [emit]);
 
   return {

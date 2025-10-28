@@ -1,0 +1,200 @@
+/* Mood Bar Modal */
+.mood-bar-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.mood-bar-modal__content {
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  position: relative;
+}
+
+.mood-bar-modal__close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  z-index: 10001;
+}
+
+.mood-bar-modal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.mood-bar-modal__title {
+  font-size: 24px;
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.mood-bar-modal__empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--spacing-xl);
+}
+
+/* Mood Bar Visualization */
+.mood-bar__container {
+  margin: var(--spacing-lg) 0;
+}
+
+.mood-bar__track {
+  height: 40px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mood-bar__fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: width 0.5s ease;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.mood-bar__fill.happy {
+  background: #4CAF50;
+}
+
+.mood-bar__fill.sad {
+  background: #F44336;
+}
+
+.mood-bar__track {
+  display: flex;
+  background: rgba(33, 150, 243, 0.2); /* Neutral blue background */
+}
+
+/* Statistics */
+.mood-bar-modal__stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-lg) 0;
+}
+
+.mood-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--mood-color);
+  transition: all 0.2s ease;
+}
+
+.mood-stat:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.mood-stat__emoji {
+  font-size: 24px;
+}
+
+.mood-stat__label {
+  flex: 1;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.mood-stat__value {
+  font-weight: var(--font-weight-bold);
+  color: var(--mood-color);
+}
+
+/* Summary */
+.mood-bar-modal__summary {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--glass-border);
+  text-align: center;
+}
+
+.mood-bar-modal__summary p {
+  margin: var(--spacing-sm) 0;
+  color: var(--text-secondary);
+}
+
+.mood-bar-modal__dominant {
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .mood-bar-modal__content {
+    padding: var(--spacing-md);
+    max-width: 95%;
+  }
+
+  .mood-bar-modal__title {
+    font-size: 20px;
+  }
+
+  .mood-stat {
+    font-size: 14px;
+  }
+
+  .mood-stat__emoji {
+    font-size: 20px;
+  }
+}
+

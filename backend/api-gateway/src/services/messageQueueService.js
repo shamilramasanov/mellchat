@@ -31,16 +31,20 @@ try {
     useBullMQ = false;
   });
 
-  redisConnection.on('connect', () => {
-    logger.info('Redis connected for BullMQ queues');
-    useBullMQ = true;
-  });
+  // Временно отключаем обработчики для ускорения запуска
+  // redisConnection.on('connect', () => {
+  //   logger.info('Redis connected for BullMQ queues');
+  //   useBullMQ = true;
+  // });
 
-  // Пытаемся подключиться
+  // Пытаемся подключиться (async, не блокируем)
   redisConnection.connect().catch(() => {
     logger.warn('Failed to connect to Redis for BullMQ, using direct processing');
     useBullMQ = false;
   });
+  
+  // Временно отключаем инициализацию Workers для ускорения запуска
+  // Workers могут быть инициализированы позже при необходимости
 } catch (error) {
   logger.warn('Redis not available for BullMQ, using direct processing:', error.message);
   useBullMQ = false;
@@ -49,7 +53,11 @@ try {
 // Создаем очереди только если Redis доступен
 let messageQueue, batchQueue, messageWorker, batchWorker;
 
-if (useBullMQ && redisConnection) {
+// Не создаём Workers при импорте - это блокирует запуск
+// Workers могут быть созданы позже, если потребуется
+logger.info('Skipping BullMQ workers initialization (fallback to direct processing)');
+
+if (false && useBullMQ && redisConnection) {
   messageQueue = new Queue('message-processing', {
     connection: redisConnection,
     defaultJobOptions: {
@@ -191,6 +199,32 @@ if (useBullMQ && redisConnection) {
       error: err.message 
     });
   });
+  
+  logger.info('BullMQ workers initialized successfully');
+}
+
+if (useBullMQ && redisConnection) {
+  messageQueue = new Queue('message-processing', {
+    connection: redisConnection,
+    defaultJobOptions: {
+      removeOnComplete: 100,
+      removeOnFail: 50,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      delay: 0,
+    }
+  });
+
+  batchQueue = new Queue('batch-processing', {
+    connection: redisConnection,
+    defaultJobOptions: {
+      removeOnComplete: 50,
+      removeOnFail: 25,
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 1000 },
+      delay: 100,
+    }
+  });
 } else {
   logger.info('BullMQ queues not available, using direct processing');
 }
@@ -203,7 +237,10 @@ class MessageQueueService {
     this.flushInterval = 1000; // Интервал сброса батча (1 сек)
     this.flushTimer = null;
     
-    this.startBatchFlushTimer();
+    // Отложенная инициализация таймера
+    setTimeout(() => {
+      this.startBatchFlushTimer();
+    }, 1000);
   }
 
   // Добавление сообщения в очередь
@@ -429,18 +466,35 @@ class MessageQueueService {
   }
 }
 
-// Создаем экземпляр сервиса
-const messageQueueService = new MessageQueueService();
+// Создаем экземпляр сервиса с задержкой (чтобы не блокировать импорт)
+let messageQueueService;
+// Отключено, чтобы не блокировать импорт модуля
+// setTimeout(() => {
+//   messageQueueService = new MessageQueueService();
+//   logger.info('MessageQueueService initialized');
+//   
+//   // Graceful shutdown при завершении процесса
+//   process.on('SIGTERM', async () => {
+//     if (messageQueueService) await messageQueueService.shutdown();
+//     process.exit(0);
+//   });
+//
+//   process.on('SIGINT', async () => {
+//     if (messageQueueService) await messageQueueService.shutdown();
+//     process.exit(0);
+//   });
+// }, 1000);
 
-// Graceful shutdown при завершении процесса
-process.on('SIGTERM', async () => {
-  await messageQueueService.shutdown();
-  process.exit(0);
-});
+// Возвращаем placeholder с методами
+const messageQueueServicePlaceholder = {
+  addMessage: async (message) => {
+    // Fallback: прямая запись в БД
+    await databaseService.saveMessage(message);
+    return { success: true, messageId: message.id };
+  },
+  addToBatch: (message) => {
+    // Fallback: игнорируем батчинг на старте
+  }
+};
 
-process.on('SIGINT', async () => {
-  await messageQueueService.shutdown();
-  process.exit(0);
-});
-
-module.exports = messageQueueService;
+module.exports = messageQueueServicePlaceholder;

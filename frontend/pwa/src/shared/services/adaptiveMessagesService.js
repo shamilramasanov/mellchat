@@ -4,8 +4,20 @@ import deviceDetection from '../utils/deviceDetection';
 const API_BASE_URL = '/api/v1';
 
 class AdaptiveMessagesService {
+  constructor() {
+    this.requestQueue = new Map();
+  }
+
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
+    const cacheKey = `${url}?${JSON.stringify(options)}`;
+    
+    // Проверяем, есть ли уже запрос в очереди (защита от дублирования)
+    if (this.requestQueue.has(cacheKey)) {
+      console.log('⏳ Request already in queue for:', url);
+      return this.requestQueue.get(cacheKey);
+    }
+    
     console.log('🌐 Making request to:', url);
     
     const config = {
@@ -17,22 +29,33 @@ class AdaptiveMessagesService {
       ...options,
     };
 
-    try {
-      console.log('📤 Request config:', config);
-      const response = await fetch(url, config);
-      console.log('📥 Response status:', response.status);
-      
-      const data = await response.json();
+    const requestPromise = (async () => {
+      try {
+        console.log('📤 Request config:', config);
+        const response = await fetch(url, config);
+        console.log('📥 Response status:', response.status);
+        
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        // Без кэша - всегда возвращаем свежие данные
+        return data;
+      } catch (error) {
+        console.error('Adaptive Messages API request failed:', error);
+        throw error;
+      } finally {
+        // Удаляем из очереди
+        this.requestQueue.delete(cacheKey);
       }
+    })();
 
-      return data;
-    } catch (error) {
-      console.error('Adaptive Messages API request failed:', error);
-      throw error;
-    }
+    // Добавляем в очередь
+    this.requestQueue.set(cacheKey, requestPromise);
+    
+    return requestPromise;
   }
 
   // Получить сообщения по адаптивной стратегии

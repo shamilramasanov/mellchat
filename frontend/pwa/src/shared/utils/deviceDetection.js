@@ -4,7 +4,7 @@ import performanceLogger from './performanceLogger';
 class DeviceDetection {
   constructor() {
     // Флаг для включения/отключения логов оптимизации
-    this.ENABLE_LOGS = false;
+    this.ENABLE_LOGS = true;
     this.cache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 минут кэш
     this.deviceInfo = null;
@@ -237,8 +237,13 @@ class DeviceDetection {
       // Виртуализация
       virtualScroll: {
         enabled: virtualizationEnabled,
-        itemHeight: deviceInfo.type === 'mobile' ? 100 : deviceInfo.type === 'tablet' ? 90 : 85,
-        overscan: deviceInfo.type === 'mobile' ? 3 : deviceInfo.type === 'tablet' ? 5 : 10
+        itemHeight: deviceInfo.type === 'mobile' ? 60 : deviceInfo.type === 'tablet' ? 70 : 80,
+        overscan: deviceInfo.type === 'mobile' ? 5 : deviceInfo.type === 'tablet' ? 8 : 10,
+        // Динамическое измерение высоты
+        dynamicSizing: true,
+        // Минимальная и максимальная высота
+        minHeight: deviceInfo.type === 'mobile' ? 50 : deviceInfo.type === 'tablet' ? 60 : 70,
+        maxHeight: deviceInfo.type === 'mobile' ? 200 : deviceInfo.type === 'tablet' ? 250 : 300
       },
       
       // Частота обновлений

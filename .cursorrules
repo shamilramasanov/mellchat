@@ -1,0 +1,167 @@
+# .cursorrules - MellChat Optimized
+
+## 🎯 Project Context
+You are working on MellChat - a real-time chat aggregator for Twitch/YouTube/Kick.
+Tech stack: React 18, Vite, Zustand, Express, PostgreSQL, Redis, BullMQ.
+Code style: Functional components, hooks, concise variable names.
+
+## ✅ Code Generation Rules
+
+### Always:
+- Use existing patterns from the codebase
+- Import from existing utils/services before creating new ones
+- Use TypeScript types if .ts files exist
+- Keep functions under 50 lines
+- Use meaningful but concise names (e.g., `msg` not `message` for loops)
+- Add JSDoc only for public APIs, not internal functions
+
+### Never:
+- Generate placeholder/TODO comments
+- Create duplicate utility functions
+- Add unnecessary try-catch blocks
+- Over-engineer simple solutions
+- Generate entire files when small changes needed
+
+### Performance:
+- Use React.memo only when necessary
+- Prefer useMemo/useCallback for expensive operations only
+- Use lodash debounce/throttle for events
+- Virtual scrolling for lists >50 items
+
+### Response Format:
+- Code blocks only, minimal explanations
+- Show only changed lines with context
+- Use // ... for unchanged code sections
+- No "Here's the solution" or "I've updated" text
+
+## 📂 Project Structure Reference
+```
+src/
+├── app/                 # Main app, routing
+├── features/            # Feature modules
+│   ├── auth/           # Authentication
+│   ├── chat/           # Chat logic
+│   ├── settings/       # User settings
+│   └── streams/        # Stream management
+├── shared/             # Shared components
+│   ├── components/     # Reusable UI
+│   └── utils/          # Helper functions
+└── services/           # Business logic
+    ├── api/            # API calls
+    ├── websocket/      # WebSocket
+    └── cache/          # Caching logic
+```
+
+## 🚫 Anti-patterns to Avoid
+
+- Creating new API calls without checking existing ones
+- Inline styles when CSS classes exist
+- Copy-pasting code instead of creating reusable functions
+- Over-commenting obvious code
+- Creating new state when derived state works
+
+## 💡 Preferred Solutions
+
+### State Management:
+```javascript
+// ✅ Good - Use Zustand store
+import { useChatStore } from '@/stores/chatStore';
+
+// ❌ Bad - Local state for global data
+const [messages, setMessages] = useState([]);
+```
+
+### API Calls:
+```javascript
+// ✅ Good - Use existing service
+import { messageService } from '@/services/messageService';
+await messageService.getMessages(streamId);
+
+// ❌ Bad - Direct fetch
+const res = await fetch('/api/messages');
+```
+
+### Components:
+```javascript
+// ✅ Good - Functional, concise
+const MessageCard = ({ msg }) => (
+  <div className="message-card">
+    <span>{msg.username}</span>
+    <p>{msg.content}</p>
+  </div>
+);
+
+// ❌ Bad - Over-engineered
+const MessageCard = ({ message }) => {
+  // Lots of unnecessary state and logic
+};
+```
+
+## 🎨 Styling Rules
+
+- Use existing Tailwind classes first
+- CSS modules for complex components
+- No inline styles unless dynamic
+- Follow glassmorphism theme (backdrop-blur, bg-opacity)
+
+## 🔍 When Asked to Debug
+
+1. Check console errors first
+2. Verify imports and exports
+3. Look for state management issues
+4. Check useEffect dependencies
+5. Verify API response structure
+
+## 📊 Performance Checklist
+
+Before suggesting changes, ensure:
+- [ ] Component doesn't re-render unnecessarily
+- [ ] Event handlers are debounced/throttled if needed
+- [ ] Large lists use virtualization
+- [ ] Images have loading="lazy"
+- [ ] No memory leaks in useEffect
+
+## 🚀 Code Examples
+
+### React Hooks Pattern:
+```javascript
+// Use this pattern consistently
+const Component = ({ prop1, prop2 }) => {
+  const store = useStore();
+  const [local, setLocal] = useState(null);
+  
+  const memoized = useMemo(() => expensive(prop1), [prop1]);
+  const callback = useCallback(() => {}, []);
+  
+  useEffect(() => {
+    // Side effects
+    return () => cleanup();
+  }, [deps]);
+  
+  return <div>...</div>;
+};
+```
+
+### API Service Pattern:
+```javascript
+// All API calls follow this pattern
+export const messageService = {
+  async getMessages(streamId) {
+    const cached = cache.get(streamId);
+    if (cached) return cached;
+    
+    const data = await api.get(`/messages/${streamId}`);
+    cache.set(streamId, data);
+    return data;
+  }
+};
+```
+
+## 🎯 Context Window Optimization
+
+When responding:
+1. Reference existing code, don't repeat it
+2. Show only the diff, not entire files
+3. Use "// existing code..." for unchanged parts
+4. Group related changes together
+5. Prioritize critical changes first

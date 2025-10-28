@@ -144,22 +144,22 @@
 /* New Messages Button */
 .chat-container__new-messages-wrapper {
   position: fixed;
-  bottom: 80px; /* Опускаем ближе к поиску */
+  bottom: 85px; /* Чуть ниже */
   left: 50%;
   transform: translateX(-50%);
-  z-index: calc(var(--z-fab) - 1);
-  /* Убираем анимацию */
+  z-index: 9999; /* Высокий z-index чтобы было поверх всего */
+  animation: slideUpFade 0.3s ease-out;
 }
 
 .chat-container__new-messages-btn {
-  padding: calc(var(--spacing-sm) / 2) var(--spacing-lg); /* Уменьшаем вертикальные отступы в два раза */
-  border-radius: 2rem;
+  padding: var(--spacing-xs) var(--spacing-sm); /* Уменьшаем отступы */
+  border-radius: 1rem; /* Меньший радиус */
   border: 1px solid var(--glass-border);
-  background: rgba(var(--bg-secondary-rgb), 0.7); /* Полупрозрачный фон */
+  background: var(--bg-secondary); /* Как было */
   cursor: pointer;
   outline: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Уменьшаем тень */
-  /* Убираем transition */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
   
   /* Flexbox for centering */
   display: flex;
@@ -167,9 +167,15 @@
   justify-content: center;
   
   font-size: var(--font-size-xs); /* Уменьшаем размер шрифта */
-  font-weight: var(--font-weight-regular); /* Убираем жирность */
-  color: var(--text-tertiary); /* Делаем более серым */
-  backdrop-filter: blur(10px); /* Добавляем размытие для полупрозрачности */
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  backdrop-filter: blur(10px);
+}
+
+.chat-container__new-messages-btn:hover {
+  background: var(--bg-tertiary); /* Как было */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .chat-container__new-messages-text {

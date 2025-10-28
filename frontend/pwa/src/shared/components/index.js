@@ -9,4 +9,5 @@ export { LiquidGlassButton } from './LiquidGlass';
 export { default as ServerErrorBanner } from './ServerErrorBanner/ServerErrorBanner';
 export { default as ApiErrorToast } from './ApiErrorToast/ApiErrorToast';
 export { default as PerformanceDashboard } from './PerformanceDashboard';
+export { WebSocketProvider, useWebSocketContext } from './WebSocketProvider';
 

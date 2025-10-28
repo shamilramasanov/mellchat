@@ -26,11 +26,13 @@ try {
     useRedis = true;
   });
 
-  // Пытаемся подключиться
+  // Пытаемся подключиться (async, не блокируем)
   redisClient.connect().catch(() => {
     logger.warn('Failed to connect to Redis, using memory store');
     useRedis = false;
   });
+  
+  logger.info('✅ Rate limiter initialized');
 } catch (error) {
   logger.warn('Redis not available, using memory store:', error.message);
   useRedis = false;

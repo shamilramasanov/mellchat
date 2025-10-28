@@ -1,0 +1,20 @@
+# .cursorignore - економ токени, виключи непотрібне
+node_modules/
+dist/
+build/
+.git/
+*.log
+*.min.js
+*.map
+coverage/
+.next/
+.vercel/
+*.lock
+
+# Large dependencies
+package-lock.json
+yarn.lock
+
+# Generated files
+*.generated.*
+*.bundle.*

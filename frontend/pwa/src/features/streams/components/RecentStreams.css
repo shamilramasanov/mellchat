@@ -1,13 +1,10 @@
 .recent-streams {
-  flex: 1;
+  min-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl);
-  background: var(--bg-secondary);
-  border-radius: 1rem;
-  margin: var(--spacing-md);
-  border: 1px solid var(--glass-border);
+  padding: var(--spacing-2xl);
+  background: var(--bg-primary);
 }
 
 .recent-streams__content {
@@ -99,6 +96,32 @@
   background: var(--bg-tertiary);
   border-color: var(--glass-border);
   transform: translateY(-2px);
+}
+
+/* Бейдж непрочитанных сообщений (зеленый) */
+.recent-stream-card__unread-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.3));
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: var(--color-success);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  margin-top: var(--spacing-xs);
+}
+
+/* Бейдж непрочитанных вопросов (синий) */
+.recent-stream-card__unread-questions-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.3));
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #3B82F6;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  margin-top: var(--spacing-xs);
 }
 
 .recent-stream-card__remove {
@@ -215,6 +238,30 @@
   font-variant-numeric: tabular-nums;
   position: relative;
   z-index: 10;
+}
+
+/* Highlight unread messages (green) */
+.recent-stream-card__stat--unread .recent-stream-card__stat-value {
+  color: var(--color-success);
+  font-size: 1.125rem;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.recent-stream-card__stat--unread .recent-stream-card__stat-icon {
+  font-size: 1.25rem;
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5));
+}
+
+/* Highlight unread questions (blue) */
+.recent-stream-card__stat--questions .recent-stream-card__stat-value {
+  color: #3B82F6;
+  font-size: 1.125rem;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.recent-stream-card__stat--questions .recent-stream-card__stat-icon {
+  font-size: 1.25rem;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
 }
 
 /* Add Stream Button */

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useStreamsStore } from '../store/streamsStore';
@@ -12,22 +12,57 @@ const RecentStreams = () => {
   const { t } = useTranslation();
   const recentStreams = useStreamsStore((state) => state.recentStreams);
   const activeStreams = useStreamsStore((state) => state.activeStreams);
+  const activeStreamId = useStreamsStore((state) => state.activeStreamId);
   const addStream = useStreamsStore((state) => state.addStream);
   const removeFromRecent = useStreamsStore((state) => state.removeFromRecent);
+  const removeStream = useStreamsStore((state) => state.removeStream);
+  const toggleStreamCard = useStreamsStore((state) => state.toggleStreamCard);
+  const collapsedStreamIds = useStreamsStore((state) => state.collapsedStreamIds);
   
   // Subscribe to messages so component re-renders when messages change
+  // ВАЖНО: подписываемся на messages.length чтобы ре-рендер при изменении!
   const messages = useChatStore((state) => state.messages);
+  const messagesCount = useChatStore((state) => state.messages.length);
   const getAllStreamsStats = useChatStore((state) => state.getAllStreamsStats);
   const loadMessagesAdaptive = useChatStore((state) => state.loadMessagesAdaptive);
   const [showAddStream, setShowAddStream] = useState(false);
   
-  // Показываем только недавние стримы, исключая активные
-  const streamsToShow = recentStreams.filter(stream => 
-    !activeStreams.some(activeStream => activeStream.id === stream.id)
-  );
+  // Показываем недавние стримы, которые сейчас не просматриваются
+  // Стрим может быть в activeStreams, но если он не активен - показываем его
+  const streamsToShow = recentStreams.filter(stream => {
+    // Проверяем, просматривается ли сейчас этот стрим
+    const isCurrentlyViewing = activeStreamId === stream.id;
+    // Если не просматриваем - показываем в последних
+    return !isCurrentlyViewing;
+  });
+  
+  // DEBUG: логирование для отладки
+  console.log('🔍 RecentStreams RERENDER:', {
+    timestamp: new Date().toISOString(),
+    totalRecentStreams: recentStreams.length,
+    activeStreamId,
+    streamsToShowCount: streamsToShow.length,
+    messagesCount,
+    recentStreams: recentStreams.map(s => ({ id: s.id, title: s.title, platform: s.platform })),
+    streamsToShow: streamsToShow.map(s => ({ id: s.id, title: s.title }))
+  });
   
   // Recalculate stats whenever messages change
-  const stats = getAllStreamsStats();
+  // ВАЖНО: используем messagesCount из подписки вместо messages.length!
+  const stats = useMemo(() => {
+    console.log('🔍 RecentStreams useMemo RUNNING - messagesCount changed:', messagesCount);
+    const calculated = getAllStreamsStats();
+    console.log('🔍 RecentStreams Stats Debug:', {
+      timestamp: new Date().toISOString(),
+      totalRecentStreams: recentStreams.length,
+      activeStreamId,
+      statsObject: calculated,
+      messagesCount: messagesCount,
+      messagesLength: messages.length,
+      twitchStats: calculated['twitch-dyrachyo'] // DEBUG: статистика для конкретного стрима
+    });
+    return calculated;
+  }, [getAllStreamsStats, messagesCount, recentStreams.length, activeStreamId]);
   
   // Загружаем сообщения для всех недавних стримов (кроме активных)
   useEffect(() => {
@@ -46,25 +81,33 @@ const RecentStreams = () => {
     }
   }, [streamsToShow.length, loadMessagesAdaptive]);
 
-  // Периодически обновляем сообщения для недавних стримов
+  // Периодически обновляем счетчики для недавних стримов
   useEffect(() => {
     if (streamsToShow.length === 0) return;
 
     const updateInterval = setInterval(async () => {
-      for (const stream of streamsToShow) {
-        try {
-          // Принудительно перезагружаем сообщения для обновления счетчиков
-          await loadMessagesAdaptive(stream.id, { forceReload: true });
-        } catch (error) {
-          console.warn(`Failed to update messages for stream ${stream.id}:`, error);
-        }
-      }
-    }, 5000); // Обновляем каждые 5 секунд
+      // Принудительно вызываем ре-рендер компонента для обновления счетчиков
+      // Сообщения уже приходят через WebSocket, нужно только обновить UI
+      const stats = getAllStreamsStats();
+      
+      console.log('🔄 Periodic stats update:', {
+        streamsCount: streamsToShow.length,
+        stats: Object.keys(stats).reduce((acc, id) => {
+          acc[id] = { unreadCount: stats[id]?.unreadCount || 0 };
+          return acc;
+        }, {})
+      });
+    }, 2000); // Обновляем каждые 2 секунды
 
     return () => clearInterval(updateInterval);
-  }, [streamsToShow, loadMessagesAdaptive]);
+  }, [streamsToShow, getAllStreamsStats]);
 
   const handleStreamClick = (stream) => {
+    // If stream is collapsed, expand it first
+    if (collapsedStreamIds.includes(stream.id)) {
+      toggleStreamCard(stream.id);
+    }
+    
     // Always add stream to active (since we only show recent streams now)
     addStream(stream);
   };
@@ -78,11 +121,11 @@ const RecentStreams = () => {
         streamToRemove = activeStreams.find(s => s.id === streamId);
       }
       
-      // Отправляем запрос на бэкенд для закрытия соединения
+      // 🚨 Отключаем от платформы (это реальный disconnect)
       if (streamToRemove?.connectionId) {
         try {
-          console.log('🔌 Disconnecting from stream:', streamToRemove.connectionId);
-          const response = await fetch('/api/v1/connect/disconnect', {
+          console.log('🔌 Full disconnect from stream:', streamToRemove.connectionId);
+          const response = await fetch('/api/v1/disconnect', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -107,9 +150,10 @@ const RecentStreams = () => {
       // Удаляем из недавних стримов
       removeFromRecent(streamId);
       
-      // Также удаляем из активных, если он там есть
-      const removeStream = useStreamsStore.getState().removeStream;
-      await removeStream(streamId);
+      // Удаляем из активных (если он там есть) через removeStream
+      if (activeStreams.find(s => s.id === streamId)) {
+        await removeStream(streamId);
+      }
     }
   };
 
@@ -193,18 +237,20 @@ const RecentStreams = () => {
                         <div className="recent-stream-card__title">
                           {stream.title || 'Stream'}
                         </div>
-                      </div>
-
-                      {/* Stats */}
-                      <div className="recent-stream-card__stats">
-                        <div className="recent-stream-card__stat">
-                          <span className="recent-stream-card__stat-icon">💬</span>
-                          <span className="recent-stream-card__stat-value">{streamStats.unreadCount || 0}</span>
-                        </div>
-                        <div className="recent-stream-card__stat">
-                          <span className="recent-stream-card__stat-icon">❓</span>
-                          <span className="recent-stream-card__stat-value">{streamStats.unreadQuestionCount || 0}</span>
-                        </div>
+                        
+                        {/* Счетчик непрочитанных сообщений */}
+                        {streamStats.unreadCount > 0 && (
+                          <div className="recent-stream-card__unread-badge">
+                            {streamStats.unreadCount} {streamStats.unreadCount === 1 ? 'новое сообщение' : 'новых сообщений'}
+                          </div>
+                        )}
+                        
+                        {/* Счетчик непрочитанных вопросов */}
+                        {streamStats.unreadQuestionCount > 0 && (
+                          <div className="recent-stream-card__unread-questions-badge">
+                            {streamStats.unreadQuestionCount} {streamStats.unreadQuestionCount === 1 ? 'новый вопрос' : streamStats.unreadQuestionCount < 5 ? 'новых вопроса' : 'новых вопросов'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>

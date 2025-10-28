@@ -2,6 +2,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const logger = require('../utils/logger');
 const messageHandler = require('../handlers/messageHandler');
+const sentimentService = require('../services/sentimentService');
 
 // Simple WS hub with per-connectionId subscriptions
 class WsHub {
@@ -64,6 +65,40 @@ class WsHub {
       this.checkInactiveConnections();
     }, 30000);
     interval.unref();
+    
+    // Mood updates broadcast каждые 2 секунды
+    const moodInterval = setInterval(() => {
+      this.broadcastMoodUpdates();
+    }, 2000);
+    moodInterval.unref();
+  }
+  
+  // Broadcast mood updates to all connected clients
+  broadcastMoodUpdates() {
+    const moodStats = sentimentService.getMoodStats();
+    
+    logger.info('🎭 Mood stats:', moodStats);
+    
+    if (moodStats.total === 0) return; // No data yet
+    
+    const data = JSON.stringify({
+      type: 'mood_update',
+      data: moodStats
+    });
+    
+    // Send to all connected WebSocket clients
+    let sentCount = 0;
+    this.wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(data);
+          sentCount++;
+        } catch (e) {
+          logger.error('WS mood broadcast error:', e.message);
+        }
+      }
+    });
+    logger.info(`📤 Mood update sent to ${sentCount} clients`);
   }
 
   checkInactiveConnections() {
@@ -156,14 +191,25 @@ class WsHub {
         platform: connectionId.split('-')[0] // Извлекаем платформу
       }, connectionId, 'WebSocket Client');
       
-      // Добавляем isQuestion к payload если определилось
-      if (result && result.isQuestion !== undefined) {
-        payload.isQuestion = result.isQuestion;
-        logger.debug(`📤 WebSocket payload updated: isQuestion=${payload.isQuestion} for message ${payload.id}`);
+      // Добавляем isQuestion, sentiment и isSpam к payload если определилось
+      if (result) {
+        if (result.isQuestion !== undefined) {
+          payload.isQuestion = result.isQuestion;
+        }
+        if (result.isSpam !== undefined) {
+          payload.isSpam = result.isSpam;
+        }
+        if (result.sentiment) {
+          payload.sentiment = result.sentiment;
+          logger.info(`📤 WebSocket: sentiment=${payload.sentiment}, isSpam=${payload.isSpam} for ${payload.id}`);
+        } else {
+          payload.sentiment = 'neutral';
+        }
       }
     } catch (error) {
       logger.error('Error processing WebSocket message:', error);
       payload.isQuestion = false; // По умолчанию не вопрос
+      payload.sentiment = 'neutral'; // По умолчанию neutral
     }
     
     const data = JSON.stringify({ type: 'message', connectionId, payload });

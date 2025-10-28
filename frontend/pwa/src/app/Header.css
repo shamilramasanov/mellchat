@@ -65,6 +65,10 @@
   gap: var(--spacing-sm);
 }
 
+.header__mood-wrapper {
+  position: relative;
+}
+
 /* Action Buttons */
 .header__action {
   width: 40px;

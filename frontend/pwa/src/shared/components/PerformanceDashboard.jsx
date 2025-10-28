@@ -214,8 +214,4 @@ const PerformanceDashboard = () => {
   );
 };
 
-export default memo(PerformanceDashboard, (prevProps, nextProps) => {
-  // Рендер только если реально изменились важные метрики
-  // Поскольку у нас нет props, всегда рендерим
-  return false; // Всегда перерендериваем, но с memo это будет реже
-});
+export default memo(PerformanceDashboard);

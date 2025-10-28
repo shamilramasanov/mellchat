@@ -2,12 +2,19 @@ import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { debounce } from 'lodash';
 import MessageCard from '../../features/chat/components/MessageCard';
+import SimpleMessageList from './SimpleMessageList';
 import deviceDetection from '../utils/deviceDetection';
 import performanceLogger from '../utils/performanceLogger';
+import measurementCache from '../utils/measurementCache.js';
+import anchorPositioning from '../utils/anchorPositioning.js';
 import './VirtualizedMessageList.css';
 
 // Флаг для включения/отключения логов оптимизации
-const ENABLE_PERFORMANCE_LOGS = false;
+const ENABLE_PERFORMANCE_LOGS = true;
+
+// CONSTANTS для Phase 1 оптимизации
+const VIRTUALIZATION_THRESHOLD = 200; // Виртуализация ТОЛЬКО если > 200 messages
+const DOM_LIMIT = 200; // Максимум 200 сообщений в DOM
 
 const VirtualizedMessageList = ({ 
   messages = [], 
@@ -16,66 +23,119 @@ const VirtualizedMessageList = ({
   isAtBottom,
   showNewMessagesButton,
   onNewMessagesClick,
-  containerRef // Добавляем ref извне
+  containerRef
 }) => {
+  // PHASE 1: Hybrid подход - Simple List для малого количества сообщений
+  if (messages.length <= VIRTUALIZATION_THRESHOLD) {
+    return (
+      <SimpleMessageList
+        messages={messages}
+        onScroll={onScroll}
+        scrollToBottom={scrollToBottom}
+        isAtBottom={isAtBottom}
+        showNewMessagesButton={showNewMessagesButton}
+        onNewMessagesClick={onNewMessagesClick}
+        containerRef={containerRef}
+      />
+    );
+  }
+
+  // PHASE 1: Ограничиваем до последних 200 messages при виртуализации
+  const displayMessages = messages.slice(-DOM_LIMIT);
+
   const parentRef = useRef(null);
-  const isScrollingRef = useRef(false);
-  const lastScrollTopRef = useRef(0);
-  
-  // Используем внешний ref если передан, иначе внутренний
   const actualContainerRef = containerRef || parentRef;
   
   // Получаем адаптивные настройки
   const adaptiveSettings = deviceDetection.getAdaptiveSettings() || {
     virtualScroll: {
-      enabled: false,
-      itemHeight: 40,
+      enabled: true,
+      itemHeight: 60,
       overscan: 10
     }
   };
-  
-  // Настройки виртуализации
+
+  // Настройки виртуализации с Measurement Cache + Smart Estimation
   const virtualizerSettings = useMemo(() => ({
-    count: messages.length,
+    count: displayMessages.length,
     getScrollElement: () => actualContainerRef.current,
-    estimateSize: () => adaptiveSettings.virtualScroll.itemHeight,
-    overscan: adaptiveSettings.virtualScroll.overscan,
-    enabled: adaptiveSettings.virtualScroll.enabled
-  }), [messages.length, adaptiveSettings.virtualScroll, actualContainerRef]);
+    estimateSize: (index) => {
+      const message = displayMessages[index];
+      if (!message) return 60;
+      
+      // Pattern 2: Проверяем Measurement Cache
+      const cachedHeight = measurementCache.getHeight(message, null);
+      if (cachedHeight) {
+        return cachedHeight;
+      }
+      
+      // Pattern 5: Smart Estimation как fallback
+      const textLength = (message.text || message.content || '').length;
+      let estimatedHeight = 60; // Default
+      
+      if (textLength < 50) estimatedHeight = 60;      // Short: 60px
+      else if (textLength < 200) estimatedHeight = 90;        // Medium: 90px
+      else estimatedHeight = 150;                      // Long: 150px
+      
+      // Сохраняем оценку в кэш
+      measurementCache.setHeight(message.id, estimatedHeight);
+      
+      return estimatedHeight;
+    },
+    overscan: 10,
+    enabled: true
+  }), [displayMessages.length, actualContainerRef, displayMessages]);
 
   // Создаем виртуализатор
   const virtualizer = useVirtualizer(virtualizerSettings);
 
-  // Логируем виртуализацию
-  useEffect(() => {
-    console.log('🔍 Virtualization stats:', {
-      totalMessages: messages.length,
-      virtualItemsCount: virtualItems.length,
-      enabled: adaptiveSettings.virtualScroll.enabled,
-      firstVisibleIndex: virtualItems[0]?.index || 'none',
-      lastVisibleIndex: virtualItems[virtualItems.length - 1]?.index || 'none',
-      containerHeight: actualContainerRef.current?.clientHeight || 'unknown'
-    });
+  // Функция для измерения реальной высоты элемента с кэшированием
+  const measureElement = useCallback((element, index) => {
+    if (!element) return;
     
-    const startTime = performance.now();
+    const message = displayMessages[index];
+    if (!message) return;
     
-    // Небольшая задержка для измерения времени рендера
-    const timeoutId = setTimeout(() => {
-      const renderTime = performance.now() - startTime;
+    // Pattern 2: Измеряем реальную высоту
+    // Используем scrollHeight для измерения контента + padding
+    // Не используем getBoundingClientRect, так как он включает внешние отступы
+    const height = element.scrollHeight || element.offsetHeight || 0;
+    
+    if (height > 0) {
+      // Сохраняем в кэш
+      measurementCache.setHeight(message.id, height);
+      
+      // Обновляем виртуализатор
+      virtualizer.measureElement(element);
       
       if (ENABLE_PERFORMANCE_LOGS) {
-        performanceLogger.logVirtualization({
-          enabled: adaptiveSettings.virtualScroll.enabled,
-          renderedItems: adaptiveSettings.virtualScroll.enabled ? virtualizer.getVirtualItems().length : messages.length,
-          totalItems: messages.length,
-          renderTime: Math.round(renderTime),
-          performance: adaptiveSettings.virtualScroll.enabled ? 'virtualized' : 'standard'
-        });
+        console.log(`📏 Measured: ${height}px for "${(message.text || message.content || '').substring(0, 30)}..."`);
       }
-    }, 100);
+    }
+  }, [virtualizer, displayMessages]);
 
-    return () => clearTimeout(timeoutId);
-  }, [messages.length, adaptiveSettings.virtualScroll.enabled, virtualizer]);
+  // Логируем виртуализацию
+  useEffect(() => {
+    const virtualItems = virtualizer.getVirtualItems();
+    
+    if (ENABLE_PERFORMANCE_LOGS) {
+      console.log('🔍 Virtualization stats:', {
+        totalMessages: messages.length,
+        displayMessages: displayMessages.length,
+        virtualItemsCount: virtualItems.length,
+        firstVisibleIndex: virtualItems[0]?.index || 'none',
+        lastVisibleIndex: virtualItems[virtualItems.length - 1]?.index || 'none'
+      });
+      
+      performanceLogger.logVirtualization({
+        enabled: true,
+        renderedItems: virtualItems.length,
+        totalItems: messages.length,
+        renderTime: 0,
+        performance: 'virtualized-hybrid'
+      });
+    }
+  }, [messages.length, displayMessages.length, virtualizer]);
 
   // Debounced обработчик скролла
   const debouncedScroll = useMemo(() => 
@@ -134,29 +194,7 @@ const VirtualizedMessageList = ({
   // Мемоизированные виртуальные элементы
   const virtualItems = virtualizer.getVirtualItems();
 
-  // Если виртуализация отключена, рендерим обычный список
-  if (!adaptiveSettings.virtualScroll.enabled) {
-    return (
-      <div className="virtualized-message-list">
-        <div 
-          ref={actualContainerRef}
-          className="virtualized-message-list__container"
-          onScroll={debouncedScroll}
-        >
-          <div className="virtualized-message-list__content">
-            {messages.map((message, index) => (
-              <MessageCard 
-                key={message.id || index} 
-                message={message} 
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Виртуализированный список
+  // Виртуализированный список (только когда messages > 200)
   return (
     <div className="virtualized-message-list">
       <div 
@@ -172,12 +210,22 @@ const VirtualizedMessageList = ({
           }}
         >
           {virtualItems.map((virtualItem) => {
-            const message = messages[virtualItem.index];
+            const message = displayMessages[virtualItem.index];
             if (!message) return null;
             
             return (
               <div
                 key={message.id || virtualItem.index}
+                id={`message-${message.id}`} // Pattern 1: id для anchor positioning
+                data-index={virtualItem.index} // Требуется для TanStack Virtual
+                ref={(el) => {
+                  if (el) {
+                    virtualizer.measureElement(el); // Register element
+                    requestAnimationFrame(() => {
+                      measureElement(el, virtualItem.index);
+                    });
+                  }
+                }}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -185,14 +233,34 @@ const VirtualizedMessageList = ({
                   width: '100%',
                   height: `${virtualItem.size}px`,
                   transform: `translateY(${virtualItem.start}px)`,
-                  padding: '0 var(--spacing-xs)', // Добавляем отступы по краям
-                  boxSizing: 'border-box', // Включаем отступы в размер
+                  contain: 'strict', // Pattern 3: CSS contain для performance
+                  boxSizing: 'border-box',
+                  paddingBottom: 'var(--spacing-xs)', // Отступ между сообщениями
                 }}
               >
                 <MessageCard message={message} />
               </div>
             );
           })}
+          
+          {/* Предупреждение о лимите */}
+          {messages.length > DOM_LIMIT && (
+            <div style={{
+              position: 'sticky',
+              top: 0,
+              left: 0,
+              right: 0,
+              padding: '8px 12px',
+              background: 'rgba(255, 193, 7, 0.1)',
+              color: 'rgba(255, 193, 7, 0.9)',
+              fontSize: '12px',
+              textAlign: 'center',
+              borderBottom: '1px solid rgba(255, 193, 7, 0.2)',
+              zIndex: 10
+            }}>
+              Показаны последние {displayMessages.length} из {messages.length} сообщений
+            </div>
+          )}
         </div>
       </div>
     </div>

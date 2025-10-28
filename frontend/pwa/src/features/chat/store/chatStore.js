@@ -5,7 +5,7 @@ import { adaptiveMessagesService } from '@shared/services/adaptiveMessagesServic
 import paginationMessagesService from '@shared/services/paginationMessagesService';
 
 export const useChatStore = create(
-  // persist(
+  persist(
     (set, get) => ({
       // State
       messages: [], // Кэш сообщений в памяти
@@ -20,6 +20,8 @@ export const useChatStore = create(
       loadingStrategy: null, // Текущая стратегия загрузки
       sessionInfo: null, // Информация о сессии пользователя
       hasMoreMessages: false, // Есть ли еще сообщения для загрузки
+      currentMood: { happy: 0, neutral: 0, sad: 0 }, // Текущее настроение чата
+      moodEnabled: true, // Включён ли анализ настроения (по умолчанию включён)
       
       // Новые поля для работы с датами
       availableDates: {}, // Доступные даты для каждого стрима
@@ -29,6 +31,8 @@ export const useChatStore = create(
 
       // Actions
       setActiveStreamId: (streamId) => set({ activeStreamId: streamId }),
+      setCurrentMood: (mood) => set({ currentMood: mood }),
+      toggleMoodEnabled: () => set((state) => ({ moodEnabled: !state.moodEnabled })),
       
       addMessage: (message) => {
         const { messages } = get();
@@ -38,17 +42,102 @@ export const useChatStore = create(
         if (exists) {
           return;
         }
+        
+        // Debug: проверяем sentiment и spam
+        if (!message.sentiment) {
+          console.warn('⚠️ Message without sentiment:', {
+            id: message.id,
+            text: message.text,
+            hasSpam: !!message.isSpam
+          });
+        } else {
+          console.log('✅ Message:', {
+            text: message.text,
+            sentiment: message.sentiment,
+            isSpam: !!message.isSpam
+          });
+        }
 
-        // Add to messages (limit to 1000 for memory management)
-        const newMessages = [...messages, message].slice(-1000);
+        // Add to messages (limit to 200 for memory management, matching DB limit)
+        const newMessages = [...messages, message].slice(-200);
 
         set({ messages: newMessages });
       },
       
       // Простая функция для получения сообщений стрима
       getStreamMessages: (streamId) => {
-        const { messages, searchQuery } = get();
+        const { messages, searchQuery, moodEnabled } = get();
         let streamMessages = messages.filter(m => m.streamId === streamId);
+
+        // Если настроение выключено - показываем все сообщения
+        if (!moodEnabled) {
+          return streamMessages;
+        }
+
+        // 🎯 Фильтруем спам локально (если бэкенд не отправил isSpam)
+        const beforeFilter = streamMessages.length;
+        streamMessages = streamMessages.filter(m => {
+          const text = (m.text || m.content || '').trim();
+          
+          // 1. Скрываем если бэкенд пометил как спам
+          if (m.isSpam) {
+            console.log('🚫 Filtered (backend spam):', text);
+            return false;
+          }
+          
+          // 2. Скрываем sentiment='sad'
+          if (m.sentiment === 'sad') {
+            console.log('🚫 Filtered (sad):', text);
+            return false;
+          }
+          
+          // 3. Локальная фильтрация (fallback если нет isSpam)
+          const spamWords = ['gg', 'lol', 'omg', 'wtf', 'bro', 'dude', 'yea', 'yeah', 'yep', 'nah', 'pfft', 'tf', 'keks', 'kekw', 'kek', 'gah', 'sheesh', 'damn', 'bruh', 'ew', 'oof', 'ugh', 'ahh'];
+          
+          // СТРОГИЙ РЕЖИМ: фильтруем агрессивно
+          
+          // Спам слова
+          if (spamWords.includes(text.toLowerCase())) {
+            console.log('🚫 Filtered (spam word):', text);
+            return false;
+          }
+          
+          // Короткие (< 3 символа)
+          if (text.length < 3) {
+            console.log('🚫 Filtered (short):', text);
+            return false;
+          }
+          
+          // Очень короткие (< 5 символов) - строгий режим
+          if (text.length < 5) {
+            console.log('🚫 Filtered (very short):', text);
+            return false;
+          }
+          
+          // Только повторения
+          if (/^([a-z])\1{2,}$/i.test(text)) {
+            console.log('🚫 Filtered (repetition):', text);
+            return false;
+          }
+          
+          // Много вопросительных знаков (> 2)
+          if ((text.match(/[?]/g) || []).length > 2) {
+            console.log('🚫 Filtered (too many ?):', text);
+            return false;
+          }
+          
+          // Только заглавные (> 5 символов)
+          if (text === text.toUpperCase() && text.length > 5 && /[A-Z]/.test(text)) {
+            console.log('🚫 Filtered (all caps):', text);
+            return false;
+          }
+          
+          return true;
+        });
+        
+        if (beforeFilter !== streamMessages.length) {
+          console.log(`🎯 Filtered: ${beforeFilter} → ${streamMessages.length} messages`);
+        }
 
         console.log('🔍 getStreamMessages:', {
           streamId,
@@ -204,7 +293,7 @@ export const useChatStore = create(
             const newMessages = dbMessages.filter(msg => !existingIds.has(msg.id));
             
             set({ 
-              messages: [...messages, ...newMessages].slice(-1000),
+              messages: [...messages, ...newMessages].slice(-200),
               databaseConnected: true,
               loading: false 
             });
@@ -250,7 +339,7 @@ export const useChatStore = create(
             const newQuestions = dbQuestions.filter(msg => !existingIds.has(msg.id));
             
             set({ 
-              messages: [...messages, ...newQuestions].slice(-1000),
+              messages: [...messages, ...newQuestions].slice(-200),
               databaseConnected: true,
               loading: false 
             });
@@ -355,6 +444,7 @@ export const useChatStore = create(
         const existingMessages = messages.filter(m => m.streamId === streamId);
         
         // Если сообщения уже есть и не требуется принудительная перезагрузка, возвращаем существующие
+        // БЕЗ вызова API
         if (existingMessages.length > 0 && !options.forceReload) {
           console.log(`✅ Adaptive loading: Using cached ${existingMessages.length} messages for stream ${streamId}`);
           return { success: true, count: existingMessages.length, strategy: { strategy: 'cached' } };
@@ -395,6 +485,19 @@ export const useChatStore = create(
             
             // Объединяем сообщения других стримов с новыми уникальными сообщениями текущего стрима
             const allMessages = [...otherStreamMessages, ...uniqueDbMessages];
+            
+            // ВАЖНО: не перезаписываем сообщения если новых нет и в кэше уже есть
+            if (uniqueDbMessages.length === 0 && existingMessages.length > 0) {
+              console.log(`✅ Adaptive loading: No new messages from DB, keeping ${existingMessages.length} cached messages`);
+              set({ 
+                databaseConnected: true,
+                loading: false,
+                loadingStrategy: response.strategy,
+                sessionInfo: response.session,
+                hasMoreMessages: response.hasMore
+              });
+              return { success: true, count: 0, strategy: response.strategy };
+            }
             
             set({ 
               messages: allMessages,
@@ -539,6 +642,26 @@ export const useChatStore = create(
           lastReadMessageIds
         });
         
+        // Если нет lastReadId - считаем все прочитанными (кроме новых после последнего)
+        if (!lastReadId && streamMessages.length > 0) {
+          // Устанавливаем последнее сообщение как прочитанное
+          const lastMessage = streamMessages[streamMessages.length - 1];
+          set({ 
+            lastReadMessageIds: { 
+              ...lastReadMessageIds, 
+              [streamId]: lastMessage.id 
+            } 
+          });
+          console.log('✅ Auto-marking as read:', { streamId, lastMessageId: lastMessage.id });
+          return {
+            messageCount: streamMessages.length,
+            questionCount: streamMessages.filter(m => m.isQuestion).length,
+            unreadCount: 0,
+            unreadQuestionCount: 0,
+            lastReadId: lastMessage.id,
+          };
+        }
+        
         // Iterate from the end to find unread messages
         for (let i = streamMessages.length - 1; i >= 0; i--) {
           const msg = streamMessages[i];
@@ -552,11 +675,9 @@ export const useChatStore = create(
           }
         }
         
-        // If lastReadId was not found, all are unread
+        // Если lastReadId не найден - значит сообщения удалились, считаем от первого существующего
         if (!foundLastRead && streamMessages.length > 0 && lastReadId) {
-          unreadCount = streamMessages.length;
-          unreadQuestionCount = streamMessages.filter(m => m.isQuestion).length;
-        } else if (!lastReadId) {
+          // Все сообщения непрочитанные до тех пор, пока не обновим lastReadId
           unreadCount = streamMessages.length;
           unreadQuestionCount = streamMessages.filter(m => m.isQuestion).length;
         }
@@ -566,16 +687,25 @@ export const useChatStore = create(
           questionCount: streamMessages.filter(m => m.isQuestion).length,
           unreadCount,
           unreadQuestionCount,
+          lastReadId,
         };
       },
       
       markMessagesAsRead: (streamId, lastMessageId) => {
-        set(state => ({
-          lastReadMessageIds: {
+        set(state => {
+          const updatedIds = {
             ...state.lastReadMessageIds,
             [streamId]: lastMessageId,
-          },
-        }));
+          };
+          console.log('📌 markMessagesAsRead:', {
+            streamId,
+            lastMessageId,
+            updated: updatedIds
+          });
+          return {
+            lastReadMessageIds: updatedIds
+          };
+        });
       },
 
       // Получить статистику всех стримов (для совместимости)
@@ -812,6 +942,21 @@ export const useChatStore = create(
         
         return oldestMessage ? oldestMessage.id : null;
       }
-    })
-    // )
+    }),
+    {
+      name: 'chat-storage', // localStorage key
+      partialize: (state) => ({
+        // Сохраняем только важные данные
+        messages: state.messages.slice(-200), // Последние 200 сообщений (по лимиту БД)
+        lastReadMessageIds: state.lastReadMessageIds, // Сохраняем lastReadMessageIds для счетчиков
+        moodEnabled: state.moodEnabled
+      }),
+      onRehydrateStorage: () => (state) => {
+        console.log('💾 Chat store rehydrated:', {
+          messagesCount: state?.messages?.length || 0,
+          lastReadMessageIds: state?.lastReadMessageIds
+        });
+      }
+    }
+  )
   );

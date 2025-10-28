@@ -83,7 +83,9 @@ class KickSimpleClient {
                   id: jsonDataSub.id || `kick-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
                   username: jsonDataSub.sender.username || 'Anonymous',
                   text: jsonDataSub.content || '',
-                  timestamp: new Date(jsonDataSub.created_at || Date.now()).getTime(),
+                  timestamp: jsonDataSub.created_at ? 
+                    new Date(jsonDataSub.created_at.replace(/[+-]\d{2}:\d{2}$/, '')).getTime() : 
+                    Date.now(),
                   platform: 'kick',
                   color: this.generateColor(jsonDataSub.sender.username || 'Anonymous'),
                   reactions: { like: 0, dislike: 0 },

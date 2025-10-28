@@ -28,6 +28,7 @@ const twitchRoutes = require('./routes/twitch');
 let kickRoutesFactory = require('./routes/kick');
 const emojiRoutes = require('./routes/emoji');
 const messagesRoutes = require('./routes/messages');
+const reputationRoutes = require('./routes/reputation');
 
 const app = express();
 const { createWsServer } = require('./ws/server');
@@ -42,7 +43,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173', // Vite dev server
   'http://localhost:5174', // Vite dev server (alternate port)
-  'http://192.168.88.22:5173', // Local network access (mobile testing)
+  'http://192.168.19.76:5173', // Local network access (mobile testing)
   'https://mellchat.vercel.app', // Production Vercel
   'https://mellchat-v5y7.vercel.app', // Old Vercel (legacy)
   'https://mellchat.live', // Custom domain
@@ -70,6 +71,12 @@ app.use(cors({
     // Allow any Vercel preview URL
     if (origin && origin.includes('.vercel.app')) {
       logger.info('CORS allowed (Vercel):', { origin });
+      return callback(null, true);
+    }
+    
+    // Allow any local network IP (192.168.x.x)
+    if (origin && origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/)) {
+      logger.info('CORS allowed (local network):', { origin });
       return callback(null, true);
     }
     
@@ -164,6 +171,9 @@ app.use('/api/v1/emoji', rateLimiters.search, emojiRoutes);
 
 // Messages routes - лимит для сообщений
 app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
+
+// Reputation routes - общий лимит
+app.use('/api/v1/reputation', rateLimiters.general, reputationRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

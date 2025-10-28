@@ -65,7 +65,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          text,
+          content as text,
           platform,
           created_at,
           is_question
@@ -95,6 +95,30 @@ const databaseService = {
         isQuestion: message.isQuestion
       });
       
+      // Проверяем лимит: максимум 200 сообщений от одного автора
+      const countQuery = `
+        SELECT COUNT(*) as count 
+        FROM messages 
+        WHERE username = $1 AND stream_id = $2
+      `;
+      const countResult = await this.query(countQuery, [message.username, message.streamId]);
+      const messageCount = parseInt(countResult.rows[0].count, 10);
+      
+      if (messageCount >= 200) {
+        // Удаляем самое старое сообщение этого автора
+        const deleteQuery = `
+          DELETE FROM messages 
+          WHERE id = (
+            SELECT id FROM messages 
+            WHERE username = $1 AND stream_id = $2 
+            ORDER BY created_at ASC 
+            LIMIT 1
+          )
+        `;
+        await this.query(deleteQuery, [message.username, message.streamId]);
+        logger.debug(`Removed oldest message from ${message.username} (had ${messageCount} messages)`);
+      }
+      
       const query = `
         INSERT INTO messages (
           id,
@@ -115,7 +139,8 @@ const databaseService = {
       if (timestamp instanceof Date) {
         timestamp = timestamp.getTime();
       } else if (typeof timestamp === 'string') {
-        timestamp = new Date(timestamp).getTime();
+        // Убираем timezone из строки ISO для корректного парсинга
+        timestamp = new Date(timestamp.replace(/[+-]\d{2}:\d{2}$/, '')).getTime();
       } else if (!timestamp) {
         timestamp = Date.now();
       }
@@ -147,6 +172,40 @@ const databaseService = {
     if (!messages || messages.length === 0) return [];
     
     try {
+      // Проверяем лимит для каждого уникального автора
+      const authorCounts = {};
+      for (const message of messages) {
+        const key = `${message.username}_${message.streamId}`;
+        if (!authorCounts[key]) {
+          const countQuery = `
+            SELECT COUNT(*) as count 
+            FROM messages 
+            WHERE username = $1 AND stream_id = $2
+          `;
+          const countResult = await this.query(countQuery, [message.username, message.streamId]);
+          authorCounts[key] = parseInt(countResult.rows[0].count, 10);
+        }
+      }
+      
+      // Удаляем старые сообщения если нужно
+      for (const [key, count] of Object.entries(authorCounts)) {
+        if (count >= 200) {
+          const [username, streamId] = key.split('_');
+          const deleteQuery = `
+            DELETE FROM messages 
+            WHERE id = (
+              SELECT id FROM messages 
+              WHERE username = $1 AND stream_id = $2 
+              ORDER BY created_at ASC 
+              LIMIT 1
+            )
+          `;
+          await this.query(deleteQuery, [username, streamId]);
+          authorCounts[key]--;
+          logger.debug(`Removed oldest message from ${username} (had ${count} messages)`);
+        }
+      }
+      
       // Создаем VALUES строку для батча
       const values = [];
       const placeholders = [];
@@ -160,7 +219,8 @@ const databaseService = {
         if (timestamp instanceof Date) {
           timestamp = timestamp.getTime();
         } else if (typeof timestamp === 'string') {
-          timestamp = new Date(timestamp).getTime();
+          // Убираем timezone из строки ISO для корректного парсинга
+          timestamp = new Date(timestamp.replace(/[+-]\d{2}:\d{2}$/, '')).getTime();
         } else if (!timestamp) {
           timestamp = Date.now();
         }
@@ -181,7 +241,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          text,
+          content,
           platform,
           timestamp,
           is_question,
@@ -231,7 +291,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          text,
+          content as text,
           platform,
           created_at,
           is_question
@@ -256,7 +316,7 @@ const databaseService = {
           id,
           stream_id,
           username,
-          text,
+          content as text,
           platform,
           created_at,
           is_question
@@ -264,7 +324,7 @@ const databaseService = {
         WHERE stream_id = $1 
         AND (
           LOWER(username) LIKE LOWER($2) 
-          OR LOWER(text) LIKE LOWER($2)
+          OR LOWER(content) LIKE LOWER($2)
         )
         ORDER BY created_at DESC 
         LIMIT $3 OFFSET $4

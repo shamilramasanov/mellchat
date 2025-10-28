@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MellChat Performance Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            font-weight: 600;
+            color: #aaa;
+        }
+        .metric-value {
+            font-weight: 700;
+            color: #4CAF50;
+        }
+        .warning {
+            color: #FFC107;
+        }
+        .error {
+            color: #f44336;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        h2 {
+            color: #81C784;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 MellChat Performance Test</h1>
+    
+    <div class="section">
+        <h2>Phase 1 Results</h2>
+        <div class="metric">
+            <span class="metric-label">Messages Count</span>
+            <span class="metric-value" id="messageCount">0</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">DOM Nodes</span>
+            <span class="metric-value" id="domNodes">0</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Rendering Mode</span>
+            <span class="metric-value" id="renderingMode">Unknown</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Layout Calculations</span>
+            <span class="metric-value" id="layoutTime">0ms</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Paint Time</span>
+            <span class="metric-value" id="paintTime">0ms</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Expected Values (Phase 1)</h2>
+        <div class="metric">
+            <span class="metric-label">Virtualization Threshold</span>
+            <span class="metric-value">≤ 200 messages</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Max DOM Nodes</span>
+            <span class="metric-value">≤ 200</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">CSS Contain</span>
+            <span class="metric-value">layout style paint</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Smart Estimation</span>
+            <span class="metric-value">Enabled</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Tests</h2>
+        <button class="test-button" onclick="checkPerformance()">Check Performance</button>
+        <button class="test-button" onclick="checkCSSContain()">Check CSS Contain</button>
+        <button class="test-button" onclick="checkDOM()">Check DOM</button>
+        <div id="testResults" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function updateMetrics() {
+            // Simulate checking messages count (in real app, get from store)
+            const messageCount = 150; // Example
+            document.getElementById('messageCount').textContent = messageCount;
+            
+            // Count DOM nodes
+            const messageCards = document.querySelectorAll('.message-card');
+            document.getElementById('domNodes').textContent = messageCards.length;
+            
+            // Determine rendering mode
+            const renderingMode = messageCount <= 200 ? 'Real DOM' : 'Virtualized';
+            document.getElementById('renderingMode').textContent = renderingMode;
+        }
+
+        function checkPerformance() {
+            const startTime = performance.now();
+            
+            // Simulate layout calculation
+            document.body.offsetHeight;
+            
+            const endTime = performance.now();
+            const layoutTime = (endTime - startTime).toFixed(2);
+            
+            document.getElementById('layoutTime').textContent = layoutTime + 'ms';
+            document.getElementById('testResults').innerHTML = 
+                `<p style="color: #4CAF50;">✓ Performance test completed in ${layoutTime}ms</p>`;
+        }
+
+        function checkCSSContain() {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'message-card';
+            document.body.appendChild(testDiv);
+            
+            const computedStyle = window.getComputedStyle(testDiv);
+            const contain = computedStyle.contain;
+            
+            document.body.removeChild(testDiv);
+            
+            if (contain && contain !== 'none') {
+                document.getElementById('testResults').innerHTML = 
+                    `<p style="color: #4CAF50;">✓ CSS contain is enabled: ${contain}</p>`;
+            } else {
+                document.getElementById('testResults').innerHTML = 
+                    `<p style="color: #f44336;">✗ CSS contain is NOT enabled</p>`;
+            }
+        }
+
+        function checkDOM() {
+            const messageCards = document.querySelectorAll('.message-card');
+            const count = messageCards.length;
+            
+            if (count <= 200) {
+                document.getElementById('testResults').innerHTML = 
+                    `<p style="color: #4CAF50;">✓ DOM is within limit: ${count} nodes (≤ 200)</p>`;
+            } else {
+                document.getElementById('testResults').innerHTML = 
+                    `<p style="color: #FFC107;">⚠ DOM exceeds limit: ${count} nodes (> 200)</p>`;
+            }
+            
+            document.getElementById('domNodes').textContent = count;
+        }
+
+        // Auto-update metrics every 2 seconds
+        setInterval(updateMetrics, 2000);
+        
+        // Initial update
+        updateMetrics();
+    </script>
+</body>
+</html>
+

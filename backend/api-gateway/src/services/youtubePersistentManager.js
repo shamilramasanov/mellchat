@@ -35,8 +35,12 @@ class YouTubePersistentManager extends EventEmitter {
     this.STATE_KEY_PREFIX = 'youtube:connection:';
     this.STATE_TTL_SECONDS = 3600; // 1 hour
 
-    // Restore connections on startup
-    this.restoreConnections();
+    // Restore connections on startup (async, after Redis connects)
+    setTimeout(() => {
+      this.restoreConnections().catch(err => {
+        logger.error('Failed to restore connections on startup:', err);
+      });
+    }, 1000);
   }
 
   // Get current API key

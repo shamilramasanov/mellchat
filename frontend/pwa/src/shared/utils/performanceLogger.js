@@ -2,7 +2,7 @@
 class PerformanceLogger {
   constructor() {
     // Флаг для включения/отключения логов оптимизации
-    this.ENABLE_LOGS = false;
+    this.ENABLE_LOGS = true;
     this.logs = [];
     this.metrics = {
       virtualization: {
