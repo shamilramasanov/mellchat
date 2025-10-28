@@ -66,11 +66,8 @@ class WsHub {
     }, 30000);
     interval.unref();
     
-    // Mood updates broadcast каждые 2 секунды
-    const moodInterval = setInterval(() => {
-      this.broadcastMoodUpdates();
-    }, 2000);
-    moodInterval.unref();
+    // Mood updates - отключен автоматический broadcast
+    // Теперь отправляем только когда реально меняется настроение
   }
   
   // Broadcast mood updates to all connected clients
