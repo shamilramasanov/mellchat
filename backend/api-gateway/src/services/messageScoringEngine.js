@@ -61,24 +61,19 @@ class MessageScoringEngine {
       penalties += (features.repetitionScore - 0.3) * 20; // До -14 баллов
     }
     
-    // Штраф за избыток эмодзи (>20% эмодзи)
-    if (features.emojiRatio > 0.2) {
-      penalties += (features.emojiRatio - 0.2) * 30; // До -24 баллов
+    // Штраф за избыток эмодзи (>50% эмодзи - только реальное злоупотребление)
+    if (features.emojiRatio > 0.5) {
+      penalties += (features.emojiRatio - 0.5) * 20; // До -10 баллов
     }
     
-    // Штраф за злоупотребление CAPS (>50% заглавных)
-    if (features.capsRatio > 0.5 && features.length > 5) {
-      penalties += (features.capsRatio - 0.5) * 10; // До -5 баллов
+    // Штраф за злоупотребление CAPS (>70% заглавных - только крики)
+    if (features.capsRatio > 0.7 && features.length > 5) {
+      penalties += (features.capsRatio - 0.7) * 10; // До -3 баллов
     }
     
-    // Штраф за спам-слова (>30% спам-слов)
-    if (features.spamWordsRatio > 0.3) {
-      penalties += (features.spamWordsRatio - 0.3) * 15; // До -10.5 баллов
-    }
-    
-    // Штраф за очень короткие сообщения (<5 символов)
-    if (features.length < 5) {
-      penalties += (5 - features.length) * 5; // До -25 баллов
+    // Штраф за спам-слова (>70% спам-слов - только реальный спам)
+    if (features.spamWordsRatio > 0.7) {
+      penalties += (features.spamWordsRatio - 0.7) * 10; // До -3 баллов
     }
     
     return Math.min(50, penalties); // Максимум -50 баллов
@@ -102,15 +97,15 @@ class MessageScoringEngine {
     // Бонус за отсутствие повторений
     score += (1 - features.repetitionScore) * 10; // До 10 баллов
     
-    // Бонус за отсутствие спам-слов
-    score += (1 - features.spamWordsRatio) * 10; // До 10 баллов
+    // Бонус за отсутствие спам-слов (уменьшаем влияние)
+    score += (1 - features.spamWordsRatio) * 5; // До 5 баллов (вместо 10)
     
     // Бонус за длину сообщения (до 20 баллов)
-    if (features.length > 20) {
-      score += Math.min(20, (features.length - 20) / 2);
-    } else if (features.length < 5 && semanticDensity < 0.2) {
-      // Штраф за короткие неосмысленные сообщения
-      score -= 15;
+    if (features.length > 15) {
+      score += Math.min(20, (features.length - 15) / 3); // Более мягкий бонус
+    } else if (features.length < 3) {
+      // Штраф только за ОЧЕНЬ короткие сообщения (< 3 символа)
+      score -= 20;
     }
     
     // Получаем модификатор репутации
