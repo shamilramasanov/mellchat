@@ -110,6 +110,21 @@ class AdaptiveSpamDetector {
     // Быстрые проверки
     if (features.length < 3) return true;
     
+    // ✅ ПРОВЕРКА ПОВТОРЯЮЩИХСЯ СИМВОЛОВ И БУКВ (аааааа, wwwwww)
+    // Если >= 6 одинаковых символов подряд - это спам
+    if (/(.)\1{5,}/i.test(text)) {
+      logger.debug('🚫 Spam detected by character repetition:', { text: text.substring(0, 50) });
+      return true;
+    }
+    
+    // ✅ ПРОВЕРКА ПОВТОРЯЮЩИХСЯ ПАТТЕРНОВ В СЛОВАХ (повторповторповтор)
+    // Если в слове паттерн повторяется >= 3 раза
+    const repeatedPatternMatch = text.match(/(.{2,})\1{2,}/g);
+    if (repeatedPatternMatch && repeatedPatternMatch.length >= 1) {
+      logger.debug('🚫 Spam detected by pattern repetition in word:', { text: text.substring(0, 50) });
+      return true;
+    }
+    
     // ✅ ПРОВЕРКА ПОВТОРЯЮЩИХСЯ И ПОХОЖИХ СЛОВ
     // Пример: "DinoDance DinoDance DinoDance" = спам
     // Пример: "evelon1Angry evelon1Angry" = спам
@@ -123,10 +138,16 @@ class AdaptiveSpamDetector {
         wordCounts[word] = (wordCounts[word] || 0) + 1;
       });
       
-      // Если одно слово повторяется >= 3 раза - это спам
+      // Если одно слово повторяется >= 2 раза в сообщениях длиной 4+ слов - это спам
       const maxRepeat = Math.max(...Object.values(wordCounts));
-      if (maxRepeat >= 3 && words.length >= 3) {
-        logger.debug('🚫 Spam detected by exact word repetition:', { text: text.substring(0, 50), maxRepeat });
+      if (maxRepeat >= 2 && words.length >= 4) {
+        logger.debug('🚫 Spam detected by exact word repetition (2+ repeats):', { text: text.substring(0, 50), maxRepeat });
+        return true;
+      }
+      
+      // Если одно слово повторяется >= 3 раза - это спам
+      if (maxRepeat >= 3) {
+        logger.debug('🚫 Spam detected by exact word repetition (3+ repeats):', { text: text.substring(0, 50), maxRepeat });
         return true;
       }
       
