@@ -74,70 +74,20 @@ export const useChatStore = create(
           return streamMessages;
         }
 
-        // 🎯 Фильтруем спам локально (если бэкенд не отправил isSpam)
-        const beforeFilter = streamMessages.length;
+        // 🎯 Фильтруем спам (только если бэкенд помечает как спам)
         streamMessages = streamMessages.filter(m => {
-          const text = (m.text || m.content || '').trim();
-          
-          // 1. Скрываем если бэкенд пометил как спам
+          // Скрываем если бэкенд пометил как спам
           if (m.isSpam) {
-            console.log('🚫 Filtered (backend spam):', text);
             return false;
           }
           
-          // 2. Скрываем sentiment='sad'
+          // Скрываем sentiment='sad'
           if (m.sentiment === 'sad') {
-            console.log('🚫 Filtered (sad):', text);
-            return false;
-          }
-          
-          // 3. Локальная фильтрация (fallback если нет isSpam)
-          const spamWords = ['gg', 'lol', 'omg', 'wtf', 'bro', 'dude', 'yea', 'yeah', 'yep', 'nah', 'pfft', 'tf', 'keks', 'kekw', 'kek', 'gah', 'sheesh', 'damn', 'bruh', 'ew', 'oof', 'ugh', 'ahh'];
-          
-          // СТРОГИЙ РЕЖИМ: фильтруем агрессивно
-          
-          // Спам слова
-          if (spamWords.includes(text.toLowerCase())) {
-            console.log('🚫 Filtered (spam word):', text);
-            return false;
-          }
-          
-          // Короткие (< 3 символа)
-          if (text.length < 3) {
-            console.log('🚫 Filtered (short):', text);
-            return false;
-          }
-          
-          // Очень короткие (< 5 символов) - строгий режим
-          if (text.length < 5) {
-            console.log('🚫 Filtered (very short):', text);
-            return false;
-          }
-          
-          // Только повторения
-          if (/^([a-z])\1{2,}$/i.test(text)) {
-            console.log('🚫 Filtered (repetition):', text);
-            return false;
-          }
-          
-          // Много вопросительных знаков (> 2)
-          if ((text.match(/[?]/g) || []).length > 2) {
-            console.log('🚫 Filtered (too many ?):', text);
-            return false;
-          }
-          
-          // Только заглавные (> 5 символов)
-          if (text === text.toUpperCase() && text.length > 5 && /[A-Z]/.test(text)) {
-            console.log('🚫 Filtered (all caps):', text);
             return false;
           }
           
           return true;
         });
-        
-        if (beforeFilter !== streamMessages.length) {
-          console.log(`🎯 Filtered: ${beforeFilter} → ${streamMessages.length} messages`);
-        }
 
         console.log('🔍 getStreamMessages:', {
           streamId,
