@@ -24,6 +24,13 @@ export const useStreamsStore = create(
           set({ activeStreamId: stream.id });
           console.log('✅ Stream already in activeStreams, just setting as active');
         } else {
+          // Проверяем лимит на 3 стрима
+          if (activeStreams.length >= 3) {
+            console.warn('⚠️ Maximum 3 streams allowed. Cannot add more streams.');
+            // Можно показать уведомление пользователю
+            return { success: false, error: 'Maximum 3 streams allowed' };
+          }
+          
           // Add to active streams
           const newActiveStreams = [...activeStreams, stream];
           set({ 
@@ -31,10 +38,12 @@ export const useStreamsStore = create(
             activeStreamId: stream.id,
             shouldAutoScroll: true, // Устанавливаем флаг автоскролла при добавлении стрима
           });
+          console.log(`✅ Stream added to activeStreams (${newActiveStreams.length}/3)`);
         }
         
         // Add to recent streams (всегда, даже если уже в activeStreams)
         get().addToRecent(stream);
+        return { success: true };
       },
       
       // Remove stream with full disconnect (from active streams page)
@@ -130,7 +139,7 @@ export const useStreamsStore = create(
 
       // Switch stream without disconnect
       switchStream: (streamId) => {
-        const { activeStreamId } = get();
+        const { activeStreamId, activeStreams } = get();
         
         // Помечаем сообщения как прочитанные для предыдущего активного стрима
         if (activeStreamId && activeStreamId !== streamId) {
@@ -143,10 +152,42 @@ export const useStreamsStore = create(
           }
         }
         
-        set({ 
-          activeStreamId: streamId,
-          shouldAutoScroll: true
-        });
+        // Проверяем, есть ли стрим в activeStreams
+        const streamExists = activeStreams.find(s => s.id === streamId);
+        if (!streamExists) {
+          // Если стрима нет в activeStreams, находим его в recentStreams и добавляем
+          const { recentStreams } = get();
+          const streamToAdd = recentStreams.find(s => s.id === streamId);
+          
+          if (streamToAdd) {
+            // Проверяем лимит на 3 стрима
+            if (activeStreams.length >= 3) {
+              console.warn('⚠️ Maximum 3 streams allowed. Cannot switch to new stream.');
+              return { success: false, error: 'Maximum 3 streams allowed' };
+            }
+            
+            // Добавляем стрим в activeStreams
+            const newActiveStreams = [...activeStreams, streamToAdd];
+            set({ 
+              activeStreams: newActiveStreams,
+              activeStreamId: streamId,
+              shouldAutoScroll: true
+            });
+            console.log(`✅ Stream switched and added to activeStreams (${newActiveStreams.length}/3)`);
+          } else {
+            console.warn('⚠️ Stream not found in recentStreams:', streamId);
+            return { success: false, error: 'Stream not found' };
+          }
+        } else {
+          // Стрим уже в activeStreams, просто делаем его активным
+          set({ 
+            activeStreamId: streamId,
+            shouldAutoScroll: true
+          });
+          console.log('✅ Stream switched to existing active stream');
+        }
+        
+        return { success: true };
       },
       
       // Удалить стрим из активных

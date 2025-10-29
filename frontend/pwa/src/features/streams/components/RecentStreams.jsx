@@ -27,23 +27,23 @@ const RecentStreams = () => {
   const loadMessagesAdaptive = useChatStore((state) => state.loadMessagesAdaptive);
   const [showAddStream, setShowAddStream] = useState(false);
   
-  // Показываем недавние стримы, которые сейчас не просматриваются
-  // Стрим может быть в activeStreams, но если он не активен - показываем его
+  // Показываем недавние стримы, которые НЕ в activeStreams
   const streamsToShow = recentStreams.filter(stream => {
-    // Проверяем, просматривается ли сейчас этот стрим
-    const isCurrentlyViewing = activeStreamId === stream.id;
-    // Если не просматриваем - показываем в последних
-    return !isCurrentlyViewing;
+    // Проверяем, есть ли стрим в activeStreams
+    const isInActiveStreams = activeStreams.some(s => s.id === stream.id);
+    // Показываем только те, которых нет в activeStreams
+    return !isInActiveStreams;
   });
   
   // DEBUG: логирование для отладки
   console.log('🔍 RecentStreams RERENDER:', {
     timestamp: new Date().toISOString(),
     totalRecentStreams: recentStreams.length,
+    activeStreamsCount: activeStreams.length,
     activeStreamId,
     streamsToShowCount: streamsToShow.length,
     messagesCount,
-    recentStreams: recentStreams.map(s => ({ id: s.id, title: s.title, platform: s.platform })),
+    activeStreams: activeStreams.map(s => ({ id: s.id, title: s.title, platform: s.platform })),
     streamsToShow: streamsToShow.map(s => ({ id: s.id, title: s.title }))
   });
   
@@ -168,6 +168,9 @@ const RecentStreams = () => {
           <div className="recent-streams__header">
             <h2 className="recent-streams__title">
               {t('streams.recent')}
+              <span className="recent-streams__limit">
+                ({activeStreams.length}/3)
+              </span>
             </h2>
             <p className="recent-streams__subtitle">
               {t('streams.recentSubtitle')}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@features/auth/store/authStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
@@ -8,6 +9,7 @@ import { AnimatedBackground, ServerErrorBanner, ApiErrorToast } from '@shared/co
 import AuthScreen from '@features/auth/components/AuthScreen';
 import RecentStreams from '@features/streams/components/RecentStreams';
 import StreamSubscriptionManager from '@features/streams/components/StreamSubscriptionManager';
+import AdminLayout from '../admin/components/AdminLayout';
 import MainView from './MainView';
 import Header from './Header';
 import { initIOSPWA } from '../utils/iosPWA';
@@ -117,17 +119,25 @@ function App() {
 
   // Always show main view with modal overlay
   return (
-    <>
+    <Router>
       <AnimatedBackground />
       <ServerErrorBanner />
       <ApiErrorToast />
-      <div className="app">
-        <StreamSubscriptionManager />
-        <Header />
-        <MainView />
-      </div>
+      <Routes>
+        {/* Admin Panel Route */}
+        <Route path="/admin/*" element={<AdminLayout />} />
+        
+        {/* Main App Routes */}
+        <Route path="/*" element={
+          <div className="app">
+            <StreamSubscriptionManager />
+            <Header />
+            <MainView />
+          </div>
+        } />
+      </Routes>
       {/* <PerformanceDashboard /> */}
-    </>
+    </Router>
   );
 }
 
