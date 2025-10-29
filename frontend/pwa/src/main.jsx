@@ -37,3 +37,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 
 // Vercel trigger
+// Force Service Worker update Wed Oct 29 22:09:22 EET 2025
