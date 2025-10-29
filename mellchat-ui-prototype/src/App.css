@@ -1,0 +1,30 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--safe-area-top) - var(--safe-area-bottom));
+  height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+  height: -webkit-fill-available;
+  overflow: hidden;
+}
+
+.app__content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Mobile: Stack vertically */
+@media (max-width: 767px) {
+  .app__content {
+    flex-direction: column;
+  }
+}
+
+/* Desktop: Side by side */
+@media (min-width: 768px) {
+  .app__content {
+    flex-direction: row;
+  }
+}
+
