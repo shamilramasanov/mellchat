@@ -220,6 +220,11 @@ httpServer.on('error', (error) => {
 // Start WebSocket server on the same port as HTTP
 const wsHub = createWsServer(httpServer);
 app.set('wsHub', wsHub);
+global.wsHub = wsHub; // Добавляем в глобальную переменную для AdminMetricsService
+
+// Добавляем adminMetricsService в глобальную переменную
+const adminMetricsService = require('./services/adminMetricsService');
+global.adminMetricsService = adminMetricsService;
 
 // Обработка необработанных исключений
 process.on('uncaughtException', (error) => {

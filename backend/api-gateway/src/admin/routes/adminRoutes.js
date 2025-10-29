@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const adminMetricsService = require('../../services/adminMetricsService');
 const router = express.Router();
 
 // Mock admin user (в реальном проекте это будет в БД)
@@ -83,29 +84,8 @@ router.post('/auth/login', async (req, res) => {
 router.get('/dashboard/metrics', authenticateAdmin, async (req, res) => {
   try {
     // Получаем реальные метрики из системы
-    const metrics = {
-      activeConnections: Math.floor(Math.random() * 100) + 50,
-      messagesPerSecond: Math.random() * 10 + 5,
-      usersOnline: Math.floor(Math.random() * 200) + 100,
-      platformStatus: {
-        twitch: Math.random() > 0.1 ? 'healthy' : 'warning',
-        youtube: Math.random() > 0.05 ? 'healthy' : 'error',
-        kick: Math.random() > 0.15 ? 'healthy' : 'warning'
-      },
-      dbPerformance: {
-        avgResponseTime: Math.floor(Math.random() * 50) + 20,
-        slowQueries: Math.floor(Math.random() * 5)
-      },
-      redisStatus: {
-        memoryUsage: Math.floor(Math.random() * 50) + 30,
-        keyCount: Math.floor(Math.random() * 10000) + 5000
-      },
-      aiStatus: {
-        available: true,
-        lastUpdate: new Date().toISOString()
-      }
-    };
-
+    const metrics = await adminMetricsService.getAllMetrics();
+    
     res.json(metrics);
   } catch (error) {
     console.error('Dashboard metrics error:', error);
@@ -118,80 +98,9 @@ router.get('/dashboard/charts', authenticateAdmin, async (req, res) => {
   try {
     const { range = '24h' } = req.query;
     
-    // Генерируем тестовые данные для графиков
-    const generateTimeSeriesData = (points, valueRange) => {
-      const data = [];
-      const now = new Date();
-      
-      for (let i = points; i >= 0; i--) {
-        const timestamp = new Date(now.getTime() - i * 60000); // каждую минуту
-        data.push({
-          x: timestamp.toISOString(),
-          y: Math.floor(Math.random() * valueRange[1]) + valueRange[0]
-        });
-      }
-      return data;
-    };
-
-    const charts = {
-      messageFlow: {
-        datasets: [{
-          label: 'Messages per minute',
-          data: generateTimeSeriesData(144, [0, 50]), // 24 часа
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.4
-        }]
-      },
-      platformDistribution: {
-        labels: ['Twitch', 'YouTube', 'Kick'],
-        datasets: [{
-          data: [45, 35, 20],
-          backgroundColor: ['#9146ff', '#ff0000', '#53fc18'],
-          borderWidth: 0
-        }]
-      },
-      sentimentTrends: {
-        datasets: [
-          {
-            label: 'Happy',
-            data: generateTimeSeriesData(144, [0, 30]),
-            borderColor: '#22c55e',
-            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-            tension: 0.4
-          },
-          {
-            label: 'Neutral',
-            data: generateTimeSeriesData(144, [0, 50]),
-            borderColor: '#f59e0b',
-            backgroundColor: 'rgba(245, 158, 11, 0.1)',
-            tension: 0.4
-          },
-          {
-            label: 'Sad',
-            data: generateTimeSeriesData(144, [0, 20]),
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            tension: 0.4
-          }
-        ]
-      },
-      systemLoad: {
-        labels: ['CPU', 'Memory', 'Network', 'Database'],
-        datasets: [{
-          label: 'Usage %',
-          data: [65, 78, 45, 82],
-          backgroundColor: [
-            'rgba(59, 130, 246, 0.8)',
-            'rgba(34, 197, 94, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(239, 68, 68, 0.8)'
-          ],
-          borderWidth: 0
-        }]
-      }
-    };
-
+    // Получаем реальные данные для графиков
+    const charts = await adminMetricsService.getChartData(range);
+    
     res.json(charts);
   } catch (error) {
     console.error('Dashboard charts error:', error);

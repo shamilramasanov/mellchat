@@ -10,6 +10,7 @@ class WsHub {
     this.wss = new WebSocket.Server({ server });
     this.subscribers = new Map(); // connectionId -> Set(ws)
     this.lastActivity = new Map(); // connectionId -> timestamp
+    this.adminSubscribers = new Set(); // WebSocket connections for admin panel
 
     this.wss.on('connection', (ws) => {
       ws.isAlive = true;
@@ -31,6 +32,14 @@ class WsHub {
               if (set.size === 0) this.subscribers.delete(msg.connectionId); 
               logger.info(`Client unsubscribed from ${msg.connectionId}`);
             }
+          } else if (msg.type === 'admin:subscribe') {
+            // Админ подписка на метрики
+            this.adminSubscribers.add(ws);
+            logger.info(`Admin client subscribed, total admin subscribers: ${this.adminSubscribers.size}`);
+          } else if (msg.type === 'admin:unsubscribe') {
+            // Админ отписка
+            this.adminSubscribers.delete(ws);
+            logger.info(`Admin client unsubscribed, total admin subscribers: ${this.adminSubscribers.size}`);
           } else if (msg.type === 'ping') {
             // client keepalive - обновляем активность
             if (msg.connectionId) {
@@ -45,6 +54,8 @@ class WsHub {
       ws.on('close', () => {
         // cleanup from all subscriptions
         for (const set of this.subscribers.values()) set.delete(ws);
+        // Очищаем админ подписку
+        this.adminSubscribers.delete(ws);
         // Очищаем активность при закрытии соединения
         for (const [connectionId, set] of this.subscribers.entries()) {
           if (set.size === 0) {
@@ -215,11 +226,84 @@ class WsHub {
       try { ws.send(data); } catch (e) { logger.error('WS send error:', e.message); }
     }
   }
+
+  // Отправка метрик админ панели
+  async broadcastAdminMetrics(metrics) {
+    if (this.adminSubscribers.size === 0) return;
+
+    try {
+      const data = JSON.stringify({ 
+        type: 'admin:metrics', 
+        data: metrics,
+        timestamp: new Date().toISOString()
+      });
+
+      logger.debug(`Broadcasting admin metrics to ${this.adminSubscribers.size} admin subscribers`);
+      for (const ws of this.adminSubscribers) {
+        try { 
+          ws.send(data); 
+        } catch (e) { 
+          logger.error('Admin WS send error:', e.message);
+          this.adminSubscribers.delete(ws);
+        }
+      }
+    } catch (error) {
+      logger.error('Error broadcasting admin metrics:', error.message);
+    }
+  }
+
+  // Отправка алертов админ панели
+  broadcastAdminAlert(alert) {
+    if (this.adminSubscribers.size === 0) return;
+
+    const data = JSON.stringify({ 
+      type: 'admin:alert', 
+      data: {
+        ...alert,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    logger.info(`Broadcasting admin alert to ${this.adminSubscribers.size} admin subscribers`);
+    for (const ws of this.adminSubscribers) {
+      try { 
+        ws.send(data); 
+      } catch (e) { 
+        logger.error('Admin alert WS send error:', e.message);
+        this.adminSubscribers.delete(ws);
+      }
+    }
+  }
+
+  // Получение статистики WebSocket
+  getStats() {
+    return {
+      totalClients: this.wss.clients.size,
+      activeSubscriptions: this.subscribers.size,
+      adminSubscribers: this.adminSubscribers.size,
+      lastActivity: Object.fromEntries(this.lastActivity)
+    };
+  }
 }
 
 function createWsServer(httpServer) {
   const hub = new WsHub(httpServer);
   logger.info(`WebSocket server attached to HTTP server`);
+  
+  // Периодическая отправка метрик админ панели каждые 30 секунд
+  const metricsInterval = setInterval(async () => {
+    try {
+      // Получаем метрики через глобальную переменную
+      if (global.adminMetricsService) {
+        const metrics = await global.adminMetricsService.getAllMetrics();
+        await hub.broadcastAdminMetrics(metrics);
+      }
+    } catch (error) {
+      logger.error('Error in metrics interval:', error.message);
+    }
+  }, 30000);
+  metricsInterval.unref();
+  
   return hub;
 }
 
