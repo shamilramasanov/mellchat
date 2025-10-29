@@ -20,8 +20,10 @@ const ADMIN_USER = {
   is_active: true
 };
 
-// Middleware для проверки JWT токена
-const authenticateAdmin = (req, res, next) => {
+const auditService = require('../../services/auditService');
+
+// Middleware для проверки JWT токена и логирования
+const authenticateAdmin = async (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   
   if (!token) {
@@ -31,10 +33,40 @@ const authenticateAdmin = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'admin-secret-key');
     req.admin = decoded;
+    
+    // Логируем доступ к админ панели
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    await auditService.logAction(
+      decoded.id,
+      'admin_access',
+      'system',
+      null,
+      { endpoint: req.path, method: req.method },
+      ipAddress,
+      userAgent
+    ).catch(() => {}); // Не прерываем если логирование не удалось
+    
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid token' });
   }
+};
+
+// Middleware для role-based access (пока базовая версия)
+const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.admin) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Пока только super_admin, в будущем можно расширить
+    if (roles.includes('super_admin') && req.admin.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    
+    next();
+  };
 };
 
 // POST /api/v1/admin/auth/login
@@ -1235,6 +1267,82 @@ router.post('/database/analyze', authenticateAdmin, async (req, res) => {
     logger.error('Analyze database error:', error);
     res.status(500).json({ 
       error: 'Failed to analyze database',
+      message: error.message 
+    });
+  }
+});
+
+// ==================== SECURITY ENDPOINTS ====================
+
+// GET /api/v1/admin/security/audit-log
+router.get('/security/audit-log', authenticateAdmin, async (req, res) => {
+  try {
+    const { limit = 100, offset = 0, adminUserId, action, targetType, fromDate, toDate } = req.query;
+    
+    const filters = {};
+    if (adminUserId) filters.adminUserId = adminUserId;
+    if (action) filters.action = action;
+    if (targetType) filters.targetType = targetType;
+    if (fromDate) filters.fromDate = fromDate;
+    if (toDate) filters.toDate = toDate;
+    
+    const logs = await auditService.getAuditLog(parseInt(limit), parseInt(offset), filters);
+    
+    res.json({
+      success: true,
+      logs,
+      count: logs.length
+    });
+  } catch (error) {
+    logger.error('Get audit log error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch audit log',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/security/audit-stats
+router.get('/security/audit-stats', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const stats = await auditService.getAuditStats(timeRange);
+    
+    res.json({
+      success: true,
+      stats,
+      timeRange
+    });
+  } catch (error) {
+    logger.error('Get audit stats error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch audit stats',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/security/roles
+router.get('/security/roles', authenticateAdmin, requireRole('super_admin'), async (req, res) => {
+  try {
+    // В будущем здесь будет реальная система ролей
+    res.json({
+      success: true,
+      roles: [
+        { id: 'super_admin', name: 'Super Admin', permissions: ['all'] },
+        { id: 'moderator', name: 'Moderator', permissions: ['moderation', 'view'] },
+        { id: 'viewer', name: 'Viewer', permissions: ['view'] }
+      ],
+      currentUser: {
+        id: req.admin.id,
+        role: req.admin.role
+      }
+    });
+  } catch (error) {
+    logger.error('Get roles error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch roles',
       message: error.message 
     });
   }
