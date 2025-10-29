@@ -5,9 +5,11 @@
   "main": "src/index.js",
   "scripts": {
     "start": "NODE_ENV=production node src/index.js",
+    "start:with-migrations": "NODE_ENV=production ./apply-migrations.sh && node src/index.js",
     "dev": "NODE_ENV=development nodemon src/index.js",
     "install:prod": "npm install --omit=dev",
-    "postinstall": "npm audit fix --force"
+    "postinstall": "npm audit fix --force",
+    "migrate": "./apply-migrations.sh"
   },
   "dependencies": {
     "@retconned/kick-js": "^0.5.4",
