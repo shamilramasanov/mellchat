@@ -116,6 +116,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Type', 'Authorization']
 }));
+logger.info('✅ CORS middleware configured');
 
 // Handle preflight requests
 app.options('*', cors());
@@ -126,10 +127,6 @@ app.use('/api/v1', rateLimiters.general); // Общий лимит для API
 
 // Metrics middleware
 app.use(metricsMiddleware);
-
-  }
-}));
-logger.info('✅ CORS middleware configured');
 
 // Body parsing middleware
 logger.info('Setting up body parsing middleware...');
