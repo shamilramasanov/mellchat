@@ -46,6 +46,44 @@ function ensurePool() {
   return pool;
 }
 
+// Валидация сообщения
+function validateMessage(message) {
+  if (!message) {
+    throw new Error('Message is required');
+  }
+  
+  if (!message.id || typeof message.id !== 'string') {
+    throw new Error('Message ID is required and must be a string');
+  }
+  
+  if (!message.streamId || typeof message.streamId !== 'string') {
+    throw new Error('Stream ID is required and must be a string');
+  }
+  
+  if (!message.username || typeof message.username !== 'string') {
+    throw new Error('Username is required and must be a string');
+  }
+  
+  if (!message.text || typeof message.text !== 'string') {
+    throw new Error('Message text is required and must be a string');
+  }
+  
+  if (!message.platform || typeof message.platform !== 'string') {
+    throw new Error('Platform is required and must be a string');
+  }
+  
+  // Валидация длины
+  if (message.text.length > 1000) {
+    throw new Error('Message text too long (max 1000 characters)');
+  }
+  
+  if (message.username.length > 100) {
+    throw new Error('Username too long (max 100 characters)');
+  }
+  
+  return true;
+}
+
 const databaseService = {
   async query(text, params) {
     try {
@@ -65,10 +103,14 @@ const databaseService = {
           id,
           stream_id,
           username,
-          content as text,
+          COALESCE(content, text) as text,
           platform,
           created_at,
-          is_question
+          is_question,
+          sentiment,
+          is_spam,
+          message_score,
+          message_classification
         FROM messages 
         WHERE stream_id = $1 
         ORDER BY created_at DESC 
@@ -85,6 +127,9 @@ const databaseService = {
 
   async saveMessage(message) {
     try {
+      // Валидируем сообщение
+      validateMessage(message);
+      
       logger.debug('saveMessage input:', {
         id: message.id,
         streamId: message.streamId,
@@ -125,11 +170,16 @@ const databaseService = {
           stream_id,
           username,
           text,
+          content,
           platform,
           timestamp,
           is_question,
+          sentiment,
+          is_spam,
+          message_score,
+          message_classification,
           created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
         ON CONFLICT (id) DO NOTHING
         RETURNING id
       `;
@@ -150,9 +200,14 @@ const databaseService = {
         message.streamId,
         message.username,
         message.text,
+        message.text, // content = text (дублируем для совместимости)
         message.platform,
         timestamp,
-        message.isQuestion || false
+        message.isQuestion || false,
+        message.sentiment || 'neutral',
+        message.isSpam || false,
+        message.messageScore || 50,
+        message.messageClassification || 'normal'
       ];
       
       logger.debug('saveMessage values:', { values });
@@ -167,11 +222,23 @@ const databaseService = {
     }
   },
 
-  // Сохранение батча сообщений (оптимизированное)
+  // Сохранение батча сообщений (оптимизированное с транзакциями)
   async saveMessageBatch(messages) {
     if (!messages || messages.length === 0) return [];
     
+    // Валидируем все сообщения
+    messages.forEach((message, index) => {
+      try {
+        validateMessage(message);
+      } catch (error) {
+        throw new Error(`Validation failed for message ${index}: ${error.message}`);
+      }
+    });
+    
+    const client = ensurePool();
     try {
+      // Начинаем транзакцию
+      await client.query('BEGIN');
       // Проверяем лимит для каждого уникального автора
       const authorCounts = {};
       for (const message of messages) {
@@ -211,8 +278,8 @@ const databaseService = {
       const placeholders = [];
       
       messages.forEach((message, index) => {
-        const baseIndex = index * 7;
-        placeholders.push(`($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, NOW())`);
+        const baseIndex = index * 12; // 12 полей вместо 7
+        placeholders.push(`($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8}, $${baseIndex + 9}, $${baseIndex + 10}, $${baseIndex + 11}, $${baseIndex + 12}, NOW())`);
         
         // Преобразуем timestamp в число (bigint)
         let timestamp = message.timestamp;
@@ -230,9 +297,14 @@ const databaseService = {
           message.streamId,
           message.username,
           message.text,
+          message.text, // content = text
           message.platform,
           timestamp,
-          message.isQuestion || false
+          message.isQuestion || false,
+          message.sentiment || 'neutral',
+          message.isSpam || false,
+          message.messageScore || 50,
+          message.messageClassification || 'normal'
         );
       });
       
@@ -245,13 +317,20 @@ const databaseService = {
           platform,
           timestamp,
           is_question,
+          sentiment,
+          is_spam,
+          message_score,
+          message_classification,
           created_at
         ) VALUES ${placeholders.join(', ')}
         ON CONFLICT (id) DO NOTHING
         RETURNING id
       `;
       
-      const result = await this.query(query, values);
+      const result = await client.query(query, values);
+      
+      // Коммитим транзакцию
+      await client.query('COMMIT');
       
       logger.database('Batch saved to database', {
         messageCount: messages.length,
@@ -261,6 +340,8 @@ const databaseService = {
       
       return result.rows;
     } catch (error) {
+      // Откатываем транзакцию при ошибке
+      await client.query('ROLLBACK');
       logger.error('Failed to save message batch to database:', error);
       throw error;
     }
