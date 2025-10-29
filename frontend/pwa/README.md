@@ -55,7 +55,7 @@ src/
 
 ## 🎨 Design System
 
-**Liquid Glass** - Modern glassmorphism design with:
+**Современный дизайн** - Чистый и современный интерфейс с:
 - Backdrop blur effects
 - Gradient accents (Cyan → Purple → Pink)
 - Smooth animations
