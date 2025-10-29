@@ -13,6 +13,8 @@ import AdminLayout from '../admin/components/AdminLayout';
 import MainView from './MainView';
 import Header from './Header';
 import { initIOSPWA } from '../utils/iosPWA';
+import { streamsAPI } from '@shared/services/api';
+import { PLATFORMS } from '@shared/utils/constants';
 import './App.css';
 
 function App() {
@@ -25,6 +27,8 @@ function App() {
   const isHome = useStreamsStore((state) => state.activeStreamId === null);
   const disconnectAllStreams = useStreamsStore((state) => state.disconnectAllStreams);
   const activeStreams = useStreamsStore((state) => state.activeStreams);
+  const recentStreams = useStreamsStore((state) => state.recentStreams);
+  const updateRecentStreamConnectionId = useStreamsStore((state) => state.updateRecentStreamConnectionId);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,6 +48,60 @@ function App() {
       setIsLoading(false);
     }, 500);
   }, []);
+
+  // Восстанавливаем подключения к стримам из recentStreams при загрузке страницы
+  useEffect(() => {
+    if (!isAuth || isLoading) return;
+
+    const restoreRecentStreamsConnections = async () => {
+      const streamsToRestore = recentStreams.filter(stream => {
+        // Восстанавливаем только те стримы, у которых есть platform и streamId, но нет connectionId
+        // или connectionId может быть устаревшим
+        return stream.platform && stream.streamId && !stream.connectionId;
+      });
+
+      if (streamsToRestore.length === 0) return;
+
+      console.log(`🔄 Restoring ${streamsToRestore.length} recent stream connections...`);
+
+      for (const stream of streamsToRestore) {
+        try {
+          // Создаем URL из platform и streamId
+          let streamUrl = '';
+          if (stream.platform === PLATFORMS.TWITCH) {
+            streamUrl = `https://www.twitch.tv/${stream.streamId}`;
+          } else if (stream.platform === PLATFORMS.YOUTUBE) {
+            streamUrl = `https://www.youtube.com/watch?v=${stream.streamId}`;
+          } else if (stream.platform === PLATFORMS.KICK) {
+            streamUrl = `https://kick.com/${stream.streamId}`;
+          }
+
+          if (!streamUrl) {
+            console.warn(`⚠️ Cannot create URL for stream:`, stream);
+            continue;
+          }
+
+          console.log(`🔌 Reconnecting to ${stream.platform}:${stream.streamId}...`);
+          
+          const response = await streamsAPI.connect(streamUrl);
+          
+          if (response?.connection) {
+            // Обновляем connectionId в recentStreams через store
+            updateRecentStreamConnectionId(stream.id, response.connection.id);
+            
+            console.log(`✅ Restored connection for ${stream.id}: ${response.connection.id}`);
+          }
+        } catch (error) {
+          console.error(`❌ Failed to restore connection for ${stream.id}:`, error);
+        }
+      }
+    };
+
+    // Ждем немного перед восстановлением, чтобы WebSocket успел подключиться
+    const timeoutId = setTimeout(restoreRecentStreamsConnections, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [isAuth, isLoading, recentStreams]);
 
   // Disconnect only active streams when user closes the browser tab
   // Recent streams should continue receiving messages

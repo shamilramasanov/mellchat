@@ -344,6 +344,14 @@ export const useStreamsStore = create(
         set({ recentStreams: filtered });
       },
       
+      updateRecentStreamConnectionId: (streamId, connectionId) => {
+        const { recentStreams } = get();
+        const updated = recentStreams.map(s => 
+          s.id === streamId ? { ...s, connectionId, status: 'connected' } : s
+        );
+        set({ recentStreams: updated });
+      },
+      
       clearRecent: () => {
         set({ recentStreams: [] });
       },
