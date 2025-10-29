@@ -130,6 +130,19 @@ export const useStreamsStore = create(
 
       // Switch stream without disconnect
       switchStream: (streamId) => {
+        const { activeStreamId } = get();
+        
+        // Помечаем сообщения как прочитанные для предыдущего активного стрима
+        if (activeStreamId && activeStreamId !== streamId) {
+          const chatStore = require('@features/chat/store/chatStore').useChatStore.getState();
+          const previousStreamMessages = chatStore.getStreamMessages(activeStreamId);
+          
+          if (previousStreamMessages.length > 0) {
+            const lastMessage = previousStreamMessages[previousStreamMessages.length - 1];
+            chatStore.markMessagesAsRead(activeStreamId, lastMessage.id);
+          }
+        }
+        
         set({ 
           activeStreamId: streamId,
           shouldAutoScroll: true

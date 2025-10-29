@@ -396,6 +396,15 @@ export const useChatStore = create(
         // Если сообщения уже есть и не требуется принудительная перезагрузка, возвращаем существующие
         // БЕЗ вызова API
         if (existingMessages.length > 0 && !options.forceReload) {
+          // Обновляем lastReadMessageIds для кэшированных сообщений
+          const { lastReadMessageIds } = get();
+          if (!lastReadMessageIds[streamId] && existingMessages.length > 0) {
+            const lastMessage = existingMessages[existingMessages.length - 1];
+            lastReadMessageIds[streamId] = lastMessage.id;
+            set({ lastReadMessageIds });
+            console.log(`📌 Auto-marking cached last message as read for stream ${streamId}:`, lastMessage.id);
+          }
+          
           console.log(`✅ Adaptive loading: Using cached ${existingMessages.length} messages for stream ${streamId}`);
           return { success: true, count: existingMessages.length, strategy: { strategy: 'cached' } };
         }
@@ -449,8 +458,20 @@ export const useChatStore = create(
               return { success: true, count: 0, strategy: response.strategy };
             }
             
+            // Обновляем lastReadMessageIds для текущего стрима
+            const streamMessages = allMessages.filter(m => m.streamId === streamId);
+            const { lastReadMessageIds } = get();
+            
+            // Если нет lastReadId для этого стрима, устанавливаем последнее сообщение как прочитанное
+            if (!lastReadMessageIds[streamId] && streamMessages.length > 0) {
+              const lastMessage = streamMessages[streamMessages.length - 1];
+              lastReadMessageIds[streamId] = lastMessage.id;
+              console.log(`📌 Auto-marking last message as read for stream ${streamId}:`, lastMessage.id);
+            }
+            
             set({ 
               messages: allMessages,
+              lastReadMessageIds,
               databaseConnected: true,
               loading: false,
               loadingStrategy: response.strategy,
@@ -703,6 +724,18 @@ export const useChatStore = create(
             unreadCount,
             unreadQuestionCount
           };
+          
+          // Логирование для отладки
+          if (unreadCount > 0 || unreadQuestionCount > 0) {
+            console.log('📊 Stream stats:', {
+              streamId,
+              totalMessages: streamMessages.length,
+              totalQuestions: questions.length,
+              lastReadId,
+              unreadCount,
+              unreadQuestionCount
+            });
+          }
         });
         
         return stats;
