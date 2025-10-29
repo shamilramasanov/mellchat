@@ -29,6 +29,7 @@ let kickRoutesFactory = require('./routes/kick');
 const emojiRoutes = require('./routes/emoji');
 const messagesRoutes = require('./routes/messages');
 const reputationRoutes = require('./routes/reputation');
+const databaseMonitoringRoutes = require('./routes/database-monitoring');
 
 const app = express();
 const { createWsServer } = require('./ws/server');
@@ -180,6 +181,9 @@ app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
 
 // Reputation routes - общий лимит
 app.use('/api/v1/reputation', rateLimiters.general, reputationRoutes);
+
+// Database monitoring routes - лимит для мониторинга
+app.use('/api/v1/database/monitoring', rateLimiters.general, databaseMonitoringRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
