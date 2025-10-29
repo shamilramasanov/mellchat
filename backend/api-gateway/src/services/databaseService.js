@@ -485,7 +485,7 @@ const databaseService = {
       logger.error('Failed to check for older messages:', error);
       throw error;
     }
-  },
+  }
 };
 
 module.exports = databaseService;
