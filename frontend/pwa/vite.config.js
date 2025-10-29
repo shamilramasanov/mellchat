@@ -108,7 +108,9 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         // Force update Service Worker
-        mode: 'production'
+        mode: 'production',
+        // Force update with version bump
+        workboxVersion: '2.0.0'
       }
     })
   ],
