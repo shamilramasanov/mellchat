@@ -615,6 +615,45 @@ const useAdminStore = create(
         }
       },
 
+      // === AI ASSISTANT METHODS ===
+      sendAIMessage: async (message, conversationHistory = []) => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`
+            },
+            body: JSON.stringify({
+              message,
+              conversationHistory
+            })
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('AI message error:', error);
+          return { success: false, error: error.message };
+        }
+      },
+
+      getAIRecommendations: async (metrics = {}) => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/ai/recommendations?metrics=${encodeURIComponent(JSON.stringify(metrics))}`, {
+            headers: {
+              'Authorization': `Bearer ${get().token}`
+            }
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('AI recommendations error:', error);
+          return { success: false, error: error.message };
+        }
+      },
+
       // === WEBSOCKET METHODS ===
       connectWebSocket: () => {
         const { wsConnection, disconnectWebSocket } = get();
