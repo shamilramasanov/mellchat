@@ -179,10 +179,22 @@ logger.info('✅ Auth routes configured');
 // Database routes - лимит для сообщений
 logger.info('Setting up database routes...');
 try {
+  logger.info('Loading databaseRoutes...');
   app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
+  logger.info('✅ databaseRoutes loaded');
+  
+  logger.info('Loading adaptiveMessagesRoutes...');
   app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
+  logger.info('✅ adaptiveMessagesRoutes loaded');
+  
+  logger.info('Loading dateMessagesRoutes...');
   app.use('/api/v1/date-messages', rateLimiters.messages, dateMessagesRoutes);
+  logger.info('✅ dateMessagesRoutes loaded');
+  
+  logger.info('Loading paginationMessagesRoutes...');
   app.use('/api/v1/pagination-messages', rateLimiters.messages, paginationMessagesRoutes);
+  logger.info('✅ paginationMessagesRoutes loaded');
+  
   logger.info('✅ Database routes configured');
 } catch (error) {
   logger.error('❌ Error setting up database routes:', error);
