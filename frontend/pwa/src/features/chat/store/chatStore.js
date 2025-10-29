@@ -140,10 +140,13 @@ export const useChatStore = create(
         
         set({ searchQuery: '', searchQueryDebounced: '', searchResults: false, searchTimeout: null });
         
-        // Восстанавливаем все сообщения если был активный стрим
-        if (activeStreamId) {
-          get().loadMessagesFromDatabase(activeStreamId, 100);
-        }
+        // НЕ загружаем сообщения из БД при очистке поиска - локальная фильтрация уже показывает все
+        // Восстанавливаем только если searchResults был true (были результаты из БД)
+        // if (activeStreamId && get().searchResults) {
+        //   get().loadMessagesFromDatabase(activeStreamId, 100).catch(err => {
+        //     console.warn('Failed to reload messages after search clear:', err);
+        //   });
+        // }
       },
 
       // Поиск сообщений в базе данных
@@ -191,8 +194,8 @@ export const useChatStore = create(
           }
         } catch (error) {
           console.error('❌ Search failed:', error);
+          // Не устанавливаем error в state, чтобы не блокировать локальную фильтрацию
           set({ 
-            error: error.message, 
             loading: false,
             searchResults: false
           });
