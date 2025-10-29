@@ -1,0 +1,25 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--safe-area-top) - var(--safe-area-bottom));
+  height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+  height: -webkit-fill-available;
+  overflow: hidden;
+  background: var(--md-background);
+}
+
+.app__content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(56px + var(--safe-area-bottom));
+  min-height: 0;
+}
+
+/* Desktop адаптация */
+@media (min-width: 768px) {
+  .app__content {
+    padding-bottom: 0;
+  }
+}
+

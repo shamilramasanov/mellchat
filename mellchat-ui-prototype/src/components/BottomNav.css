@@ -1,0 +1,106 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--md-surface);
+  border-top: 1px solid var(--md-surface-variant);
+  padding: var(--md-spacing-xs) var(--md-spacing-sm);
+  padding-bottom: calc(var(--md-spacing-xs) + var(--safe-area-bottom));
+  padding-left: calc(var(--md-spacing-sm) + var(--safe-area-left));
+  padding-right: calc(var(--md-spacing-sm) + var(--safe-area-right));
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  padding: var(--md-spacing-xs);
+  min-width: 64px;
+  min-height: 56px;
+  transition: color var(--md-transition-base);
+  position: relative;
+  font-size: var(--md-font-size-xs);
+}
+
+.bottom-nav__item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bottom-nav__item--active {
+  color: var(--md-primary);
+}
+
+.bottom-nav__item--fab {
+  min-width: 56px;
+  min-height: 56px;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  border-radius: var(--md-radius-full);
+  margin-top: -20px;
+  box-shadow: var(--md-elevation-4);
+}
+
+.bottom-nav__item--fab:hover {
+  background: var(--md-primary-light);
+  box-shadow: var(--md-elevation-2);
+}
+
+.bottom-nav__item--fab:active {
+  transform: scale(0.95);
+}
+
+.bottom-nav__icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bottom-nav__item--fab .bottom-nav__icon {
+  font-size: 24px;
+  font-weight: var(--md-font-weight-semibold);
+}
+
+.bottom-nav__label {
+  font-size: var(--md-font-size-xs);
+  font-weight: var(--md-font-weight-medium);
+  line-height: 1;
+}
+
+.bottom-nav__item--fab .bottom-nav__label {
+  display: none;
+}
+
+.bottom-nav__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--md-error);
+  color: var(--md-on-primary);
+  font-size: 10px;
+  font-weight: var(--md-font-weight-semibold);
+  padding: 2px 5px;
+  border-radius: var(--md-radius-full);
+  min-width: 16px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Desktop: скрываем bottom nav */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
