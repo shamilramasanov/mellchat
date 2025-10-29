@@ -15,21 +15,38 @@ const auth = require('./middleware/auth');
 const passport = require('./config/passport');
 
 // Routes
+logger.info('Loading routes...');
 const healthRoutes = require('./routes/health');
+logger.info('✅ healthRoutes loaded');
 const connectRoutes = require('./routes/connect');
+logger.info('✅ connectRoutes loaded');
 const authRoutes = require('./routes/auth');
+logger.info('✅ authRoutes loaded');
 const databaseRoutes = require('./routes/database');
+logger.info('✅ databaseRoutes loaded, type:', typeof databaseRoutes);
 const adminRoutes = require('./admin/routes/adminRoutes');
+logger.info('✅ adminRoutes loaded');
 const adaptiveMessagesRoutes = require('./routes/adaptiveMessages');
+logger.info('✅ adaptiveMessagesRoutes loaded');
 const dateMessagesRoutes = require('./routes/dateMessages');
+logger.info('✅ dateMessagesRoutes loaded');
 const paginationMessagesRoutes = require('./routes/paginationMessages');
+logger.info('✅ paginationMessagesRoutes loaded');
 let youtubeRoutesFactory = require('./routes/youtube');
+logger.info('✅ youtubeRoutesFactory loaded');
 const twitchRoutes = require('./routes/twitch');
+logger.info('✅ twitchRoutes loaded');
 let kickRoutesFactory = require('./routes/kick');
+logger.info('✅ kickRoutesFactory loaded');
 const emojiRoutes = require('./routes/emoji');
+logger.info('✅ emojiRoutes loaded');
 const messagesRoutes = require('./routes/messages');
+logger.info('✅ messagesRoutes loaded');
 const reputationRoutes = require('./routes/reputation');
+logger.info('✅ reputationRoutes loaded');
 const databaseMonitoringRoutes = require('./routes/database-monitoring');
+logger.info('✅ databaseMonitoringRoutes loaded');
+logger.info('✅ All routes loaded successfully');
 
 const app = express();
 const { createWsServer } = require('./ws/server');
