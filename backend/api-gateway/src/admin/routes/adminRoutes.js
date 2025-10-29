@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
+const geminiService = require('../../services/geminiService');
+const logger = require('../../utils/logger');
 
 // Mock admin user (в реальном проекте это будет в БД)
 const ADMIN_USER = {
@@ -120,8 +122,34 @@ router.get('/dashboard/charts', authenticateAdmin, async (req, res) => {
 // GET /api/v1/admin/ai/insights
 router.get('/ai/insights', authenticateAdmin, async (req, res) => {
   try {
-    const insights = {
-      recommendations: [
+    // Ленивая загрузка adminMetricsService
+    if (!global.adminMetricsService) {
+      global.adminMetricsService = require('../../services/adminMetricsService');
+    }
+
+    // Получаем реальные метрики
+    const metrics = await global.adminMetricsService.getAllMetrics();
+
+    let recommendations = [];
+    let insights = {
+      peakHours: 'N/A',
+      topPlatform: 'N/A',
+      avgSentiment: 'neutral',
+      userGrowth: '0%'
+    };
+
+    // Если Gemini доступен, получаем рекомендации от ИИ
+    if (geminiService.isAvailable()) {
+      try {
+        recommendations = await geminiService.getRecommendations(metrics);
+      } catch (error) {
+        logger.warn('Failed to get Gemini recommendations, using fallback:', error);
+      }
+    }
+
+    // Если рекомендаций нет, используем базовые
+    if (recommendations.length === 0) {
+      recommendations = [
         {
           id: '1',
           title: 'Optimize Database Queries',
@@ -135,66 +163,29 @@ router.get('/ai/insights', authenticateAdmin, async (req, res) => {
           actions: [
             { icon: '🔍', label: 'View Slow Queries' },
             { icon: '⚡', label: 'Optimize Now' }
-          ],
-          details: {
-            queries: ['SELECT * FROM messages WHERE...', 'SELECT COUNT(*) FROM users...']
-          }
-        },
-        {
-          id: '2',
-          title: 'Increase Spam Detection Sensitivity',
-          description: 'Spam detection rate is below optimal. Consider adjusting thresholds.',
-          priority: 'medium',
-          metrics: {
-            'Detection rate': '78%',
-            'False positives': '2%',
-            'Target rate': '85%'
-          },
-          actions: [
-            { icon: '⚙️', label: 'Adjust Settings' },
-            { icon: '📊', label: 'View Analytics' }
-          ]
-        },
-        {
-          id: '3',
-          title: 'Scale Redis Memory',
-          description: 'Redis memory usage is approaching limits. Consider scaling up.',
-          priority: 'low',
-          metrics: {
-            'Memory usage': '78%',
-            'Available': '22%',
-            'Keys count': '8,542'
-          },
-          actions: [
-            { icon: '📈', label: 'Scale Up' },
-            { icon: '🧹', label: 'Clean Cache' }
           ]
         }
-      ],
-      insights: {
-        peakHours: '14:00-18:00',
-        topPlatform: 'Twitch',
-        avgSentiment: 'positive',
-        userGrowth: '+12%'
-      },
-      alerts: [
-        {
-          id: '1',
-          type: 'warning',
-          title: 'High Memory Usage',
-          message: 'System memory usage is above 80%',
-          timestamp: new Date().toISOString(),
-          actions: [
-            { icon: '🔍', label: 'View Details' },
-            { icon: '⚡', label: 'Restart Services' }
-          ]
-        }
-      ]
+      ];
+    }
+
+    // Извлекаем insights из метрик
+    if (metrics.platforms) {
+      const platformCounts = Object.entries(metrics.platforms).map(([name, count]) => ({ name, count }));
+      const topPlatform = platformCounts.sort((a, b) => b.count - a.count)[0];
+      if (topPlatform) {
+        insights.topPlatform = topPlatform.name;
+      }
+    }
+
+    const result = {
+      recommendations,
+      insights,
+      alerts: metrics.alerts || []
     };
 
-    res.json(insights);
+    res.json(result);
   } catch (error) {
-    console.error('AI insights error:', error);
+    logger.error('AI insights error:', error);
     res.status(500).json({ error: 'Failed to fetch AI insights' });
   }
 });
@@ -202,34 +193,150 @@ router.get('/ai/insights', authenticateAdmin, async (req, res) => {
 // POST /api/v1/admin/ai/chat
 router.post('/ai/chat', authenticateAdmin, async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, conversationHistory = [] } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Простая имитация ИИ ответа (в реальном проекте здесь будет OpenAI API)
-    const responses = [
-      "Based on current system metrics, I recommend checking the database performance. There are 5 slow queries that could be optimized.",
-      "The spam detection rate is currently at 78%. Consider adjusting the threshold to 0.65 for better accuracy.",
-      "Memory usage is at 78%. I suggest scaling up Redis or cleaning old cache entries.",
-      "User activity peaks between 14:00-18:00. Consider scaling resources during these hours.",
-      "The sentiment analysis shows 65% positive messages. This is within normal range.",
-      "I've detected 3 potential security issues. Would you like me to investigate further?",
-      "System performance is optimal. No immediate actions required.",
-      "Based on the analytics, Twitch is your most active platform with 45% of total messages."
-    ];
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ 
+        error: 'Gemini API не настроен. Установите GEMINI_API_KEY в переменных окружения.' 
+      });
+    }
 
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    const result = await geminiService.chat(message, conversationHistory);
 
     res.json({
       success: true,
-      response: randomResponse,
-      timestamp: new Date().toISOString()
+      ...result
     });
   } catch (error) {
-    console.error('AI chat error:', error);
-    res.status(500).json({ error: 'Failed to process AI request' });
+    logger.error('AI chat error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process AI request',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/ai/analyze-content
+router.post('/ai/analyze-content', authenticateAdmin, async (req, res) => {
+  try {
+    const { messages } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Messages array is required' });
+    }
+
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ 
+        error: 'Gemini API не настроен. Установите GEMINI_API_KEY в переменных окружения.' 
+      });
+    }
+
+    const analysis = await geminiService.analyzeContent(messages);
+
+    res.json({
+      success: true,
+      ...analysis
+    });
+  } catch (error) {
+    logger.error('AI analyze content error:', error);
+    res.status(500).json({ 
+      error: 'Failed to analyze content',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/ai/generate-report
+router.post('/ai/generate-report', authenticateAdmin, async (req, res) => {
+  try {
+    const { metrics, timeRange = '24h' } = req.body;
+
+    if (!metrics) {
+      return res.status(400).json({ error: 'Metrics are required' });
+    }
+
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ 
+        error: 'Gemini API не настроен. Установите GEMINI_API_KEY в переменных окружения.' 
+      });
+    }
+
+    const report = await geminiService.generateReport(metrics, timeRange);
+
+    res.json({
+      success: true,
+      ...report
+    });
+  } catch (error) {
+    logger.error('AI generate report error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate report',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/ai/optimize-system
+router.post('/ai/optimize-system', authenticateAdmin, async (req, res) => {
+  try {
+    const { systemMetrics } = req.body;
+
+    if (!systemMetrics) {
+      return res.status(400).json({ error: 'System metrics are required' });
+    }
+
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ 
+        error: 'Gemini API не настроен. Установите GEMINI_API_KEY в переменных окружения.' 
+      });
+    }
+
+    const optimization = await geminiService.optimizeSystem(systemMetrics);
+
+    res.json({
+      success: true,
+      ...optimization
+    });
+  } catch (error) {
+    logger.error('AI optimize system error:', error);
+    res.status(500).json({ 
+      error: 'Failed to optimize system',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/ai/troubleshoot
+router.post('/ai/troubleshoot', authenticateAdmin, async (req, res) => {
+  try {
+    const { errorLogs, systemState } = req.body;
+
+    if (!errorLogs || !Array.isArray(errorLogs)) {
+      return res.status(400).json({ error: 'Error logs array is required' });
+    }
+
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ 
+        error: 'Gemini API не настроен. Установите GEMINI_API_KEY в переменных окружения.' 
+      });
+    }
+
+    const diagnosis = await geminiService.troubleshootIssue(errorLogs, systemState || {});
+
+    res.json({
+      success: true,
+      ...diagnosis
+    });
+  } catch (error) {
+    logger.error('AI troubleshoot error:', error);
+    res.status(500).json({ 
+      error: 'Failed to troubleshoot',
+      message: error.message 
+    });
   }
 });
 

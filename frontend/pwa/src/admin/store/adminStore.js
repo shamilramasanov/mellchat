@@ -496,7 +496,7 @@ const useAdminStore = create(
       },
 
       // AI Assistant
-      sendAIMessage: async (message) => {
+      sendAIMessage: async (message, conversationHistory = []) => {
         try {
           const response = await fetch(`${API_URL}/api/v1/admin/ai/chat`, {
             method: 'POST',
@@ -504,15 +504,20 @@ const useAdminStore = create(
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${get().token}`
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ message, conversationHistory })
           });
 
           if (!response.ok) {
-            throw new Error('Failed to send AI message');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to send AI message');
           }
 
           const data = await response.json();
-          return { success: true, response: data.response };
+          return { 
+            success: true, 
+            response: data.response || data.diagnosis || data.analysis || 'Ответ получен',
+            timestamp: data.timestamp 
+          };
         } catch (error) {
           return { success: false, error: error.message };
         }
