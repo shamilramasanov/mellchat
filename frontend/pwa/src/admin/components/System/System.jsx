@@ -13,7 +13,8 @@ const System = () => {
     blockUser,
     unblockUser,
     blockedUsers,
-    broadcastMessage
+    broadcastMessage,
+    sendMessageToUser
   } = useAdminStore();
 
   const [connections, setConnections] = useState([]);
@@ -23,6 +24,8 @@ const System = () => {
   const [blockingUserId, setBlockingUserId] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [messageMode, setMessageMode] = useState('broadcast'); // 'broadcast' или 'personal'
+  const [selectedUserId, setSelectedUserId] = useState('');
 
   useEffect(() => {
     loadData();
@@ -100,14 +103,34 @@ const System = () => {
       return;
     }
 
-    if (!confirm(`Отправить сообщение всем подключенным пользователям?`)) return;
+    if (messageMode === 'broadcast') {
+      if (!confirm(`Отправить сообщение всем подключенным пользователям?`)) return;
+    } else {
+      if (!selectedUserId) {
+        alert('Выберите пользователя');
+        return;
+      }
+      if (!confirm(`Отправить сообщение пользователю ${selectedUserId}?`)) return;
+    }
 
     setSendingMessage(true);
     try {
-      const result = await broadcastMessage(adminMessage.trim());
+      let result;
+      if (messageMode === 'broadcast') {
+        result = await broadcastMessage(adminMessage.trim());
+      } else {
+        result = await sendMessageToUser(selectedUserId, adminMessage.trim());
+      }
+
       if (result.success) {
-        alert(`Сообщение отправлено ${result.sentCount} пользователям`);
+        const recipientText = messageMode === 'broadcast' 
+          ? `${result.sentCount} пользователям`
+          : `пользователю ${selectedUserId}`;
+        alert(`Сообщение отправлено ${recipientText}`);
         setAdminMessage('');
+        if (messageMode === 'personal') {
+          setSelectedUserId('');
+        }
       } else {
         alert(`Ошибка: ${result.error}`);
       }
@@ -129,12 +152,67 @@ const System = () => {
 
       {/* Отправка сообщения всем пользователям */}
       <section className="admin-system__section">
-        <h2>📢 Отправка сообщения всем подключенным пользователям</h2>
+        <h2>📢 Отправка сообщений</h2>
+        
+        {/* Выбор режима отправки */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              name="messageMode"
+              value="broadcast"
+              checked={messageMode === 'broadcast'}
+              onChange={(e) => setMessageMode(e.target.value)}
+            />
+            <span>Всем пользователям</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              name="messageMode"
+              value="personal"
+              checked={messageMode === 'personal'}
+              onChange={(e) => setMessageMode(e.target.value)}
+            />
+            <span>Конкретному пользователю</span>
+          </label>
+        </div>
+
+        {/* Выбор пользователя для персональной отправки */}
+        {messageMode === 'personal' && (
+          <div style={{ marginBottom: '15px' }}>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '14px',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '8px',
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <option value="">Выберите пользователя...</option>
+              {connectedUsers.map((user) => (
+                <option key={user.userId} value={user.userId}>
+                  {user.userId} ({user.connectionIds?.length || 0} подключений)
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '20px' }}>
           <textarea
             value={adminMessage}
             onChange={(e) => setAdminMessage(e.target.value)}
-            placeholder="Введите сообщение для отправки всем пользователям..."
+            placeholder={
+              messageMode === 'broadcast'
+                ? "Введите сообщение для отправки всем пользователям..."
+                : "Введите сообщение для отправки выбранному пользователю..."
+            }
             style={{
               flex: 1,
               padding: '10px',
@@ -154,7 +232,7 @@ const System = () => {
           />
           <button
             onClick={handleBroadcastMessage}
-            disabled={sendingMessage || !adminMessage.trim()}
+            disabled={sendingMessage || !adminMessage.trim() || (messageMode === 'personal' && !selectedUserId)}
             style={{
               padding: '10px 20px',
               fontSize: '14px',
@@ -162,15 +240,17 @@ const System = () => {
               color: 'white',
               border: 'none',
               borderRadius: '8px',
-              cursor: sendingMessage || !adminMessage.trim() ? 'not-allowed' : 'pointer',
-              opacity: sendingMessage || !adminMessage.trim() ? 0.5 : 1
+              cursor: sendingMessage || !adminMessage.trim() || (messageMode === 'personal' && !selectedUserId) ? 'not-allowed' : 'pointer',
+              opacity: sendingMessage || !adminMessage.trim() || (messageMode === 'personal' && !selectedUserId) ? 0.5 : 1
             }}
           >
-            {sendingMessage ? '📤 Отправка...' : '📢 Отправить'}
+            {sendingMessage ? '📤 Отправка...' : messageMode === 'broadcast' ? '📢 Отправить всем' : '📨 Отправить'}
           </button>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-          Сообщение появится в чате всех подключенных пользователей с зеленым фоном от имени "admin"
+          {messageMode === 'broadcast'
+            ? 'Сообщение появится в чате всех подключенных пользователей с зеленым фоном от имени "admin"'
+            : 'Сообщение появится в чате выбранного пользователя с зеленым фоном от имени "admin"'}
         </p>
       </section>
 

@@ -445,6 +445,30 @@ const useAdminStore = create(
         }
       },
 
+      // Отправка сообщения конкретному пользователю
+      sendMessageToUser: async (userId, message) => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/message`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`
+            },
+            body: JSON.stringify({ userId, message })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to send message to user');
+          }
+
+          const data = await response.json();
+          return { success: true, sentCount: data.sentCount, message: data.message };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
       // System Health
       updateSystemHealth: (health) => {
         set({ systemHealth: { ...get().systemHealth, ...health } });
