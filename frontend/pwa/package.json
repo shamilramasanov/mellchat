@@ -18,6 +18,8 @@
     "framer-motion": "^10.16.16",
     "html2canvas": "^1.4.1",
     "i18next": "^23.7.6",
+    "react-i18next": "^13.5.0",
+    "react-hot-toast": "^2.4.1",
     "lodash.debounce": "^4.0.8",
     "chart.js": "^4.4.0",
     "react-router-dom": "^6.20.1"
