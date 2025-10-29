@@ -11,15 +11,41 @@ fi
 
 echo "✅ DATABASE_URL is set"
 
-# Apply moderation fields migration
+# Apply moderation fields migration using Node.js
 echo "📝 Applying moderation fields migration..."
-psql "$DATABASE_URL" -f database/migrations/add_moderation_fields.sql
+node -e "
+const { Client } = require('pg');
+const fs = require('fs');
+const path = require('path');
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL
+});
+
+async function runMigration() {
+  try {
+    await client.connect();
+    console.log('Connected to database');
+    
+    const migrationSQL = fs.readFileSync(path.join(__dirname, 'database/migrations/add_moderation_fields.sql'), 'utf8');
+    await client.query(migrationSQL);
+    
+    console.log('✅ Moderation fields migration applied successfully!');
+    await client.end();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Migration failed:', error.message);
+    await client.end();
+    process.exit(1);
+  }
+}
+
+runMigration();
+"
 
 if [ $? -eq 0 ]; then
-    echo "✅ Moderation fields migration applied successfully!"
+    echo "🎉 All migrations completed successfully!"
 else
     echo "❌ Migration failed!"
     exit 1
 fi
-
-echo "🎉 All migrations completed successfully!"
