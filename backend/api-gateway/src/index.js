@@ -180,6 +180,15 @@ logger.info('✅ Auth routes configured');
 logger.info('Setting up database routes...');
 try {
   logger.info('Loading databaseRoutes...');
+  
+  // Проверяем, что databaseRoutes не undefined
+  if (!databaseRoutes) {
+    throw new Error('databaseRoutes is undefined - import failed');
+  }
+  
+  logger.info('databaseRoutes type:', typeof databaseRoutes);
+  logger.info('databaseRoutes constructor:', databaseRoutes.constructor.name);
+  
   app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
   logger.info('✅ databaseRoutes loaded');
   
