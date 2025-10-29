@@ -69,14 +69,11 @@ export default defineConfig({
       workbox: {
         // Runtime caching strategies
         runtimeCaching: [
-          {
-            // API calls - Network Only (no caching for CORS issues)
-            urlPattern: /^https:\/\/mellchat-production\.up\.railway\.app\/api\/.*/i,
-            handler: 'NetworkOnly',
-            options: {
-              networkTimeoutSeconds: 10
-            }
-          },
+        {
+          // API calls - Network Only (no caching for CORS issues)
+          urlPattern: /^https:\/\/mellchat-production\.up\.railway\.app\/api\/.*/i,
+          handler: 'NetworkOnly'
+        },
           {
             // Images - Cache First
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
