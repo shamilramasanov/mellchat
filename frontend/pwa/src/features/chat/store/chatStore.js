@@ -21,7 +21,7 @@ export const useChatStore = create(
       sessionInfo: null, // Информация о сессии пользователя
       hasMoreMessages: false, // Есть ли еще сообщения для загрузки
       currentMood: { happy: 0, neutral: 0, sad: 0 }, // Текущее настроение чата
-      moodEnabled: true, // Включён ли анализ настроения (по умолчанию включён)
+      moodEnabled: false, // Включён ли анализ настроения (по умолчанию отключён)
       
       // Новые поля для работы с датами
       availableDates: {}, // Доступные даты для каждого стрима
