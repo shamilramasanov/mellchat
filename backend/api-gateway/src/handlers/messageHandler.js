@@ -306,22 +306,29 @@ class MessageHandler {
     try {
       const { limit = 50, afterId = null } = options;
       
+      // Извлекаем platform и channel из connectionId (например: youtube-4zfSyomuEg0)
+      const [platform, channel] = connectionId.split('-', 2);
+      
       let query = `
         SELECT * FROM messages 
-        WHERE connection_id = $1 
+        WHERE platform = $1 AND channel = $2
         AND is_spam = false
       `;
-      const params = [connectionId];
+      const params = [platform, channel];
       
       if (afterId) {
-        query += ` AND id > $2`;
+        query += ` AND id > $3`;
         params.push(afterId);
       }
       
       query += ` ORDER BY timestamp DESC LIMIT $${params.length + 1}`;
       params.push(limit);
       
+      logger.info(`🔍 Polling query: ${query}`, { params });
+      
       const result = await databaseService.query(query, params);
+      logger.info(`📥 Polling found ${result.rows?.length || 0} messages for ${connectionId}`);
+      
       return result.rows || [];
       
     } catch (error) {
@@ -335,15 +342,18 @@ class MessageHandler {
     try {
       if (!lastMessageId) return true;
       
+      // Извлекаем platform и channel из connectionId
+      const [platform, channel] = connectionId.split('-', 2);
+      
       const query = `
         SELECT COUNT(*) as count 
         FROM messages 
-        WHERE connection_id = $1 
-        AND id > $2 
+        WHERE platform = $1 AND channel = $2
+        AND id > $3 
         AND is_spam = false
       `;
       
-      const result = await databaseService.query(query, [connectionId, lastMessageId]);
+      const result = await databaseService.query(query, [platform, channel, lastMessageId]);
       return parseInt(result.rows[0]?.count || 0) > 0;
       
     } catch (error) {
