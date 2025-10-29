@@ -35,8 +35,9 @@ const MessageCard = ({ message }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      data-message-id={message.id}
     >
-        <div className={`message-card ${message.isQuestion ? 'message-card--question' : ''}`}>
+      <div className={`message-card ${message.isQuestion ? 'message-card--question' : ''}`}>
         {/* Top Row: Left side (Username/Platform) and Right side (Message Text + Timestamp) */}
         <div className="message-card__top">
           <div className="message-card__left">

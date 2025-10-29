@@ -151,6 +151,30 @@ const RecentStreams = () => {
     return () => clearInterval(updateInterval);
   }, [streamsToShow, getAllStreamsStats]);
 
+  const handleScrollToUnread = (e, streamId, isQuestion = false) => {
+    e.stopPropagation(); // Предотвращаем клик на карточку
+    
+    // Если стрим не активен, сначала делаем его активным
+    if (activeStreamId !== streamId) {
+      setActiveStream(streamId);
+      // Ждем немного чтобы стрим стал активным и сообщения загрузились
+      setTimeout(() => {
+        if (isQuestion) {
+          scrollToUnreadQuestion?.(streamId);
+        } else {
+          scrollToUnreadMessage?.(streamId);
+        }
+      }, 500);
+    } else {
+      // Если стрим уже активен, сразу скроллим
+      if (isQuestion) {
+        scrollToUnreadQuestion?.(streamId);
+      } else {
+        scrollToUnreadMessage?.(streamId);
+      }
+    }
+  };
+
   const handleStreamClick = (stream) => {
     // Если стрим коллапсирован, развернуть его и сделать активным
     if (collapsedStreamIds.includes(stream.id)) {
@@ -285,7 +309,19 @@ const RecentStreams = () => {
                       {/* Stream Info */}
                       <div className="recent-stream-card__info">
                         <div className="recent-stream-card__author">
-                          {stream.author || stream.streamId}
+                          {stream.streamUrl ? (
+                            <a 
+                              href={stream.streamUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="recent-stream-card__author-link"
+                            >
+                              {stream.author || stream.streamId}
+                            </a>
+                          ) : (
+                            stream.author || stream.streamId
+                          )}
                         </div>
                         <div className="recent-stream-card__title">
                           {stream.title || 'Stream'}
@@ -293,16 +329,24 @@ const RecentStreams = () => {
                         
                         {/* Счетчик непрочитанных сообщений */}
                         {streamStats.unreadCount > 0 && (
-                          <div className="recent-stream-card__unread-badge">
+                          <button
+                            className="recent-stream-card__unread-badge recent-stream-card__unread-badge--clickable"
+                            onClick={(e) => handleScrollToUnread(e, stream.id, false)}
+                            title="Перейти к непрочитанным сообщениям"
+                          >
                             {streamStats.unreadCount} {streamStats.unreadCount === 1 ? 'новое сообщение' : 'новых сообщений'}
-                          </div>
+                          </button>
                         )}
                         
                         {/* Счетчик непрочитанных вопросов */}
                         {streamStats.unreadQuestionCount > 0 && (
-                          <div className="recent-stream-card__unread-questions-badge">
+                          <button
+                            className="recent-stream-card__unread-questions-badge recent-stream-card__unread-questions-badge--clickable"
+                            onClick={(e) => handleScrollToUnread(e, stream.id, true)}
+                            title="Перейти к непрочитанным вопросам"
+                          >
                             {streamStats.unreadQuestionCount} {streamStats.unreadQuestionCount === 1 ? 'новый вопрос' : streamStats.unreadQuestionCount < 5 ? 'новых вопроса' : 'новых вопросов'}
-                          </div>
+                          </button>
                         )}
                       </div>
                     </div>

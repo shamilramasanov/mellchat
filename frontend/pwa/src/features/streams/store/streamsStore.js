@@ -12,6 +12,8 @@ export const useStreamsStore = create(
       recentStreams: [], // History of streams
       shouldAutoScroll: false, // Флаг для автоскролла при переходе со страницы последних стримов
       collapsedStreamIds: [], // Streams that are collapsed from cards view
+      scrollToUnreadMessage: null, // Callback для скролла к непрочитанному сообщению
+      scrollToUnreadQuestion: null, // Callback для скролла к непрочитанному вопросу
       
       // Actions
       addStream: (stream) => {
@@ -371,6 +373,11 @@ export const useStreamsStore = create(
         return get().activeStreams.length > 0;
       },
       
+      // Регистрация функций скролла из ChatContainer
+      setScrollFunctions: (scrollToUnreadMessage, scrollToUnreadQuestion) => {
+        set({ scrollToUnreadMessage, scrollToUnreadQuestion });
+      },
+
       // Helpers
       createStreamFromURL: (url) => {
         const platform = detectPlatform(url);
@@ -384,7 +391,7 @@ export const useStreamsStore = create(
           id: `${platform}-${streamId}`,
           platform,
           streamId,
-          url,
+          streamUrl: url, // Сохраняем оригинальную ссылку
           title: streamId, // Will be updated from API
           viewers: 0,
           isLive: true,
@@ -403,7 +410,8 @@ export const useStreamsStore = create(
           title: s.title,
           platform: s.platform,
           isLive: s.isLive,
-          connectionId: s.connectionId // Сохраняем connectionId
+          connectionId: s.connectionId, // Сохраняем connectionId
+          streamUrl: s.streamUrl // Сохраняем streamUrl
         })),
         activeStreamId: state.activeStreamId,
         recentStreams: state.recentStreams.map(s => ({
@@ -414,7 +422,8 @@ export const useStreamsStore = create(
           platform: s.platform,
           isLive: s.isLive,
           lastViewed: s.lastViewed,
-          connectionId: s.connectionId // Сохраняем connectionId для WebSocket подписки
+          connectionId: s.connectionId, // Сохраняем connectionId для WebSocket подписки
+          streamUrl: s.streamUrl // Сохраняем streamUrl
         })),
       }),
     }

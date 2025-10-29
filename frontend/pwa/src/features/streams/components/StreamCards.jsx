@@ -10,6 +10,8 @@ const StreamCards = () => {
   const collapsedStreamIds = useStreamsStore((state) => state.collapsedStreamIds);
   const setActiveStream = useStreamsStore((state) => state.setActiveStream);
   const toggleStreamCard = useStreamsStore((state) => state.toggleStreamCard);
+  const scrollToUnreadMessage = useStreamsStore((state) => state.scrollToUnreadMessage);
+  const scrollToUnreadQuestion = useStreamsStore((state) => state.scrollToUnreadQuestion);
   
   // Subscribe to messages so component re-renders when messages change
   const messages = useChatStore((state) => state.messages);
@@ -20,6 +22,30 @@ const StreamCards = () => {
   
   // Filter out collapsed streams
   const visibleStreams = activeStreams.filter(s => !collapsedStreamIds.includes(s.id));
+
+  const handleScrollToUnread = (e, streamId, isQuestion = false) => {
+    e.stopPropagation(); // Предотвращаем переключение стрима
+    
+    // Если стрим не активен, сначала делаем его активным
+    if (activeStreamId !== streamId) {
+      setActiveStream(streamId);
+      // Ждем немного чтобы стрим стал активным и сообщения загрузились
+      setTimeout(() => {
+        if (isQuestion) {
+          scrollToUnreadQuestion?.(streamId);
+        } else {
+          scrollToUnreadMessage?.(streamId);
+        }
+      }, 300);
+    } else {
+      // Если стрим уже активен, сразу скроллим
+      if (isQuestion) {
+        scrollToUnreadQuestion?.(streamId);
+      } else {
+        scrollToUnreadMessage?.(streamId);
+      }
+    }
+  };
 
   if (visibleStreams.length === 0) {
     return null;
@@ -61,20 +87,44 @@ const StreamCards = () => {
             
             {/* Stream Info */}
             <div className="stream-card__info">
-              <div className="stream-card__author">{stream.author || stream.streamId}</div>
+              <div className="stream-card__author">
+                {stream.streamUrl ? (
+                  <a 
+                    href={stream.streamUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="stream-card__author-link"
+                  >
+                    {stream.author || stream.streamId}
+                  </a>
+                ) : (
+                  stream.author || stream.streamId
+                )}
+              </div>
               <div className="stream-card__title">{stream.title || 'Stream'}</div>
             </div>
             
             {/* Stats */}
             <div className="stream-card__stats">
-              <div className="stream-card__stat">
+              <button
+                className={`stream-card__stat ${streamStats.unreadCount > 0 ? 'stream-card__stat--clickable' : ''}`}
+                onClick={(e) => streamStats.unreadCount > 0 && handleScrollToUnread(e, stream.id, false)}
+                disabled={streamStats.unreadCount === 0}
+                title={streamStats.unreadCount > 0 ? 'Перейти к непрочитанным сообщениям' : ''}
+              >
                 <span className="stream-card__stat-icon">💬</span>
                 <span className="stream-card__stat-value">{streamStats.unreadCount || 0}</span>
-              </div>
-              <div className="stream-card__stat">
+              </button>
+              <button
+                className={`stream-card__stat ${streamStats.unreadQuestionCount > 0 ? 'stream-card__stat--clickable' : ''}`}
+                onClick={(e) => streamStats.unreadQuestionCount > 0 && handleScrollToUnread(e, stream.id, true)}
+                disabled={streamStats.unreadQuestionCount === 0}
+                title={streamStats.unreadQuestionCount > 0 ? 'Перейти к непрочитанным вопросам' : ''}
+              >
                 <span className="stream-card__stat-icon">❓</span>
                 <span className="stream-card__stat-value">{streamStats.unreadQuestionCount || 0}</span>
-              </div>
+              </button>
             </div>
           </div>
         );

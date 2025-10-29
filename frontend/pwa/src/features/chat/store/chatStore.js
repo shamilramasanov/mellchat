@@ -924,6 +924,54 @@ export const useChatStore = create(
         });
         
         return oldestMessage ? oldestMessage.id : null;
+      },
+
+      // Получить ID первого непрочитанного сообщения
+      getFirstUnreadMessageId: (streamId) => {
+        const { messages, lastReadMessageIds } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        const lastReadId = lastReadMessageIds[streamId];
+        
+        if (!lastReadId || streamMessages.length === 0) {
+          return streamMessages.length > 0 ? streamMessages[streamMessages.length - 1]?.id : null;
+        }
+        
+        // Находим индекс последнего прочитанного сообщения
+        const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+        
+        if (lastReadIndex === -1 || lastReadIndex === streamMessages.length - 1) {
+          // Если не найдено или это последнее сообщение - возвращаем последнее
+          return streamMessages[streamMessages.length - 1]?.id;
+        }
+        
+        // Возвращаем ID первого непрочитанного сообщения
+        return streamMessages[lastReadIndex + 1]?.id;
+      },
+
+      // Получить ID первого непрочитанного вопроса
+      getFirstUnreadQuestionId: (streamId) => {
+        const { messages, lastReadMessageIds } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        const lastReadId = lastReadMessageIds[streamId];
+        
+        if (!lastReadId || streamMessages.length === 0) {
+          // Если нет прочитанных, ищем первый вопрос
+          const firstQuestion = streamMessages.find(m => m.isQuestion);
+          return firstQuestion?.id || streamMessages[streamMessages.length - 1]?.id;
+        }
+        
+        // Находим индекс последнего прочитанного сообщения
+        const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+        
+        // Ищем первый непрочитанный вопрос после lastReadId
+        for (let i = lastReadIndex + 1; i < streamMessages.length; i++) {
+          if (streamMessages[i].isQuestion) {
+            return streamMessages[i].id;
+          }
+        }
+        
+        // Если непрочитанных вопросов нет, возвращаем последнее сообщение
+        return streamMessages[streamMessages.length - 1]?.id;
       }
     }),
     {

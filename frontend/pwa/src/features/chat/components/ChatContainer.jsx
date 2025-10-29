@@ -24,10 +24,13 @@ const ChatContainer = ({ onAddStream }) => {
   const activeStreams = useStreamsStore((s) => s.activeStreams);
   const shouldAutoScroll = useStreamsStore((s) => s.shouldAutoScroll);
   const clearAutoScrollFlag = useStreamsStore((s) => s.clearAutoScrollFlag);
+  const setScrollFunctions = useStreamsStore((s) => s.setScrollFunctions);
   const messages = useChatStore((s) => s.messages);
   const markMessagesAsRead = useChatStore((s) => s.markMessagesAsRead);
   const getStreamStats = useChatStore((s) => s.getStreamStats);
   const getStreamMessages = useChatStore((s) => s.getStreamMessages);
+  const getFirstUnreadMessageId = useChatStore((s) => s.getFirstUnreadMessageId);
+  const getFirstUnreadQuestionId = useChatStore((s) => s.getFirstUnreadQuestionId);
   const setSearchQuery = useChatStore((s) => s.setSearchQuery);
   const searchQuery = useChatStore((s) => s.searchQuery);
   const loadMessagesFromDatabase = useChatStore((s) => s.loadMessagesFromDatabase);
@@ -118,6 +121,70 @@ const ChatContainer = ({ onAddStream }) => {
     setIsAtBottom(true);
     wasAtBottomRef.current = true;
   }, [activeStreamId, streamMessages, hasMessages, markMessagesAsRead, adaptiveSettings.animations.reducedMotion]);
+
+  // Скролл к первому непрочитанному сообщению
+  const scrollToFirstUnreadMessage = useCallback((streamId, behavior = 'smooth') => {
+    if (!streamId) return;
+    
+    const messageId = getFirstUnreadMessageId(streamId);
+    if (!messageId) {
+      // Если нет непрочитанных, скроллим в конец
+      scrollToBottom(behavior);
+      return;
+    }
+
+    // Ждем немного чтобы DOM обновился
+    setTimeout(() => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      // Ищем элемент сообщения по data-message-id
+      const messageElement = el.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.scrollIntoView({ behavior, block: 'center' });
+        
+        // Помечаем как прочитанное после скролла
+        setTimeout(() => {
+          markMessagesAsRead(streamId, messageId);
+        }, 500);
+      } else {
+        // Если элемент не найден, скроллим в конец
+        scrollToBottom(behavior);
+      }
+    }, 100);
+  }, [getFirstUnreadMessageId, scrollToBottom, markMessagesAsRead]);
+
+  // Скролл к первому непрочитанному вопросу
+  const scrollToFirstUnreadQuestion = useCallback((streamId, behavior = 'smooth') => {
+    if (!streamId) return;
+    
+    const questionId = getFirstUnreadQuestionId(streamId);
+    if (!questionId) {
+      // Если нет непрочитанных вопросов, скроллим в конец
+      scrollToBottom(behavior);
+      return;
+    }
+
+    // Ждем немного чтобы DOM обновился
+    setTimeout(() => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      // Ищем элемент вопроса по data-message-id
+      const questionElement = el.querySelector(`[data-message-id="${questionId}"]`);
+      if (questionElement) {
+        questionElement.scrollIntoView({ behavior, block: 'center' });
+        
+        // Помечаем как прочитанное после скролла
+        setTimeout(() => {
+          markMessagesAsRead(streamId, questionId);
+        }, 500);
+      } else {
+        // Если элемент не найден, скроллим в конец
+        scrollToBottom(behavior);
+      }
+    }, 100);
+  }, [getFirstUnreadQuestionId, scrollToBottom, markMessagesAsRead]);
 
   // Отдельная функция для автоскролла (без проверки hasMessages)
   const forceScrollToBottom = useCallback((behavior = 'instant') => {
@@ -294,6 +361,14 @@ const ChatContainer = ({ onAddStream }) => {
       }
     }, SCROLL_RESET_DELAY);
   }, [activeStreamId, streamMessages, hasMessages, markMessagesAsRead, saveScroll, getOldestMessageId, loadingStrategy]);
+
+  // Регистрируем функции скролла в streamsStore
+  useEffect(() => {
+    setScrollFunctions(scrollToFirstUnreadMessage, scrollToFirstUnreadQuestion);
+    return () => {
+      setScrollFunctions(null, null);
+    };
+  }, [scrollToFirstUnreadMessage, scrollToFirstUnreadQuestion, setScrollFunctions]);
 
   // === Установка активного стрима для поиска ===
   useEffect(() => {
