@@ -127,15 +127,24 @@ app.use('/api/v1', rateLimiters.general); // Общий лимит для API
 // Metrics middleware
 app.use(metricsMiddleware);
 
+  }
+}));
+logger.info('✅ CORS middleware configured');
+
 // Body parsing middleware
+logger.info('Setting up body parsing middleware...');
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+logger.info('✅ Body parsing middleware configured');
 
 // Initialize Passport
+logger.info('Setting up Passport...');
 app.use(passport.initialize());
+logger.info('✅ Passport initialized');
 
 // Request logging
+logger.info('Setting up request logging...');
 app.use((req, res, next) => {
   logger.info('Incoming request', {
     method: req.method,
@@ -145,11 +154,15 @@ app.use((req, res, next) => {
   });
   next();
 });
+logger.info('✅ Request logging configured');
 
 // Health check route (no auth required)
+logger.info('Setting up health routes...');
 app.use('/api/v1/health', healthRoutes);
+logger.info('✅ Health routes configured');
 
 // Metrics endpoint for Prometheus
+logger.info('Setting up metrics endpoint...');
 app.get('/metrics', async (req, res) => {
   try {
     res.set('Content-Type', register.contentType);
@@ -159,49 +172,75 @@ app.get('/metrics', async (req, res) => {
     res.status(500).end('Failed to generate metrics');
   }
 });
+logger.info('✅ Metrics endpoint configured');
 
 // Auth routes (OAuth) - строгий лимит
+logger.info('Setting up auth routes...');
 app.use('/api/v1/auth', rateLimiters.auth, authRoutes);
+logger.info('✅ Auth routes configured');
 
 // Database routes - лимит для сообщений
+logger.info('Setting up database routes...');
 app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
 app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
 app.use('/api/v1/date-messages', rateLimiters.messages, dateMessagesRoutes);
 app.use('/api/v1/pagination-messages', rateLimiters.messages, paginationMessagesRoutes);
+logger.info('✅ Database routes configured');
 
 // Admin routes - специальный лимит для админ панели
+logger.info('Setting up admin routes...');
 app.use('/api/v1/admin', rateLimiters.admin, adminRoutes);
+logger.info('✅ Admin routes configured');
 
 // Connect route - общий лимит
+logger.info('Setting up connect routes...');
 app.use('/api/v1/connect', rateLimiters.general, connectRoutes);
+logger.info('✅ Connect routes configured');
 
 // YouTube Live Chat routes
+logger.info('Setting up YouTube routes...');
 const youtubeRoutes = youtubeRoutesFactory(() => app.get('wsHub'));
 app.use('/api/v1/youtube', rateLimiters.general, youtubeRoutes);
+logger.info('✅ YouTube routes configured');
 
 // Twitch Chat routes
+logger.info('Setting up Twitch routes...');
 app.use('/api/v1/twitch', rateLimiters.general, twitchRoutes);
+logger.info('✅ Twitch routes configured');
 
 // Kick Chat routes
+logger.info('Setting up Kick routes...');
 const kickRoutes = kickRoutesFactory(() => app.get('wsHub'));
 app.use('/api/v1/kick', rateLimiters.general, kickRoutes);
+logger.info('✅ Kick routes configured');
 
 // Emoji processing routes - лимит для поиска
+logger.info('Setting up emoji routes...');
 app.use('/api/v1/emoji', rateLimiters.search, emojiRoutes);
+logger.info('✅ Emoji routes configured');
 
 // Messages routes - лимит для сообщений
+logger.info('Setting up messages routes...');
 app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
+logger.info('✅ Messages routes configured');
 
 // Reputation routes - общий лимит
+logger.info('Setting up reputation routes...');
 app.use('/api/v1/reputation', rateLimiters.general, reputationRoutes);
+logger.info('✅ Reputation routes configured');
 
 // Database monitoring routes - лимит для мониторинга
+logger.info('Setting up database monitoring routes...');
 app.use('/api/v1/database/monitoring', rateLimiters.general, databaseMonitoringRoutes);
+logger.info('✅ Database monitoring routes configured');
 
 // Error handling middleware
+logger.info('Setting up error handling middleware...');
 app.use(errorHandler);
+logger.info('✅ Error handling middleware configured');
 
 // 404 handler
+logger.info('Setting up 404 handler...');
 app.use('*', (req, res) => {
   res.status(404).json({
     error: {
@@ -210,6 +249,7 @@ app.use('*', (req, res) => {
     },
   });
 });
+logger.info('✅ 404 handler configured');
 
 // Start server
 logger.info('Attempting to start HTTP server...');
