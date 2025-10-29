@@ -67,7 +67,7 @@ export const useChatStore = create(
       
       // Простая функция для получения сообщений стрима
       getStreamMessages: (streamId) => {
-        const { messages, searchQueryDebounced, moodEnabled } = get();
+        const { messages, searchQuery, moodEnabled, searchResults } = get();
         let streamMessages = messages.filter(m => m.streamId === streamId);
 
         // Если настроение выключено - показываем все сообщения
@@ -90,22 +90,9 @@ export const useChatStore = create(
           return true;
         });
 
-        console.log('🔍 getStreamMessages:', {
-          streamId,
-          totalMessages: messages.length,
-          streamMessagesCount: streamMessages.length,
-          searchQueryDebounced: searchQueryDebounced.trim(),
-          firstFewStreamMessages: streamMessages.slice(0, 3).map(m => ({ id: m.id, timestamp: m.timestamp })),
-          allStreamIds: [...new Set(messages.map(m => m.streamId))],
-          streamIdCounts: messages.reduce((acc, m) => {
-            acc[m.streamId] = (acc[m.streamId] || 0) + 1;
-            return acc;
-          }, {})
-        });
-
-        // Применяем поиск если есть debounced запрос
-        if (searchQueryDebounced.trim()) {
-          const query = searchQueryDebounced.toLowerCase();
+        // Применяем поиск если есть запрос (локальная фильтрация сразу)
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
           streamMessages = streamMessages.filter(m =>
             m.username.toLowerCase().includes(query) ||
             (m.text || m.content || '').toLowerCase().includes(query)
@@ -117,32 +104,28 @@ export const useChatStore = create(
 
       // Функции поиска
       setSearchQuery: (query) => {
-        // Обновляем searchQuery сразу для отображения в UI
+        // Обновляем searchQuery сразу для немедленной локальной фильтрации
         set({ searchQuery: query });
         
-        // Очищаем предыдущий таймер
+        // Очищаем предыдущий таймер поиска в БД
         if (get().searchTimeout) {
           clearTimeout(get().searchTimeout);
         }
         
-        // Если запрос не пустой, устанавливаем debounce таймер для поиска в БД и локальной фильтрации
+        // Если запрос не пустой, устанавливаем debounce таймер для поиска в БД
         if (query.trim()) {
           const timeout = setTimeout(() => {
             const activeStreamId = get().activeStreamId;
             
-            // Обновляем debounced версию для локальной фильтрации
-            set({ searchQueryDebounced: query });
-            
-            // Выполняем поиск в БД
+            // Выполняем поиск в БД (только для дополнения результатов)
             if (activeStreamId) {
               get().searchMessagesInDatabase(activeStreamId, query);
             }
-          }, 500); // 500ms задержка для поиска
+          }, 500); // 500ms задержка для поиска в БД
           
           set({ searchTimeout: timeout });
         } else {
           // Если запрос пустой, сразу очищаем поиск
-          set({ searchQueryDebounced: '' });
           get().clearSearch();
         }
       },
@@ -186,14 +169,22 @@ export const useChatStore = create(
               created_at: msg.created_at
             }));
 
-            // Заменяем сообщения результатами поиска
+            // Объединяем результаты поиска в БД с существующими сообщениями
+            // ВАЖНО: Не заменяем все сообщения, а дополняем результаты локальной фильтрации
+            const { messages: currentMessages } = get();
+            const existingIds = new Set(currentMessages.map(m => m.id));
+            const newDbMessages = dbMessages.filter(msg => !existingIds.has(msg.id));
+            
+            // Объединяем существующие сообщения с новыми из БД
+            const allMessages = [...currentMessages, ...newDbMessages];
+            
             set({ 
-              messages: dbMessages,
+              messages: allMessages.slice(-200), // Ограничиваем до 200 для памяти
               loading: false,
               searchResults: true // Флаг что это результаты поиска
             });
             
-            console.log(`✅ Found ${dbMessages.length} messages matching "${searchQuery}"`);
+            console.log(`✅ Found ${dbMessages.length} messages matching "${searchQuery}" (${newDbMessages.length} new)`);
             return { success: true, count: dbMessages.length };
           } else {
             throw new Error(response.message || 'Search failed');
@@ -211,7 +202,7 @@ export const useChatStore = create(
 
       // Восстановление всех сообщений после поиска
       restoreAllMessages: async (streamId) => {
-        set({ searchQuery: '', searchQueryDebounced: '', searchResults: false });
+        set({ searchQuery: '', searchResults: false });
         return get().loadMessagesFromDatabase(streamId, 100);
       },
 
