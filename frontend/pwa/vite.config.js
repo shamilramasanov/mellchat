@@ -74,6 +74,11 @@ export default defineConfig({
           urlPattern: /^https:\/\/mellchat-production\.up\.railway\.app\/api\/.*/i,
           handler: 'NetworkOnly'
         },
+        {
+          // Health check - Network Only
+          urlPattern: /^https:\/\/mellchat-production\.up\.railway\.app\/api\/v1\/health/i,
+          handler: 'NetworkOnly'
+        },
           {
             // Images - Cache First
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
@@ -106,14 +111,12 @@ export default defineConfig({
         clientsClaim: true,
         // Force update Service Worker
         mode: 'production',
-        // Force cache busting
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        additionalManifestEntries: [
-          {
-            url: '/sw-v2.js',
-            revision: Date.now().toString()
-          }
-        ]
+        // Force cache busting with new SW name
+        swDest: 'sw-v3.js',
+        // Force update all caches
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
   ],
