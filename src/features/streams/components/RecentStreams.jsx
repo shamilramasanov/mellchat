@@ -150,9 +150,6 @@ const RecentStreams = () => {
             <h2 className="recent-streams__title">
               {t('streams.recent')}
             </h2>
-            <p className="recent-streams__subtitle">
-              {t('streams.recentSubtitle')}
-            </p>
           </div>
 
           {streamsToShow.length === 0 ? (
