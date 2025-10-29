@@ -44,7 +44,6 @@ const Moderation = () => {
 
   const loadHistory = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
       const response = await fetch(`${API_URL}/api/v1/admin/moderation/history?limit=50`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -64,7 +63,6 @@ const Moderation = () => {
 
     setAnalyzing(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
       const response = await fetch(`${API_URL}/api/v1/admin/moderation/analyze`, {
         method: 'POST',
         headers: {

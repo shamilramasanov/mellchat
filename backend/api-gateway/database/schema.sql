@@ -10,11 +10,16 @@
 CREATE TABLE IF NOT EXISTS messages (
     id VARCHAR(255) PRIMARY KEY,
     stream_id VARCHAR(255) NOT NULL,
+    connection_id VARCHAR(255),
     username VARCHAR(255) NOT NULL,
     text TEXT NOT NULL,
     platform VARCHAR(50) NOT NULL,
     timestamp BIGINT NOT NULL,
     is_question BOOLEAN DEFAULT FALSE,
+    is_spam BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    moderation_reason TEXT,
+    sentiment VARCHAR(50) DEFAULT 'neutral',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -24,6 +29,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
 CREATE INDEX IF NOT EXISTS idx_messages_is_question ON messages(is_question);
 CREATE INDEX IF NOT EXISTS idx_messages_platform ON messages(platform);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_connection_id ON messages(connection_id);
+CREATE INDEX IF NOT EXISTS idx_messages_is_spam ON messages(is_spam);
+CREATE INDEX IF NOT EXISTS idx_messages_is_deleted ON messages(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_messages_sentiment ON messages(sentiment);
 
 -- Questions table (optional - for better question tracking)
 CREATE TABLE IF NOT EXISTS questions (
