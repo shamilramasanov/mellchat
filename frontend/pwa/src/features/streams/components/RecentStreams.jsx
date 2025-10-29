@@ -18,6 +18,8 @@ const RecentStreams = () => {
   const removeStream = useStreamsStore((state) => state.removeStream);
   const toggleStreamCard = useStreamsStore((state) => state.toggleStreamCard);
   const collapsedStreamIds = useStreamsStore((state) => state.collapsedStreamIds);
+  // Используем строку для отслеживания изменений массива в useMemo
+  const collapsedStreamIdsString = useStreamsStore((state) => JSON.stringify(state.collapsedStreamIds));
   const setActiveStream = useStreamsStore((state) => state.setActiveStream);
   
   // Subscribe to messages so component re-renders when messages change
@@ -31,10 +33,12 @@ const RecentStreams = () => {
   // Показываем недавние стримы, которые НЕ в activeStreams
   // ПЛЮС коллапсированные стримы из activeStreams
   const streamsToShow = useMemo(() => {
-    // Стримы из recentStreams, которых нет в activeStreams
+    // Стримы из recentStreams, которых нет в activeStreams ИЛИ которые коллапсированы
     const recentNotActive = recentStreams.filter(stream => {
       const isInActiveStreams = activeStreams.some(s => s.id === stream.id);
-      return !isInActiveStreams;
+      const isCollapsed = collapsedStreamIds.includes(stream.id);
+      // Показываем, если не в activeStreams ИЛИ если коллапсирован
+      return !isInActiveStreams || isCollapsed;
     });
     
     // Коллапсированные стримы из activeStreams
@@ -49,7 +53,7 @@ const RecentStreams = () => {
     );
     
     return uniqueStreams;
-  }, [recentStreams, activeStreams, collapsedStreamIds]);
+  }, [recentStreams, activeStreams, collapsedStreamIdsString]); // Используем строку для отслеживания изменений массива
   
   // DEBUG: логирование для отладки
   console.log('🔍 RecentStreams RERENDER:', {
@@ -57,6 +61,8 @@ const RecentStreams = () => {
     totalRecentStreams: recentStreams.length,
     activeStreamsCount: activeStreams.length,
     activeStreamId,
+    collapsedStreamIds: collapsedStreamIds,
+    collapsedStreamIdsString,
     streamsToShowCount: streamsToShow.length,
     messagesCount,
     activeStreams: activeStreams.map(s => ({ id: s.id, title: s.title, platform: s.platform })),
