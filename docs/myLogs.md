@@ -84,3 +84,14 @@
 20:26:53.181 If you do want to externalize this module explicitly add it to
 20:26:53.181 `build.rollupOptions.external`
 20:26:53.181 Additionally, handling the error in the 'buildEnd' hook caused the following error:
+20:26:53.182   [vite]: Rollup failed to resolve import "react-i18next" from "/vercel/path0/frontend/pwa/src/main.jsx".
+20:26:53.182 This is most likely unintended because it can break your application at runtime.
+20:26:53.182 If you do want to externalize this module explicitly add it to
+20:26:53.182 `build.rollupOptions.external`[31m
+20:26:53.182     at getRollupError (file:///vercel/path0/frontend/pwa/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+20:26:53.182     at file:///vercel/path0/frontend/pwa/node_modules/rollup/dist/es/shared/node-entry.js:23322:39
+20:26:53.182     at async catchUnfinishedHookActions (file:///vercel/path0/frontend/pwa/node_modules/rollup/dist/es/shared/node-entry.js:22780:16)
+20:26:53.182     at async rollupInternal (file:///vercel/path0/frontend/pwa/node_modules/rollup/dist/es/shared/node-entry.js:23305:5)
+20:26:53.182     at async build (file:///vercel/path0/frontend/pwa/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65709:14)
+20:26:53.182     at async CAC.<anonymous> (file:///vercel/path0/frontend/pwa/node_modules/vite/dist/node/cli.js:829:5)[39m
+20:26:53.209 Error: Command "cd frontend/pwa && npm install && npm run build" exited with 1
