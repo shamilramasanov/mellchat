@@ -48,6 +48,8 @@ const databaseMonitoringRoutes = require('./routes/database-monitoring');
 logger.info('✅ databaseMonitoringRoutes loaded');
 const aiRoutes = require('./routes/ai');
 logger.info('✅ aiRoutes loaded');
+const pollingRoutes = require('./routes/polling');
+logger.info('✅ pollingRoutes loaded');
 logger.info('✅ All routes loaded successfully');
 
 const app = express();
@@ -291,6 +293,16 @@ try {
   logger.info('✅ AI routes configured');
 } catch (error) {
   logger.error('❌ Error setting up admin routes:', error);
+  throw error;
+}
+
+// Polling routes (fallback for WebSocket)
+logger.info('Setting up polling routes...');
+try {
+  app.use('/api/v1/polling', rateLimiters.general, pollingRoutes);
+  logger.info('✅ Polling routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up polling routes:', error);
   throw error;
 }
 

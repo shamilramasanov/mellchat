@@ -300,6 +300,57 @@ class MessageHandler {
       };
     }
   }
+
+  // Получить сообщения для polling
+  async getMessages(connectionId, options = {}) {
+    try {
+      const { limit = 50, afterId = null } = options;
+      
+      let query = `
+        SELECT * FROM messages 
+        WHERE connection_id = $1 
+        AND is_spam = false
+      `;
+      const params = [connectionId];
+      
+      if (afterId) {
+        query += ` AND id > $2`;
+        params.push(afterId);
+      }
+      
+      query += ` ORDER BY timestamp DESC LIMIT $${params.length + 1}`;
+      params.push(limit);
+      
+      const result = await databaseService.query(query, params);
+      return result.rows || [];
+      
+    } catch (error) {
+      logger.error('Error getting messages for polling:', error);
+      return [];
+    }
+  }
+
+  // Проверить, есть ли новые сообщения
+  async hasNewMessages(connectionId, lastMessageId) {
+    try {
+      if (!lastMessageId) return true;
+      
+      const query = `
+        SELECT COUNT(*) as count 
+        FROM messages 
+        WHERE connection_id = $1 
+        AND id > $2 
+        AND is_spam = false
+      `;
+      
+      const result = await databaseService.query(query, [connectionId, lastMessageId]);
+      return parseInt(result.rows[0]?.count || 0) > 0;
+      
+    } catch (error) {
+      logger.error('Error checking new messages:', error);
+      return false;
+    }
+  }
 }
 
 // Создаем глобальный экземпляр
