@@ -137,10 +137,45 @@ const AddStreamModal = ({ isOpen, onClose }) => {
       const authorName = inputValue;
       const platforms = [PLATFORMS.TWITCH, PLATFORMS.KICK]; // YouTube требует videoId, пропускаем
       const connectedPlatforms = [];
+      const inactivePlatforms = [];
 
       try {
+        // Сначала проверяем Kick API на наличие активного стрима
+        const checkKickStream = async () => {
+          try {
+            const response = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(authorName)}`, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              // Проверяем, есть ли активный стрим
+              const hasLiveStream = data.livestream && data.livestream.id;
+              return hasLiveStream;
+            }
+            return false;
+          } catch (error) {
+            console.log(`⚠️ Failed to check Kick stream status:`, error.message);
+            // Если не удалось проверить, разрешаем подключение (fallback)
+            return true;
+          }
+        };
+
+        // Проверяем Kick перед подключением
+        const kickHasStream = await checkKickStream();
+        if (!kickHasStream) {
+          inactivePlatforms.push(PLATFORMS.KICK);
+        }
+
         // Пытаемся подключиться ко всем платформам параллельно
         const connectionPromises = platforms.map(async (platform) => {
+          // Пропускаем Kick, если нет активного стрима
+          if (platform === PLATFORMS.KICK && !kickHasStream) {
+            return null;
+          }
+
           try {
             const streamUrl = createStreamURL(authorName, platform);
             if (!streamUrl) return null;
@@ -181,11 +216,19 @@ const AddStreamModal = ({ isOpen, onClose }) => {
 
         // Показываем результат
         if (connectedPlatforms.length > 0) {
-          toast.success(`Подключено на ${connectedPlatforms.length} платформах: ${connectedPlatforms.join(', ')}`);
+          let message = `Подключено на ${connectedPlatforms.length} платформах: ${connectedPlatforms.join(', ')}`;
+          if (inactivePlatforms.length > 0) {
+            message += `\n${inactivePlatforms.join(', ')}: нет активного стрима`;
+          }
+          toast.success(message);
           setUrl('');
           onClose();
         } else {
-          toast.error(`Не удалось подключиться к "${authorName}" ни на одной платформе. Проверьте имя автора.`);
+          if (inactivePlatforms.length > 0) {
+            toast.error(`Не найден активный стрим для "${authorName}" на платформах: ${inactivePlatforms.join(', ')}`);
+          } else {
+            toast.error(`Не удалось подключиться к "${authorName}" ни на одной платформе. Проверьте имя автора.`);
+          }
         }
       } catch (error) {
         console.error('❌ Multi-platform connect error:', error);
