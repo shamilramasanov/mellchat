@@ -475,4 +475,7 @@ router.get('/debug/connections', (req, res) => {
   });
 });
 
+// Экспортируем activeConnections для использования в других модулях
+router.activeConnections = activeConnections;
+
 module.exports = router;

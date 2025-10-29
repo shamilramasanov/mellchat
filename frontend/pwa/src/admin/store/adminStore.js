@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { API_URL } from '@shared/utils/constants';
 
 const useAdminStore = create(
   persist(
@@ -103,7 +104,7 @@ const useAdminStore = create(
         try {
           set({ loading: { ...get().loading, auth: true } });
           
-          const response = await fetch('/api/v1/admin/auth/login', {
+          const response = await fetch(`${API_URL}/api/v1/admin/auth/login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -148,7 +149,7 @@ const useAdminStore = create(
         try {
           set({ loading: { ...get().loading, metrics: true } });
           
-          const response = await fetch('/api/v1/admin/dashboard/metrics', {
+          const response = await fetch(`${API_URL}/api/v1/admin/dashboard/metrics`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -180,7 +181,7 @@ const useAdminStore = create(
         try {
           set({ loading: { ...get().loading, charts: true } });
           
-          const response = await fetch(`/api/v1/admin/dashboard/charts?range=${timeRange}`, {
+          const response = await fetch(`${API_URL}/api/v1/admin/dashboard/charts?range=${timeRange}`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -210,7 +211,7 @@ const useAdminStore = create(
 
       fetchAIInsights: async () => {
         try {
-          const response = await fetch('/api/v1/admin/ai/insights', {
+          const response = await fetch(`${API_URL}/api/v1/admin/ai/insights`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -240,7 +241,7 @@ const useAdminStore = create(
 
       saveSettings: async (settings) => {
         try {
-          const response = await fetch('/api/v1/admin/settings', {
+          const response = await fetch(`${API_URL}/api/v1/admin/settings`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -289,28 +290,130 @@ const useAdminStore = create(
         }
       },
 
-      blockUser: async (userId, reason, duration) => {
+      blockUser: async (userId, reason) => {
         try {
-          const response = await fetch('/api/v1/admin/users/block', {
+          const response = await fetch(`${API_URL}/api/v1/admin/users/block`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${get().token}`
             },
-            body: JSON.stringify({ userId, reason, duration })
+            body: JSON.stringify({ userId, reason })
           });
 
           if (!response.ok) {
             throw new Error('Failed to block user');
           }
 
-          // Update local state
-          const users = get().users.map(user => 
-            user.id === userId 
-              ? { ...user, blocked: true, blockReason: reason }
-              : user
-          );
-          set({ users });
+          const data = await response.json();
+          
+          // Update blocked users list
+          const { blockedUsers } = get();
+          set({ blockedUsers: [...blockedUsers, data.user] });
+
+          return { success: true };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
+      unblockUser: async (userId) => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/users/unblock`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`
+            },
+            body: JSON.stringify({ userId })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to unblock user');
+          }
+
+          // Update blocked users list
+          const { blockedUsers } = get();
+          set({ blockedUsers: blockedUsers.filter(u => u.userId !== userId) });
+
+          return { success: true };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
+      fetchConnectedUsers: async () => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/users/connected`, {
+            headers: {
+              'Authorization': `Bearer ${get().token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch connected users');
+          }
+
+          const data = await response.json();
+          return { success: true, users: data.users, total: data.total };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
+      fetchBlockedUsers: async () => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/users/blocked`, {
+            headers: {
+              'Authorization': `Bearer ${get().token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch blocked users');
+          }
+
+          const data = await response.json();
+          set({ blockedUsers: data.users });
+          return { success: true, users: data.users };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
+      fetchConnections: async () => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/connections/list`, {
+            headers: {
+              'Authorization': `Bearer ${get().token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch connections');
+          }
+
+          const data = await response.json();
+          return { success: true, connections: data.connections, total: data.total };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
+      disconnectConnection: async (connectionId) => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/connections/disconnect`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`
+            },
+            body: JSON.stringify({ connectionId })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to disconnect connection');
+          }
 
           return { success: true };
         } catch (error) {
@@ -325,7 +428,7 @@ const useAdminStore = create(
 
       fetchSystemHealth: async () => {
         try {
-          const response = await fetch('/api/v1/admin/system/health', {
+          const response = await fetch(`${API_URL}/api/v1/admin/system/health`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -347,7 +450,7 @@ const useAdminStore = create(
       // AI Assistant
       sendAIMessage: async (message) => {
         try {
-          const response = await fetch('/api/v1/admin/ai/chat', {
+          const response = await fetch(`${API_URL}/api/v1/admin/ai/chat`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

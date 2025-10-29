@@ -183,6 +183,24 @@ class WsHub {
       return;
     }
     
+    // Проверяем блокировку пользователя перед обработкой сообщения
+    try {
+      const adminRoutes = require('../admin/routes/adminRoutes');
+      const blockedUsers = adminRoutes.blockedUsers || new Map();
+      
+      // Извлекаем userId из сообщения (может быть username или userId)
+      const userId = payload.userId || payload.username;
+      
+      // Если пользователь заблокирован, не обрабатываем сообщение
+      if (userId && blockedUsers.has(userId)) {
+        logger.debug(`🚫 Message from blocked user ${userId} filtered`);
+        return;
+      }
+    } catch (error) {
+      logger.error('Error checking user block status:', error);
+      // Продолжаем обработку сообщения в случае ошибки проверки
+    }
+    
     // Обрабатываем сообщение через messageHandler
     try {
       logger.debug('WebSocket emitMessage calling messageHandler:', { 

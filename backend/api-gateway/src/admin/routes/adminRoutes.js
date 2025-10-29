@@ -262,4 +262,289 @@ router.get('/system/health', authenticateAdmin, async (req, res) => {
   }
 });
 
+// ==================== USER MANAGEMENT ====================
+
+// In-memory storage for blocked users (в будущем перенести в БД)
+const blockedUsers = new Map(); // userId -> { blockedAt, reason, blockedBy }
+
+// GET /api/v1/admin/users/connected - Список подключенных пользователей
+router.get('/users/connected', authenticateAdmin, async (req, res) => {
+  try {
+    const wsHub = req.app.get('wsHub');
+    const connectedUsers = [];
+    
+    // Собираем информацию о подключенных пользователях из WebSocket подписок
+    if (wsHub && wsHub.subscribers) {
+      const subscribersMap = new Map();
+      
+      // Проходим по всем подпискам WebSocket
+      for (const [connectionId, wsSet] of wsHub.subscribers.entries()) {
+        wsSet.forEach(ws => {
+          // Извлекаем информацию о пользователе из WebSocket (если есть)
+          const userId = ws.userId || 'anonymous';
+          const userAgent = ws.headers?.['user-agent'] || 'Unknown';
+          const ip = ws._socket?.remoteAddress || 'Unknown';
+          
+          if (!subscribersMap.has(userId)) {
+            subscribersMap.set(userId, {
+              userId,
+              connectionIds: [],
+              userAgent,
+              ip,
+              connectedAt: ws.connectedAt || new Date(),
+              isBlocked: blockedUsers.has(userId)
+            });
+          }
+          
+          subscribersMap.get(userId).connectionIds.push(connectionId);
+        });
+      }
+      
+      connectedUsers.push(...Array.from(subscribersMap.values()));
+    }
+    
+    // Также получаем информацию из активных подключений
+    const activeConnections = require('../../routes/connect'); // Прямой доступ к activeConnections
+    const activeKickConnections = global.activeKickConnections || new Map();
+    
+    res.json({
+      success: true,
+      users: connectedUsers,
+      total: connectedUsers.length,
+      totalConnections: wsHub?.subscribers?.size || 0
+    });
+  } catch (error) {
+    console.error('Get connected users error:', error);
+    res.status(500).json({ error: 'Failed to fetch connected users' });
+  }
+});
+
+// GET /api/v1/admin/users/blocked - Список заблокированных пользователей
+router.get('/users/blocked', authenticateAdmin, async (req, res) => {
+  try {
+    const blocked = Array.from(blockedUsers.entries()).map(([userId, data]) => ({
+      userId,
+      ...data
+    }));
+    
+    res.json({
+      success: true,
+      users: blocked,
+      total: blocked.length
+    });
+  } catch (error) {
+    console.error('Get blocked users error:', error);
+    res.status(500).json({ error: 'Failed to fetch blocked users' });
+  }
+});
+
+// POST /api/v1/admin/users/block - Заблокировать пользователя
+router.post('/users/block', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, reason } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    blockedUsers.set(userId, {
+      blockedAt: new Date(),
+      reason: reason || 'No reason provided',
+      blockedBy: req.admin.username || req.admin.id
+    });
+    
+    // Отключаем все подключения пользователя
+    const wsHub = req.app.get('wsHub');
+    if (wsHub && wsHub.subscribers) {
+      for (const [connectionId, wsSet] of wsHub.subscribers.entries()) {
+        wsSet.forEach(ws => {
+          if (ws.userId === userId) {
+            try {
+              ws.close(1000, 'User blocked by admin');
+            } catch (err) {
+              console.error('Error closing WebSocket:', err);
+            }
+          }
+        });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `User ${userId} blocked successfully`,
+      user: {
+        userId,
+        blockedAt: blockedUsers.get(userId).blockedAt,
+        reason: blockedUsers.get(userId).reason
+      }
+    });
+  } catch (error) {
+    console.error('Block user error:', error);
+    res.status(500).json({ error: 'Failed to block user' });
+  }
+});
+
+// POST /api/v1/admin/users/unblock - Разблокировать пользователя
+router.post('/users/unblock', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    if (!blockedUsers.has(userId)) {
+      return res.status(404).json({ error: 'User is not blocked' });
+    }
+    
+    blockedUsers.delete(userId);
+    
+    res.json({
+      success: true,
+      message: `User ${userId} unblocked successfully`
+    });
+  } catch (error) {
+    console.error('Unblock user error:', error);
+    res.status(500).json({ error: 'Failed to unblock user' });
+  }
+});
+
+// POST /api/v1/admin/connections/disconnect - Отключить подключение
+router.post('/connections/disconnect', authenticateAdmin, async (req, res) => {
+  try {
+    const { connectionId } = req.body;
+    
+    if (!connectionId) {
+      return res.status(400).json({ error: 'Connection ID is required' });
+    }
+    
+    const connectRoutes = require('../../routes/connect');
+    const activeConnections = connectRoutes.activeConnections || new Map();
+    const activeKickConnections = global.activeKickConnections || new Map();
+    
+    // Отключаем подключение
+    let disconnected = false;
+    
+    // Проверяем в activeConnections
+    const connection = activeConnections.get(connectionId);
+    if (connection) {
+      if (connection.client) {
+        connection.client.disconnect();
+      }
+      activeConnections.delete(connectionId);
+      disconnected = true;
+    }
+    
+    // Проверяем в activeKickConnections
+    const kickConnection = activeKickConnections.get(connectionId);
+    if (kickConnection) {
+      if (kickConnection.kickSimpleClient) {
+        kickConnection.kickSimpleClient.disconnect();
+      }
+      if (kickConnection.kickJsClient) {
+        kickConnection.kickJsClient.disconnect();
+      }
+      if (kickConnection.wsClient) {
+        kickConnection.wsClient.close();
+      }
+      activeKickConnections.delete(connectionId);
+      disconnected = true;
+    }
+    
+    // Закрываем WebSocket подписки
+    const wsHub = req.app.get('wsHub');
+    if (wsHub && wsHub.subscribers) {
+      const wsSet = wsHub.subscribers.get(connectionId);
+      if (wsSet) {
+        wsSet.forEach(ws => {
+          try {
+            ws.close(1000, 'Disconnected by admin');
+          } catch (err) {
+            console.error('Error closing WebSocket:', err);
+          }
+        });
+        wsHub.subscribers.delete(connectionId);
+        disconnected = true;
+      }
+    }
+    
+    if (!disconnected) {
+      return res.status(404).json({ error: 'Connection not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: `Connection ${connectionId} disconnected successfully`
+    });
+  } catch (error) {
+    console.error('Disconnect connection error:', error);
+    res.status(500).json({ error: 'Failed to disconnect connection' });
+  }
+});
+
+// GET /api/v1/admin/connections/list - Список всех активных подключений
+router.get('/connections/list', authenticateAdmin, async (req, res) => {
+  try {
+    const connectRoutes = require('../../routes/connect');
+    const activeConnections = connectRoutes.activeConnections || new Map();
+    const activeKickConnections = global.activeKickConnections || new Map();
+    
+    const connections = [];
+    
+    // Собираем подключения из activeConnections
+    for (const [id, conn] of activeConnections.entries()) {
+      connections.push({
+        connectionId: id,
+        platform: conn.platform,
+        channel: conn.channelName,
+        connectedAt: conn.connectedAt,
+        messageCount: conn.messages?.length || 0
+      });
+    }
+    
+    // Добавляем Kick подключения
+    for (const [id, conn] of activeKickConnections.entries()) {
+      connections.push({
+        connectionId: id,
+        platform: conn.platform || 'kick',
+        channel: conn.channel,
+        connectedAt: conn.connectedAt,
+        messageCount: conn.messages?.length || 0
+      });
+    }
+    
+    // Также получаем информацию о WebSocket подписчиках
+    const wsHub = req.app.get('wsHub');
+    if (wsHub && wsHub.subscribers) {
+      for (const [connectionId, wsSet] of wsHub.subscribers.entries()) {
+        const existingConnection = connections.find(c => c.connectionId === connectionId);
+        if (existingConnection) {
+          existingConnection.subscribers = wsSet.size;
+        } else {
+          // Если подключение есть в WebSocket, но нет в activeConnections
+          connections.push({
+            connectionId,
+            platform: connectionId.split('-')[0],
+            channel: connectionId.split('-').slice(1, -1).join('-'),
+            subscribers: wsSet.size,
+            connectedAt: new Date()
+          });
+        }
+      }
+    }
+    
+    res.json({
+      success: true,
+      connections,
+      total: connections.length
+    });
+  } catch (error) {
+    console.error('Get connections list error:', error);
+    res.status(500).json({ error: 'Failed to fetch connections list' });
+  }
+});
+
+// Экспортируем blockedUsers для использования в других модулях
+router.blockedUsers = blockedUsers;
+
 module.exports = router;
