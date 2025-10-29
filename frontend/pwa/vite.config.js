@@ -70,15 +70,10 @@ export default defineConfig({
         // Runtime caching strategies
         runtimeCaching: [
           {
-            // API calls - Network First
+            // API calls - Network Only (no caching for CORS issues)
             urlPattern: /^https:\/\/mellchat-production\.up\.railway\.app\/api\/.*/i,
-            handler: 'NetworkFirst',
+            handler: 'NetworkOnly',
             options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 300 // 5 minutes
-              },
               networkTimeoutSeconds: 10
             }
           },
@@ -111,7 +106,9 @@ export default defineConfig({
         navigateFallback: null,
         cleanupOutdatedCaches: true,
         skipWaiting: true,
-        clientsClaim: true
+        clientsClaim: true,
+        // Force update Service Worker
+        mode: 'production'
       }
     })
   ],
