@@ -28,11 +28,10 @@ class GeminiService {
     }
 
     try {
-      const url = `${this.baseUrl}/models`;
+      const url = `${this.baseUrl}/models?key=${this.apiKey}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         }
       });
