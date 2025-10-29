@@ -6,8 +6,7 @@ class DateMessagesService {
 
   async request(endpoint, options = {}) {
     const url = `${this.API_BASE_URL}${endpoint}`;
-    console.log('🌐 Making date messages request to:', url);
-    
+
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -18,10 +17,9 @@ class DateMessagesService {
     };
 
     try {
-      console.log('📤 Date messages request config:', config);
+
       const response = await fetch(url, config);
-      console.log('📥 Date messages response status:', response.status);
-      
+
       const data = await response.json();
 
       if (!response.ok) {

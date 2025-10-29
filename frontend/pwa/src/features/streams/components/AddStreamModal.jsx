@@ -6,7 +6,7 @@ import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
 import { streamsAPI } from '@shared/services';
 import { isValidStreamURL } from '@shared/utils/validators';
-import { detectPlatform } from '@shared/utils/helpers';
+import { detectPlatform, extractYouTubeVideoId } from '@shared/utils/helpers';
 import { PLATFORM_LOGOS, PLATFORMS } from '@shared/utils/constants';
 import './AddStreamModal.css';
 
@@ -95,6 +95,19 @@ const AddStreamModal = ({ isOpen, onClose }) => {
       default:
         return null;
     }
+  };
+
+  // Функция для обработки YouTube URL и извлечения videoId
+  const processYouTubeURL = (url) => {
+    const videoId = extractYouTubeVideoId(url);
+    if (videoId) {
+      return {
+        videoId,
+        url: `https://www.youtube.com/live/${videoId}`,
+        platform: PLATFORMS.YOUTUBE
+      };
+    }
+    return null;
   };
 
   // Проверка, является ли ввод именем автора (не URL)

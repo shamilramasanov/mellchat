@@ -47,4 +47,3 @@ function createRateLimiter({ windowMs = 60000, max = 100 } = {}) {
 
 module.exports = { createRateLimiter };
 
-

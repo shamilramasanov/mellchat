@@ -33,12 +33,12 @@ const RecentStreams = () => {
   useEffect(() => {
     // НЕ загружаем если нет активных стримов (пользователь вышел из всех)
     if (activeStreams.length === 0) {
-      console.log('🛑 Skipping recent streams loading - no active streams');
+
       return;
     }
     
     const loadMessagesForRecentStreams = async () => {
-      console.log('🔄 Loading messages for recent streams:', streamsToShow.length);
+
       for (const stream of streamsToShow) {
         try {
           await loadMessagesAdaptive(stream.id, { forceReload: false });
@@ -59,16 +59,14 @@ const RecentStreams = () => {
     
     // НЕ обновляем если нет активных стримов (пользователь вышел из всех)
     if (activeStreams.length === 0) {
-      console.log('🛑 Stopping recent streams updates - no active streams');
+
       return;
     }
-
-    console.log('🔄 Starting periodic updates for recent streams:', streamsToShow.length);
 
     const updateInterval = setInterval(async () => {
       // Дополнительная проверка - если активных стримов нет, останавливаем обновления
       if (activeStreams.length === 0) {
-        console.log('🛑 Stopping periodic updates - no active streams');
+
         clearInterval(updateInterval);
         return;
       }
@@ -84,7 +82,7 @@ const RecentStreams = () => {
     }, 5000); // Обновляем каждые 5 секунд
 
     return () => {
-      console.log('🧹 Clearing recent streams update interval');
+
       clearInterval(updateInterval);
     };
   }, [streamsToShow, activeStreams.length]); // Добавляем activeStreams.length в зависимости
@@ -106,7 +104,7 @@ const RecentStreams = () => {
       // Отправляем запрос на бэкенд для закрытия соединения
       if (streamToRemove?.connectionId) {
         try {
-          console.log('🔌 Disconnecting from stream:', streamToRemove.connectionId);
+
           const response = await fetch('/api/v1/connect/disconnect', {
             method: 'POST',
             headers: {
@@ -118,7 +116,7 @@ const RecentStreams = () => {
           });
           
           if (response.ok) {
-            console.log('✅ Successfully disconnected from stream');
+
           } else {
             console.warn('⚠️ Failed to disconnect from stream:', response.status);
           }

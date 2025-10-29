@@ -4,7 +4,6 @@ import { useChatStore } from '../store/chatStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import VirtualizedMessageList from '@shared/components/VirtualizedMessageList';
 import SearchBar from './SearchBar';
-// import DatabaseStatus from './DatabaseStatus'; // Убрали для продакшена
 import { useAdaptiveUpdates, usePerformanceMonitor } from '@shared/hooks/useOptimization';
 import deviceDetection from '@shared/utils/deviceDetection';
 import './ChatContainer.css';
@@ -123,19 +122,12 @@ const ChatContainer = ({ onAddStream }) => {
     }
 
     if (ENABLE_DEBUG_LOGS) {
-      console.log('🚀 Force scrolling to bottom:', {
-        scrollHeight: el.scrollHeight,
-        scrollTop: el.scrollTop,
-        clientHeight: el.clientHeight,
-        behavior,
-        messagesCount: streamMessages?.length || 0
-      });
+
     }
 
     // Проверяем, что есть контент для скролла
     if (el.scrollHeight <= el.clientHeight) {
       if (ENABLE_DEBUG_LOGS) {
-        console.log('⚠️ No scrollable content, scrollHeight <= clientHeight');
       }
       return;
     }
@@ -176,23 +168,21 @@ const ChatContainer = ({ onAddStream }) => {
 
     setIsLoadingMore(true);
     try {
-      console.log('📥 Loading more messages for stream:', activeStreamId);
-      
+
       const oldestMessageId = getOldestMessageId(activeStreamId);
       if (!oldestMessageId) {
-        console.log('❌ No oldest message ID found');
+
         return;
       }
       
       const result = await loadOlderMessages(activeStreamId, oldestMessageId, 20);
       
       if (result.success) {
-        console.log(`✅ Loaded ${result.loadedCount} older messages`);
-        
+
         // Если есть еще сообщения за эту дату, оставляем кнопку
         // Если нет - переходим к следующей дате
         if (!result.hasMore) {
-          console.log('📅 All messages loaded');
+
         }
       } else {
         console.error('❌ Failed to load older messages:', result.error);
@@ -228,15 +218,7 @@ const ChatContainer = ({ onAddStream }) => {
     
     // Отладочная информация
     if (ENABLE_SCROLL_LOGS) {
-      console.log('📜 Scroll event:', {
-        scrollTop,
-        scrollHeight,
-        clientHeight,
-        nowAtBottom,
-        wasAtBottom,
-        scrollPercentage,
-        isScrolling: isScrollingRef.current
-      });
+
     }
     
     // ВАЖНО: Обновляем wasAtBottomRef СРАЗУ при скролле
@@ -246,14 +228,14 @@ const ChatContainer = ({ onAddStream }) => {
     if (wasAtBottom && !nowAtBottom) {
       setShowNewBtn(true);
       if (ENABLE_SCROLL_LOGS) {
-        console.log('🔝 User scrolled up - showing new messages button');
+
       }
     } else if (!wasAtBottom && nowAtBottom) {
       setShowNewBtn(false);
       setNewMsgCount(0);
       autoLoadTriggeredRef.current = false; // Сбрасываем флаг при скролле вниз
       if (ENABLE_SCROLL_LOGS) {
-        console.log('🔽 User scrolled to bottom - hiding new messages button');
+
       }
       
       // НЕ помечаем как прочитано при скролле вниз
@@ -272,7 +254,7 @@ const ChatContainer = ({ onAddStream }) => {
                           (now - lastLoadMoreTimeRef.current) > 2000; // Минимум 2 секунды между загрузками
     
     if (shouldAutoLoad) {
-      console.log('📥 Auto-loading older messages on scroll up');
+
       lastLoadMoreTimeRef.current = now;
       lastLoadedMessageIdRef.current = oldestMessageId; // Сохраняем ID для следующей проверки
       autoLoadTriggeredRef.current = true;
@@ -285,7 +267,7 @@ const ChatContainer = ({ onAddStream }) => {
     setTimeout(() => {
       isScrollingRef.current = false;
       if (ENABLE_SCROLL_LOGS) {
-        console.log('⏰ Scroll flag reset');
+
       }
     }, SCROLL_RESET_DELAY);
   }, [activeStreamId, streamMessages, hasMessages, markMessagesAsRead, saveScroll, getOldestMessageId, loadingStrategy]);
@@ -306,13 +288,11 @@ const ChatContainer = ({ onAddStream }) => {
     lastLoadedMessageIdRef.current = null;
     lastLoadMoreTimeRef.current = 0;
 
-    console.log('🔄 Loading NEW messages for stream:', activeStreamId);
-    
     // Загружаем только новые сообщения (с момента последнего просмотра)
     // Это обеспечивает "с чистого листа" поведение
     loadMessagesAdaptive(activeStreamId).then((result) => {
       if (result.success) {
-        console.log(`✅ Loaded ${result.count} NEW messages with ${result.strategy.strategy} strategy`);
+
       } else {
         console.error('❌ Failed to load messages adaptively:', result.error);
         // Fallback к обычной загрузке
@@ -324,12 +304,10 @@ const ChatContainer = ({ onAddStream }) => {
   // === Автоскролл при смене стрима ===
   useEffect(() => {
     if (!activeStreamId || !shouldAutoScroll) return;
-    
-    console.log('🚀 Auto-scroll triggered for stream:', activeStreamId);
-    
+
     // Ждем дольше, чтобы сообщения точно успели загрузиться
     const timer = setTimeout(() => {
-      console.log('🚀 Executing auto-scroll after delay');
+
       forceScrollToBottom('instant');
       clearAutoScrollFlag();
     }, 500); // Увеличиваем задержку до 500ms
@@ -340,12 +318,10 @@ const ChatContainer = ({ onAddStream }) => {
   // === Дополнительный автоскролл после загрузки сообщений ===
   useEffect(() => {
     if (!activeStreamId || !shouldAutoScroll || !streamMessages?.length) return;
-    
-    console.log('🚀 Additional auto-scroll triggered, messages count:', streamMessages.length);
-    
+
     // Дополнительный автоскролл после того, как сообщения загрузились
     const timer = setTimeout(() => {
-      console.log('🚀 Executing additional auto-scroll after messages loaded');
+
       forceScrollToBottom('instant');
       clearAutoScrollFlag();
     }, 100);
@@ -364,7 +340,7 @@ const ChatContainer = ({ onAddStream }) => {
     const observer = new MutationObserver(() => {
       // Проверяем, что есть сообщения и контент для скролла
       if (streamMessages?.length > 0 && container.scrollHeight > container.clientHeight) {
-        console.log('🚀 DOM changed, forcing scroll to bottom');
+
         forceScrollToBottom('instant');
         clearAutoScrollFlag();
         observer.disconnect(); // Отключаем наблюдатель после первого срабатывания
@@ -394,7 +370,7 @@ const ChatContainer = ({ onAddStream }) => {
     
     // Если установлен флаг автоскролла, не восстанавливаем позицию
     if (shouldAutoScroll) {
-      console.log('🚀 Skipping position restoration due to auto-scroll flag');
+
       return;
     }
 
@@ -458,16 +434,7 @@ const ChatContainer = ({ onAddStream }) => {
     const currentScrollHeight = el.scrollHeight;
     const currentClientHeight = el.clientHeight;
     const actuallyAtBottom = currentScrollHeight - currentScrollTop - currentClientHeight <= THRESHOLD;
-    
-    console.log('📨 New message effect:', {
-      newCount,
-      oldCount,
-      wasAtBottom,
-      isScrolling,
-      actuallyAtBottom,
-      shouldAutoScroll: wasAtBottom && !isScrolling && actuallyAtBottom
-    });
-    
+
     // ВАЖНО: Обновляем wasAtBottomRef на основе текущего состояния
     wasAtBottomRef.current = actuallyAtBottom;
     
@@ -475,7 +442,7 @@ const ChatContainer = ({ onAddStream }) => {
     if (wasAtBottom && !isScrolling && actuallyAtBottom) {
       // Автоскролл вниз только если пользователь был внизу И не скроллит И действительно внизу
       if (ENABLE_SCROLL_LOGS) {
-        console.log('🚀 Auto-scrolling to bottom');
+
       }
       requestAnimationFrame(() => {
         el.scrollTop = el.scrollHeight;
@@ -488,27 +455,21 @@ const ChatContainer = ({ onAddStream }) => {
       });
     } else if (!wasAtBottom || !actuallyAtBottom) {
       // Показываем кнопку новых сообщений только если пользователь НЕ был внизу
-      console.log('🔔 Showing new messages button');
+
       const stats = getStreamStats(activeStreamId);
-      console.log('📊 Stream stats:', { 
-        streamId: activeStreamId, 
-        unreadCount: stats.unreadCount,
-        totalMessages: streamMessages.length,
-        lastReadId: stats.lastReadId 
-      });
+
       if (stats.unreadCount > 0) {
         setNewMsgCount(stats.unreadCount);
         setShowNewBtn(true);
       }
     } else {
       if (ENABLE_SCROLL_LOGS) {
-        console.log('⏸️ User is scrolling or not at bottom - not auto-scrolling');
+
       }
     }
 
     prevMsgCountRef.current = newCount;
   }, [streamMessages?.length || 0, activeStreamId, getStreamStats, markMessagesAsRead]);
-
 
   // === Очистка ===
   useEffect(() => {
@@ -551,7 +512,6 @@ const ChatContainer = ({ onAddStream }) => {
           </div>
         )}
       </div>
-
 
             {/* Кнопка новых сообщений */}
       {showNewBtn && (

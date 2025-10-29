@@ -57,7 +57,7 @@ export const useStreamsStore = create(
             });
             
             if (response.ok) {
-              console.log('✅ Successfully disconnected from platform:', streamToRemove.connectionId);
+
             } else {
               console.warn('⚠️ Failed to disconnect from platform:', streamToRemove.connectionId);
             }
@@ -97,7 +97,7 @@ export const useStreamsStore = create(
         // Отправляем запрос на бэкенд для закрытия соединения
         if (streamToRemove?.connectionId) {
           try {
-            console.log('🔌 Disconnecting from stream:', streamToRemove.connectionId);
+
             const response = await fetch('/api/v1/connect/disconnect', {
               method: 'POST',
               headers: {
@@ -109,7 +109,7 @@ export const useStreamsStore = create(
             });
             
             if (response.ok) {
-              console.log('✅ Successfully disconnected from stream');
+
             } else {
               console.warn('⚠️ Failed to disconnect from stream:', response.status);
             }
@@ -131,16 +131,13 @@ export const useStreamsStore = create(
           activeStreams: updatedStreams,
           activeStreamId: newActiveStreamId
         });
-        
-        console.log(`🗑️ Removed stream ${streamId}, active stream: ${newActiveStreamId}`);
+
       },
 
       // Принудительно закрыть все соединения
       disconnectAllStreams: async () => {
         const { activeStreams } = get();
-        
-        console.log('🔌 Disconnecting from all streams...');
-        
+
         // Отправляем запросы на закрытие всех соединений
         const disconnectPromises = activeStreams.map(async (stream) => {
           if (stream.connectionId) {
@@ -156,7 +153,7 @@ export const useStreamsStore = create(
               });
               
               if (response.ok) {
-                console.log(`✅ Disconnected from ${stream.id}`);
+
               } else {
                 console.warn(`⚠️ Failed to disconnect from ${stream.id}:`, response.status);
               }
@@ -173,8 +170,7 @@ export const useStreamsStore = create(
           activeStreams: [],
           activeStreamId: null
         });
-        
-        console.log('✅ All streams disconnected');
+
       },
       
       switchStream: (streamId) => {

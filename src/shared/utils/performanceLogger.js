@@ -71,8 +71,7 @@ class PerformanceLogger {
       renderTime: data.renderTime,
       lastUpdate: Date.now()
     };
-    
-    console.log(`🎯 [Virtualization] ${data.enabled ? 'ENABLED' : 'DISABLED'} | Rendered: ${data.renderedItems}/${data.totalItems} | Time: ${data.renderTime}ms | Performance: ${data.performance}`);
+
   }
 
   // Логирование определения устройства
@@ -96,8 +95,7 @@ class PerformanceLogger {
       adaptiveSettings: data.adaptiveSettings,
       lastUpdate: Date.now()
     };
-    
-    console.log(`📱 [Device Detection] Type: ${data.deviceType} | Performance: ${data.performance} | Virtual Scroll: ${data.adaptiveSettings?.virtualScroll?.enabled ? 'ON' : 'OFF'}`);
+
   }
 
   // Логирование кэша
@@ -176,8 +174,7 @@ class PerformanceLogger {
       cacheHits: data.cacheHits,
       lastPrefetch: Date.now()
     };
-    
-    console.log(`🚀 [Prefetching] Pages: ${data.prefetchedPages} | Cache Hits: ${data.cacheHits} | Performance: ${data.performance}`);
+
   }
 
   // Общее логирование производительности
@@ -198,7 +195,7 @@ class PerformanceLogger {
     this.logs.push(log);
     
     const emoji = duration < 10 ? '⚡' : duration < 50 ? '✅' : duration < 100 ? '⚠️' : '🐌';
-    console.log(`${emoji} [Performance] ${component}.${action}: ${duration}ms`, details);
+
   }
 
   // Получение статистики
@@ -237,12 +234,7 @@ class PerformanceLogger {
     if (!this.ENABLE_LOGS) return;
     
     console.group('📊 MellChat Performance Summary');
-    console.log('🎯 Virtualization:', this.metrics.virtualization);
-    console.log('📱 Device Detection:', this.metrics.deviceDetection);
-    console.log('💾 Cache:', this.metrics.cache);
-    console.log('📜 Scroll:', this.metrics.scroll);
-    console.log('🚀 Prefetching:', this.metrics.prefetching);
-    console.log('📈 Total Logs:', this.logs.length);
+
     console.groupEnd();
   }
 
@@ -251,7 +243,7 @@ class PerformanceLogger {
     this.enabled = enabled;
     localStorage.setItem('mellchat-debug', enabled.toString());
     if (this.ENABLE_LOGS) {
-      console.log(`🔧 Performance logging ${enabled ? 'ENABLED' : 'DISABLED'}`);
+
     }
   }
 

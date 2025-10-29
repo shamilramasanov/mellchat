@@ -33,19 +33,17 @@ class AdaptiveMessagesService {
     
     // Проверяем, есть ли уже такой запрос в очереди
     if (this.requestQueue.has(requestKey)) {
-      console.log('⏳ Request already in queue, skipping:', endpoint);
+
       return this.requestQueue.get(requestKey);
     }
 
     // Проверяем задержку для rate limiting
     const delay = this.getRequestDelay(requestKey);
     if (delay > 0) {
-      console.log(`⏳ Rate limit delay: ${delay}ms for ${endpoint}`);
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    console.log('🌐 Making request to:', url);
-    
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -70,10 +68,9 @@ class AdaptiveMessagesService {
 
   async makeRequest(url, config, requestKey) {
     try {
-      console.log('📤 Request config:', config);
+
       const response = await fetch(url, config);
-      console.log('📥 Response status:', response.status);
-      
+
       // Обработка rate limiting
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');

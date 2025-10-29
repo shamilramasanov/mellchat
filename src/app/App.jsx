@@ -43,12 +43,9 @@ function App() {
   useEffect(() => {
     if (!isAuth || !hasActiveStreams || !activeStreamId) return;
 
-    // console.log('🚀 App: Loading messages adaptively for active stream:', activeStreamId);
-    
     // Используем адаптивную загрузку - она сама проверит кэш
     loadMessagesAdaptive(activeStreamId).then((result) => {
       if (result.success) {
-        console.log(`✅ App: Loaded ${result.count} messages with ${result.strategy.strategy} strategy`);
       } else {
         console.error('❌ App: Failed to load messages adaptively:', result.error);
       }

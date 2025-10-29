@@ -37,10 +37,10 @@ const StreamCards = () => {
               onClick={async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('🔄 Switching away from stream:', stream.id);
+
                 try {
                   switchStream(stream.id);
-                  console.log('✅ Switched to another stream successfully');
+
                 } catch (error) {
                   console.error('❌ Error switching stream:', error);
                 }

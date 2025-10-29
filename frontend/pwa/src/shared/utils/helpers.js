@@ -31,6 +31,37 @@ export const extractStreamId = (url) => {
 };
 
 /**
+ * Extract YouTube video ID from various YouTube URL formats
+ * @param {string} url - YouTube URL
+ * @returns {string|null} - Video ID or null
+ */
+export const extractYouTubeVideoId = (url) => {
+  if (!url) return null;
+  
+  // YouTube Live URL: https://www.youtube.com/live/VIDEO_ID
+  const liveMatch = url.match(/youtube\.com\/live\/([a-zA-Z0-9_-]+)/);
+  if (liveMatch) return liveMatch[1];
+  
+  // Standard YouTube URL: https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+  if (watchMatch) return watchMatch[1];
+  
+  // Short YouTube URL: https://youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortMatch) return shortMatch[1];
+  
+  // YouTube embed URL: https://www.youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+  if (embedMatch) return embedMatch[1];
+  
+  // YouTube mobile URL: https://m.youtube.com/watch?v=VIDEO_ID
+  const mobileMatch = url.match(/m\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+  if (mobileMatch) return mobileMatch[1];
+  
+  return null;
+};
+
+/**
  * Check if message is a question
  * @param {string} text - Message text
  * @returns {boolean}

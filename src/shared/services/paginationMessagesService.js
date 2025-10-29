@@ -31,27 +31,12 @@ class PaginationMessagesService {
       
       // Нормализуем сообщения: stream_id -> streamId
       if (data.success && data.messages) {
-        console.log('🔄 Normalizing messages:', {
-          originalCount: data.messages.length,
-          firstMessage: data.messages[0] ? { 
-            id: data.messages[0].id, 
-            streamId: data.messages[0].streamId, 
-            stream_id: data.messages[0].stream_id 
-          } : null
-        });
-        
+
         data.messages = data.messages.map(message => ({
           ...message,
           streamId: message.stream_id || message.streamId
         }));
-        
-        console.log('✅ Messages normalized:', {
-          normalizedCount: data.messages.length,
-          firstMessage: data.messages[0] ? { 
-            id: data.messages[0].id, 
-            streamId: data.messages[0].streamId 
-          } : null
-        });
+
       }
       
       return data;

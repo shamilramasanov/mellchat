@@ -40,7 +40,6 @@ async function fetchKickChannel(channel) {
   };
 }
 
-
 // Best-effort polling of recent messages
 async function pollKickMessages(connectionId, wsHub) {
   const conn = activeKickConnections.get(connectionId);

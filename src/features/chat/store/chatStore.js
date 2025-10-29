@@ -111,8 +111,7 @@ export const useChatStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Searching messages in database:', { streamId, searchQuery });
-          
+
           const response = await databaseService.searchMessages(streamId, searchQuery, limit);
           
           if (response.success) {
@@ -135,8 +134,7 @@ export const useChatStore = create(
               loading: false,
               searchResults: true // Флаг что это результаты поиска
             });
-            
-            console.log(`✅ Found ${dbMessages.length} messages matching "${searchQuery}"`);
+
             return { success: true, count: dbMessages.length };
           } else {
             throw new Error(response.message || 'Search failed');
@@ -329,13 +327,13 @@ export const useChatStore = create(
         set(state => ({
           messages: state.messages.filter(m => m.streamId !== streamId)
         }));
-        console.log(`🗑️ Cleared cache for stream: ${streamId}`);
+
       },
       
       // Очистка всего кэша сообщений
       clearAllCache: () => {
         set({ messages: [] });
-        console.log('🗑️ Cleared all message cache');
+
       },
       
       // Adaptive loading functions
@@ -346,14 +344,14 @@ export const useChatStore = create(
         
         // Если сообщения уже есть и не требуется принудительная перезагрузка, возвращаем существующие
         if (existingMessages.length > 0 && !options.forceReload) {
-          console.log(`✅ Adaptive loading: Using cached ${existingMessages.length} messages for stream ${streamId}`);
+
           return { success: true, count: existingMessages.length, strategy: { strategy: 'cached' } };
         }
 
         // Проверяем, не идет ли уже загрузка для этого стрима
         const loadingKey = `loading_${streamId}`;
         if (get()[loadingKey]) {
-          console.log(`⏳ Loading already in progress for stream ${streamId}`);
+
           return { success: false, error: 'Loading in progress' };
         }
         
@@ -457,8 +455,7 @@ export const useChatStore = create(
               loading: false,
               hasMoreMessages: response.hasMore
             });
-            
-            console.log(`✅ Loaded ${dbMessages.length} more messages`);
+
             return { success: true, count: dbMessages.length };
           } else {
             throw new Error(response.message || 'Failed to load more messages');
@@ -504,8 +501,7 @@ export const useChatStore = create(
               sessionInfo: response.session,
               hasMoreMessages: false
             });
-            
-            console.log(`✅ Clean session created: ${dbMessages.length} messages loaded`);
+
             return { success: true, count: dbMessages.length };
           } else {
             throw new Error(response.message || 'Failed to create clean session');
@@ -530,14 +526,7 @@ export const useChatStore = create(
         let unreadCount = 0;
         let unreadQuestionCount = 0;
         let foundLastRead = false;
-        
-        console.log('🔍 getStreamStats debug:', {
-          streamId,
-          totalMessages: streamMessages.length,
-          lastReadId,
-          lastReadMessageIds
-        });
-        
+
         // Iterate from the end to find unread messages
         for (let i = streamMessages.length - 1; i >= 0; i--) {
           const msg = streamMessages[i];
@@ -641,7 +630,7 @@ export const useChatStore = create(
       // Новые методы для работы с датами
       loadAvailableDates: async (streamId) => {
         try {
-          console.log('📅 Loading available dates for stream:', streamId);
+
           const result = await dateMessagesService.getAvailableDates(streamId);
           
           if (result.success) {
@@ -651,8 +640,7 @@ export const useChatStore = create(
                 [streamId]: result.dates
               }
             }));
-            
-            console.log('✅ Available dates loaded:', result.dates);
+
             return result.dates;
           }
           
@@ -665,8 +653,7 @@ export const useChatStore = create(
 
       loadMessagesByDate: async (streamId, date, offset = 0, limit = 20) => {
         try {
-          console.log('📅 Loading messages for date:', { streamId, date, offset, limit });
-          
+
           const result = await dateMessagesService.getMessagesByDate(streamId, date, offset, limit);
           
           if (result.success) {
@@ -687,8 +674,7 @@ export const useChatStore = create(
                 }
               };
             });
-            
-            console.log(`✅ Loaded ${result.loadedCount} messages for date ${date}`);
+
             return {
               success: true,
               loadedCount: result.loadedCount,
@@ -741,8 +727,7 @@ export const useChatStore = create(
       // ID-based пагинация
       loadOlderMessages: async (streamId, beforeId, limit = 20) => {
         try {
-          console.log('📥 Loading older messages:', { streamId, beforeId, limit });
-          
+
           const result = await paginationMessagesService.getOlderMessages(streamId, beforeId, limit);
           
           if (result.success) {
@@ -770,10 +755,9 @@ export const useChatStore = create(
             
             // Принудительно обновляем состояние для немедленного отображения
             setTimeout(() => {
-              console.log('🔄 Forcing state update after adding older messages');
+
             }, 0);
-            
-            console.log(`✅ Loaded ${result.loadedCount} older messages`);
+
             return {
               success: true,
               loadedCount: result.loadedCount,

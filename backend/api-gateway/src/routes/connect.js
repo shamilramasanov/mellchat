@@ -88,8 +88,7 @@ const startKickConnection = async (connectionId, channelName, wsHub) => {
       messages: []
     };
     activeKickConnections.set(connectionId, conn);
-    
-    
+
     // Try to connect using the simple Kick client
     const kickSimpleClient = new KickSimpleClient({
       channelName: channelName,
@@ -149,7 +148,7 @@ const startKickConnection = async (connectionId, channelName, wsHub) => {
  */
 router.post('/', async (req, res, next) => {
   try {
-    const { streamUrl } = req.body;
+    const { streamUrl, platform: providedPlatform, videoId: providedVideoId, channelName: providedChannelName } = req.body;
     
     if (!streamUrl) {
       return res.status(400).json({
@@ -160,37 +159,67 @@ router.post('/', async (req, res, next) => {
       });
     }
     
-    // Parse URL to determine platform and channel
-    let platform = '';
-    let channelName = '';
-    let videoId = '';
+    // Use provided platform or detect from URL
+    let platform = providedPlatform || '';
+    let channelName = providedChannelName || '';
+    let videoId = providedVideoId || '';
     
-    if (streamUrl.includes('twitch.tv')) {
-      platform = 'twitch';
-      const match = streamUrl.match(/twitch\.tv\/([^/?]+)/);
-      channelName = match ? match[1] : '';
+    // If platform not provided, detect from URL
+    if (!platform) {
+      logger.info(`🔍 Detecting platform from URL: ${streamUrl}`);
       
-    } else if (streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be')) {
-      platform = 'youtube';
-      const match = streamUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
-      videoId = match ? match[1] : '';
-      channelName = videoId; // Use videoId as channel name for YouTube
-      
-    } else if (streamUrl.includes('kick.com')) {
-      platform = 'kick';
-      const match = streamUrl.match(/kick\.com\/([^/?]+)/);
-      channelName = match ? match[1] : '';
-      
+      if (streamUrl.includes('twitch.tv')) {
+        platform = 'twitch';
+        const match = streamUrl.match(/twitch\.tv\/([^/?]+)/);
+        channelName = match ? match[1] : '';
+        logger.info(`📺 Detected Twitch: ${channelName}`);
+        
+      } else if (streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be')) {
+        platform = 'youtube';
+        // Support multiple YouTube URL formats
+        let match = streamUrl.match(/(?:youtube\.com\/live\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+        videoId = match ? match[1] : '';
+        channelName = videoId; // Use videoId as channel name for YouTube
+        logger.info(`📺 Detected YouTube: videoId=${videoId}, channelName=${channelName}`);
+        
+      } else if (streamUrl.includes('kick.com')) {
+        platform = 'kick';
+        const match = streamUrl.match(/kick\.com\/([^/?]+)/);
+        channelName = match ? match[1] : '';
+        logger.info(`📺 Detected Kick: ${channelName}`);
+        
+      } else {
+        logger.error(`❌ Unsupported URL format: ${streamUrl}`);
+        return res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Unsupported platform. Supported: YouTube, Twitch, Kick',
+          },
+        });
+      }
     } else {
-      return res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Unsupported platform. Supported: YouTube, Twitch, Kick',
-        },
-      });
+      logger.info(`🔍 Using provided platform: ${platform} for URL: ${streamUrl}`);
+      // Platform provided, extract channel/video info from URL
+      if (platform === 'youtube') {
+        let match = streamUrl.match(/(?:youtube\.com\/live\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+        videoId = match ? match[1] : '';
+        channelName = videoId;
+        logger.info(`📺 YouTube extraction: videoId=${videoId}, channelName=${channelName}`);
+      } else if (platform === 'twitch') {
+        const match = streamUrl.match(/twitch\.tv\/([^/?]+)/);
+        channelName = match ? match[1] : '';
+        logger.info(`📺 Twitch extraction: ${channelName}`);
+      } else if (platform === 'kick') {
+        const match = streamUrl.match(/kick\.com\/([^/?]+)/);
+        channelName = match ? match[1] : '';
+        logger.info(`📺 Kick extraction: ${channelName}`);
+      }
     }
     
+    logger.info(`🔍 Final values: platform=${platform}, channelName=${channelName}, videoId=${videoId}`);
+    
     if (!channelName) {
+      logger.error(`❌ No channelName extracted from URL: ${streamUrl}`);
       return res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',

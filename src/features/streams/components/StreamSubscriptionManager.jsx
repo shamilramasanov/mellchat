@@ -24,17 +24,17 @@ const StreamSubscriptionManager = () => {
     // Subscribe to all active streams using connectionId for WebSocket
     activeStreams.forEach((stream) => {
       if (stream.connectionId) {
-        console.log('📡 Subscribing to stream:', stream.id, stream.connectionId);
+
         subscribe(stream.connectionId);
       }
     });
 
     // Cleanup: unsubscribe from all streams
     return () => {
-      console.log('🧹 StreamSubscriptionManager: Cleaning up subscriptions');
+
       activeStreams.forEach((stream) => {
         if (stream.connectionId) {
-          console.log('📡 Unsubscribing from stream:', stream.id, stream.connectionId);
+
           unsubscribe(stream.connectionId);
         }
       });
@@ -53,9 +53,7 @@ const StreamSubscriptionManager = () => {
           console.log('⚠️ Received message for unknown stream:', data.connectionId, 'Active streams:', activeStreams.map(s => s.connectionId));
           return;
         }
-        
-        console.log('📨 Received message for stream:', stream.id, data.message);
-        
+
         // Add streamId to message before storing (use stable stream.id)
         const messageWithStreamId = {
           ...data.message,

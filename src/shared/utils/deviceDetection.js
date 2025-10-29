@@ -225,14 +225,7 @@ class DeviceDetection {
     const virtualizationEnabled = forceVirtualization !== null ? 
       forceVirtualization === 'true' : 
       false; // Отключаем виртуализацию по умолчанию
-    
-    console.log('🔧 DeviceDetection getAdaptiveSettings:', {
-      deviceType: deviceInfo?.type,
-      performance: deviceInfo?.performance,
-      forceVirtualization,
-      virtualizationEnabled
-    });
-    
+
     const baseSettings = {
       // Виртуализация
       virtualScroll: {

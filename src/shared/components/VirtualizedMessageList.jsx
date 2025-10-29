@@ -48,15 +48,7 @@ const VirtualizedMessageList = ({
 
   // Логируем виртуализацию
   useEffect(() => {
-    console.log('🔍 Virtualization stats:', {
-      totalMessages: messages.length,
-      virtualItemsCount: virtualItems.length,
-      enabled: adaptiveSettings.virtualScroll.enabled,
-      firstVisibleIndex: virtualItems[0]?.index || 'none',
-      lastVisibleIndex: virtualItems[virtualItems.length - 1]?.index || 'none',
-      containerHeight: actualContainerRef.current?.clientHeight || 'unknown'
-    });
-    
+
     const startTime = performance.now();
     
     // Небольшая задержка для измерения времени рендера
@@ -83,7 +75,7 @@ const VirtualizedMessageList = ({
       if (!e || !e.target) return;
       
       if (ENABLE_PERFORMANCE_LOGS) {
-        console.log('📜 Scroll debounced');
+
       }
       
       // Вызываем onScroll
