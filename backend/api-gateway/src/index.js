@@ -178,58 +178,108 @@ logger.info('✅ Auth routes configured');
 
 // Database routes - лимит для сообщений
 logger.info('Setting up database routes...');
-app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
-app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
-app.use('/api/v1/date-messages', rateLimiters.messages, dateMessagesRoutes);
-app.use('/api/v1/pagination-messages', rateLimiters.messages, paginationMessagesRoutes);
-logger.info('✅ Database routes configured');
+try {
+  app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
+  app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
+  app.use('/api/v1/date-messages', rateLimiters.messages, dateMessagesRoutes);
+  app.use('/api/v1/pagination-messages', rateLimiters.messages, paginationMessagesRoutes);
+  logger.info('✅ Database routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up database routes:', error);
+  throw error;
+}
 
 // Admin routes - специальный лимит для админ панели
 logger.info('Setting up admin routes...');
-app.use('/api/v1/admin', rateLimiters.admin, adminRoutes);
-logger.info('✅ Admin routes configured');
+try {
+  app.use('/api/v1/admin', rateLimiters.admin, adminRoutes);
+  logger.info('✅ Admin routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up admin routes:', error);
+  throw error;
+}
 
 // Connect route - общий лимит
 logger.info('Setting up connect routes...');
-app.use('/api/v1/connect', rateLimiters.general, connectRoutes);
-logger.info('✅ Connect routes configured');
+try {
+  app.use('/api/v1/connect', rateLimiters.general, connectRoutes);
+  logger.info('✅ Connect routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up connect routes:', error);
+  throw error;
+}
 
 // YouTube Live Chat routes
 logger.info('Setting up YouTube routes...');
-const youtubeRoutes = youtubeRoutesFactory(() => app.get('wsHub'));
-app.use('/api/v1/youtube', rateLimiters.general, youtubeRoutes);
-logger.info('✅ YouTube routes configured');
+try {
+  const youtubeRoutes = youtubeRoutesFactory(() => app.get('wsHub'));
+  app.use('/api/v1/youtube', rateLimiters.general, youtubeRoutes);
+  logger.info('✅ YouTube routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up YouTube routes:', error);
+  throw error;
+}
 
 // Twitch Chat routes
 logger.info('Setting up Twitch routes...');
-app.use('/api/v1/twitch', rateLimiters.general, twitchRoutes);
-logger.info('✅ Twitch routes configured');
+try {
+  app.use('/api/v1/twitch', rateLimiters.general, twitchRoutes);
+  logger.info('✅ Twitch routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up Twitch routes:', error);
+  throw error;
+}
 
 // Kick Chat routes
 logger.info('Setting up Kick routes...');
-const kickRoutes = kickRoutesFactory(() => app.get('wsHub'));
-app.use('/api/v1/kick', rateLimiters.general, kickRoutes);
-logger.info('✅ Kick routes configured');
+try {
+  const kickRoutes = kickRoutesFactory(() => app.get('wsHub'));
+  app.use('/api/v1/kick', rateLimiters.general, kickRoutes);
+  logger.info('✅ Kick routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up Kick routes:', error);
+  throw error;
+}
 
 // Emoji processing routes - лимит для поиска
 logger.info('Setting up emoji routes...');
-app.use('/api/v1/emoji', rateLimiters.search, emojiRoutes);
-logger.info('✅ Emoji routes configured');
+try {
+  app.use('/api/v1/emoji', rateLimiters.search, emojiRoutes);
+  logger.info('✅ Emoji routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up emoji routes:', error);
+  throw error;
+}
 
 // Messages routes - лимит для сообщений
 logger.info('Setting up messages routes...');
-app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
-logger.info('✅ Messages routes configured');
+try {
+  app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
+  logger.info('✅ Messages routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up messages routes:', error);
+  throw error;
+}
 
 // Reputation routes - общий лимит
 logger.info('Setting up reputation routes...');
-app.use('/api/v1/reputation', rateLimiters.general, reputationRoutes);
-logger.info('✅ Reputation routes configured');
+try {
+  app.use('/api/v1/reputation', rateLimiters.general, reputationRoutes);
+  logger.info('✅ Reputation routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up reputation routes:', error);
+  throw error;
+}
 
 // Database monitoring routes - лимит для мониторинга
 logger.info('Setting up database monitoring routes...');
-app.use('/api/v1/database/monitoring', rateLimiters.general, databaseMonitoringRoutes);
-logger.info('✅ Database monitoring routes configured');
+try {
+  app.use('/api/v1/database/monitoring', rateLimiters.general, databaseMonitoringRoutes);
+  logger.info('✅ Database monitoring routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up database monitoring routes:', error);
+  throw error;
+}
 
 // Error handling middleware
 logger.info('Setting up error handling middleware...');
