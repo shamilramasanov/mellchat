@@ -1,5 +1,10 @@
 const logger = require('../utils/logger');
 
+// Polyfill for fetch in Node.js
+if (typeof fetch === 'undefined') {
+  global.fetch = require('node-fetch');
+}
+
 class GeminiService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY;
