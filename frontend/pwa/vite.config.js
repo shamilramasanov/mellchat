@@ -109,8 +109,14 @@ export default defineConfig({
         clientsClaim: true,
         // Force update Service Worker
         mode: 'production',
-        // Force update with version bump
-        workboxVersion: '2.0.0'
+        // Force cache busting
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        additionalManifestEntries: [
+          {
+            url: '/sw-v2.js',
+            revision: Date.now().toString()
+          }
+        ]
       }
     })
   ],
