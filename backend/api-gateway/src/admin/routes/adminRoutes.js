@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const geminiService = require('../../services/geminiService');
+const analyticsService = require('../../services/analyticsService');
 const logger = require('../../utils/logger');
 
 // Mock admin user (в реальном проекте это будет в БД)
@@ -800,6 +801,189 @@ router.post('/message', authenticateAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to send message to user'
+    });
+  }
+});
+
+// ==================== ANALYTICS ENDPOINTS ====================
+
+// GET /api/v1/admin/analytics/full
+router.get('/analytics/full', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const analytics = await analyticsService.getFullAnalytics(timeRange);
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get full analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch analytics',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/analytics/platforms
+router.get('/analytics/platforms', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const analytics = await analyticsService.getPlatformAnalytics(timeRange);
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get platform analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch platform analytics',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/analytics/time
+router.get('/analytics/time', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const analytics = await analyticsService.getTimeAnalytics(timeRange);
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get time analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch time analytics',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/analytics/streams
+router.get('/analytics/streams', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h', limit = 20 } = req.query;
+    
+    const analytics = await analyticsService.getStreamAnalytics(timeRange, parseInt(limit));
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get stream analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch stream analytics',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/analytics/users
+router.get('/analytics/users', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h', limit = 50 } = req.query;
+    
+    const analytics = await analyticsService.getUserAnalytics(timeRange, parseInt(limit));
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get user analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user analytics',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/analytics/content-quality
+router.get('/analytics/content-quality', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const analytics = await analyticsService.getContentQualityAnalytics(timeRange);
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get content quality analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch content quality analytics',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/analytics/user-activity
+router.get('/analytics/user-activity', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '7d' } = req.query;
+    
+    const analytics = await analyticsService.getUserActivityAnalytics(timeRange);
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get user activity analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user activity analytics',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/analytics/generate-report
+router.post('/analytics/generate-report', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.body;
+    
+    // Получаем полную аналитику
+    const analytics = await analyticsService.getFullAnalytics(timeRange);
+    
+    // Генерируем отчет через Gemini
+    if (geminiService.isAvailable()) {
+      try {
+        const report = await geminiService.generateReport(analytics, timeRange);
+        res.json({
+          success: true,
+          analytics,
+          ...report
+        });
+      } catch (geminiError) {
+        logger.warn('Gemini report generation failed, returning analytics only:', geminiError);
+        res.json({
+          success: true,
+          analytics,
+          report: 'Отчет не сгенерирован (Gemini недоступен)'
+        });
+      }
+    } else {
+      res.json({
+        success: true,
+        analytics,
+        report: 'Отчет не сгенерирован (Gemini API не настроен)'
+      });
+    }
+  } catch (error) {
+    logger.error('Generate analytics report error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate report',
+      message: error.message 
     });
   }
 });
