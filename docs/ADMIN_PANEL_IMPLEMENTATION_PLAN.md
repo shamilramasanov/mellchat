@@ -42,7 +42,7 @@ src/admin/
 ```
 
 ### **ИИ Интеграции**
-- **OpenAI GPT-4** - анализ контента и рекомендации
+- **Google Gemini** - анализ контента и рекомендации (вместо OpenAI GPT)
 - **Custom ML Models** - спам детекция и классификация
 - **Sentiment Analysis** - расширенный анализ настроений
 - **Anomaly Detection** - выявление аномалий в системе
@@ -205,7 +205,7 @@ src/admin/
 
 ## 🤖 ИИ ИНТЕГРАЦИИ
 
-### **1. OpenAI GPT-4 Integration**
+### **1. Google Gemini Integration**
 
 #### **Функции:**
 - **Content Analysis:** Deep message analysis
@@ -222,6 +222,12 @@ POST /api/admin/ai/optimize-system
 POST /api/admin/ai/troubleshoot
 GET /api/admin/ai/recommendations
 ```
+
+#### **Реализация:**
+- Использовать Google Gemini API (Google AI Studio / Vertex AI)
+- API ключ через переменные окружения: `GEMINI_API_KEY`
+- Модели: `gemini-pro` или `gemini-pro-vision` для анализа
+- Streaming responses для real-time взаимодействия
 
 ### **2. Custom ML Models**
 
@@ -371,9 +377,14 @@ CREATE TABLE system_metrics (
 
 ### **AI Service Integration**
 
-#### **OpenAI Service:**
+#### **Google Gemini Service:**
 ```javascript
 class AIAnalysisService {
+  constructor() {
+    this.apiKey = process.env.GEMINI_API_KEY;
+    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  }
+  
   async analyzeContent(messages) {
     const prompt = `
     Analyze these chat messages for:
@@ -386,18 +397,47 @@ class AIAnalysisService {
     Messages: ${JSON.stringify(messages)}
     `;
     
-    return await this.openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }]
+    const response = await fetch(`${this.baseUrl}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      })
     });
+    
+    return await response.json();
   }
   
   async generateRecommendations(systemMetrics) {
-    // AI-powered system optimization suggestions
+    // AI-powered system optimization suggestions using Gemini
   }
   
   async troubleshootIssue(errorLogs) {
-    // AI-powered troubleshooting assistance
+    // AI-powered troubleshooting assistance using Gemini
+  }
+  
+  async chat(message, context = []) {
+    // Natural language chat with Gemini for admin questions
+    const response = await fetch(`${this.baseUrl}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          ...context,
+          {
+            parts: [{ text: message }]
+          }
+        ]
+      })
+    });
+    
+    return await response.json();
   }
 }
 ```
