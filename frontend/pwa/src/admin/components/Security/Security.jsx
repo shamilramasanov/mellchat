@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useAdminStore from '../../store/adminStore';
+import { API_URL } from '@shared/utils/constants';
 import './Security.css';
 
 const Security = () => {
@@ -25,7 +26,7 @@ const Security = () => {
   const loadAuditLog = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${(import.meta.env.VITE_API_URL || window.location.origin) || ''}/api/v1/admin/security/audit-log?limit=100`, {
+      const response = await fetch(`${API_URL || ''}/api/v1/admin/security/audit-log?limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -44,7 +45,7 @@ const Security = () => {
   const loadAuditStats = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${(import.meta.env.VITE_API_URL || window.location.origin) || ''}/api/v1/admin/security/audit-stats?timeRange=${timeRange}`, {
+      const response = await fetch(`${API_URL || ''}/api/v1/admin/security/audit-stats?timeRange=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -63,7 +64,7 @@ const Security = () => {
   const loadRoles = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${(import.meta.env.VITE_API_URL || window.location.origin) || ''}/api/v1/admin/security/roles`, {
+      const response = await fetch(`${API_URL || ''}/api/v1/admin/security/roles`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

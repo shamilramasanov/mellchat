@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import useAdminStore from '../../store/adminStore';
+import { API_URL } from '@shared/utils/constants';
 import './Moderation.css';
 
 const Moderation = () => {
@@ -25,7 +26,6 @@ const Moderation = () => {
   const loadStats = async () => {
     setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
       const response = await fetch(`${API_URL}/api/v1/admin/moderation/stats?timeRange=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${token}`

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import useAdminStore from '../../store/adminStore';
+import { API_URL } from '@shared/utils/constants';
 import './Database.css';
 
 const Database = () => {
@@ -19,7 +20,7 @@ const Database = () => {
   const loadOverview = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${(import.meta.env.VITE_API_URL || window.location.origin) || ''}/api/v1/admin/database/overview`, {
+      const response = await fetch(`${API_URL || ''}/api/v1/admin/database/overview`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -38,7 +39,7 @@ const Database = () => {
   const handleAnalyze = async () => {
     setAnalyzing(true);
     try {
-      const response = await fetch(`${(import.meta.env.VITE_API_URL || window.location.origin) || ''}/api/v1/admin/database/analyze`, {
+      const response = await fetch(`${API_URL || ''}/api/v1/admin/database/analyze`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
