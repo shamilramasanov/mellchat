@@ -468,22 +468,27 @@ class MessageQueueService {
 
 // Создаем экземпляр сервиса с задержкой (чтобы не блокировать импорт)
 let messageQueueService;
-// Отключено, чтобы не блокировать импорт модуля
-// setTimeout(() => {
-//   messageQueueService = new MessageQueueService();
-//   logger.info('MessageQueueService initialized');
-//   
-//   // Graceful shutdown при завершении процесса
-//   process.on('SIGTERM', async () => {
-//     if (messageQueueService) await messageQueueService.shutdown();
-//     process.exit(0);
-//   });
-//
-//   process.on('SIGINT', async () => {
-//     if (messageQueueService) await messageQueueService.shutdown();
-//     process.exit(0);
-//   });
-// }, 1000);
+
+// Инициализируем сервис с задержкой
+setTimeout(() => {
+  try {
+    messageQueueService = new MessageQueueService();
+    logger.info('MessageQueueService initialized');
+    
+    // Graceful shutdown при завершении процесса
+    process.on('SIGTERM', async () => {
+      if (messageQueueService) await messageQueueService.shutdown();
+      process.exit(0);
+    });
+
+    process.on('SIGINT', async () => {
+      if (messageQueueService) await messageQueueService.shutdown();
+      process.exit(0);
+    });
+  } catch (error) {
+    logger.error('Failed to initialize MessageQueueService:', error.message);
+  }
+}, 1000);
 
 // Возвращаем placeholder с методами
 const messageQueueServicePlaceholder = {

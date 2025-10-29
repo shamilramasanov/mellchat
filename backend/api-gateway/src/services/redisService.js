@@ -16,17 +16,34 @@ async function ensureClient() {
   
   connecting = true;
   const url = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
-  client = createClient({ url });
-  client.on('error', (err) => logger.error('Redis Client Error', { error: err.message }));
   
   try {
+    client = createClient({ 
+      url,
+      socket: {
+        connectTimeout: 5000,
+        lazyConnect: true
+      }
+    });
+    
+    client.on('error', (err) => {
+      logger.error('Redis Client Error:', err.message);
+      connecting = false;
+    });
+    
+    client.on('connect', () => {
+      logger.info('Redis client connected successfully');
+      connecting = false;
+    });
+    
     await client.connect();
     logger.info('Redis client connected');
   } catch (err) {
-    logger.error('Redis connect failed', { error: err.message });
+    logger.error('Redis connect failed:', err.message);
+    connecting = false;
+    throw err;
   }
   
-  connecting = false;
   return client;
 }
 

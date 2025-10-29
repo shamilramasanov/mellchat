@@ -207,19 +207,46 @@ const httpServer = app.listen(PORT, HOST, () => {
   });
 });
 
+// Обработка ошибок сервера
+httpServer.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    logger.error(`Port ${PORT} is already in use`);
+  } else {
+    logger.error('Server error:', error);
+  }
+  process.exit(1);
+});
+
 // Start WebSocket server on the same port as HTTP
 const wsHub = createWsServer(httpServer);
 app.set('wsHub', wsHub);
 
+// Обработка необработанных исключений
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
+  httpServer.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
 });
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
+  httpServer.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
 });
 
 module.exports = app;

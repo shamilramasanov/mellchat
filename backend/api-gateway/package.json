@@ -4,8 +4,9 @@
   "description": "MellChat API Gateway - Backend for live chat integration",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "NODE_ENV=production node src/index.js",
+    "dev": "NODE_ENV=development nodemon src/index.js",
+    "install:prod": "npm install --omit=dev"
   },
   "dependencies": {
     "@retconned/kick-js": "^0.5.4",
