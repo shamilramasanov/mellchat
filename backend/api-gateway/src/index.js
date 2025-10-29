@@ -36,6 +36,11 @@ const { createWsServer } = require('./ws/server');
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
+// Railway автоматически устанавливает PORT, проверяем это
+if (process.env.RAILWAY_ENVIRONMENT) {
+  logger.info('Running on Railway, using Railway PORT:', process.env.PORT);
+}
+
 logger.info(`Starting server with config:`, {
   PORT,
   HOST,
@@ -208,6 +213,9 @@ app.use('*', (req, res) => {
 
 // Start server
 logger.info('Attempting to start HTTP server...');
+logger.info('App routes loaded:', app._router?.stack?.length || 'unknown');
+logger.info('About to call app.listen with:', { PORT, HOST });
+
 try {
   const httpServer = app.listen(PORT, HOST, () => {
     logger.info(`✅ API Gateway started successfully on ${HOST}:${PORT}`, {
@@ -237,6 +245,11 @@ try {
 
 } catch (error) {
   logger.error('❌ Failed to start server:', error);
+  logger.error('Error details:', {
+    message: error.message,
+    code: error.code,
+    stack: error.stack
+  });
   process.exit(1);
 }
 
