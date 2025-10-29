@@ -114,34 +114,6 @@
   --safe-area-right: env(safe-area-inset-right, 0);
 }
 
-/* ===== Light Theme Variables ===== */
-body.light-theme {
-  /* Background */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --bg-tertiary: #e5e5e5;
-  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f5f5f5 50%, #e5e5e5 100%);
-  
-  /* Glass Effects */
-  --glass-white: rgba(0, 0, 0, 0.05);
-  --glass-white-hover: rgba(0, 0, 0, 0.08);
-  --glass-white-active: rgba(0, 0, 0, 0.1);
-  --glass-border: rgba(0, 0, 0, 0.12);
-  --glass-border-hover: rgba(0, 0, 0, 0.2);
-  
-  /* Text Colors */
-  --text-primary: #000000;
-  --text-secondary: rgba(0, 0, 0, 0.7);
-  --text-tertiary: rgba(0, 0, 0, 0.5);
-  --text-disabled: rgba(0, 0, 0, 0.3);
-  
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.25);
-}
-
 /* ===== Global Styles ===== */
 body {
   font-family: var(--font-family);
@@ -156,10 +128,6 @@ body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-}
-
-body.light-theme {
-  background: #e0e0e0; /* Простой светло-серый фон */
 }
 
 
@@ -196,11 +164,6 @@ body.light-theme {
 /* ===== Utility Classes ===== */
 .gradient-text {
   color: #ffffff;
-}
-
-/* Черный текст на светлой теме */
-body.light-theme .gradient-text {
-  color: #000000;
 }
 
 .glow {

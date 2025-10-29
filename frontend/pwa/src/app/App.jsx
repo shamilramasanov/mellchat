@@ -32,14 +32,8 @@ function App() {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize app and theme
+  // Initialize app
   useEffect(() => {
-    // Apply saved theme on mount
-    const savedTheme = localStorage.getItem('mellchat-theme');
-    if (savedTheme === 'light') {
-      document.body.classList.add('light-theme');
-    }
-    
     // Initialize iOS PWA optimizations
     initIOSPWA();
     

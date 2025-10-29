@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 // import { Modal, Button } from '@shared/components'; // Удалены - используем обычные элементы с glass эффектами
 import { useSettingsStore } from '../store/settingsStore';
@@ -17,25 +16,8 @@ const SettingsPanel = ({ isOpen, onClose }) => {
   const notifyQuestions = useSettingsStore((state) => state.notifyQuestions);
   const setNotifyQuestions = useSettingsStore((state) => state.setNotifyQuestions);
 
-  // Theme state
-  const [isDarkTheme, setIsDarkTheme] = useState(() => {
-    const savedTheme = localStorage.getItem('mellchat-theme');
-    return savedTheme !== 'light';
-  });
-
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
-  };
-
-  const handleThemeToggle = (isDark) => {
-    setIsDarkTheme(isDark);
-    if (isDark) {
-      document.body.classList.remove('light-theme');
-      localStorage.setItem('mellchat-theme', 'dark');
-    } else {
-      document.body.classList.add('light-theme');
-      localStorage.setItem('mellchat-theme', 'light');
-    }
   };
 
   if (!isOpen) return null;
@@ -55,27 +37,6 @@ const SettingsPanel = ({ isOpen, onClose }) => {
 
           {/* Modal Content */}
           <div className="settings-panel">
-        {/* Theme */}
-        <div className="settings-section">
-          <h3 className="settings-section__title">🌓 Тема</h3>
-          <div className="settings-options">
-            <button
-              className={`settings-option ${isDarkTheme ? 'settings-option--active' : ''}`}
-              onClick={() => handleThemeToggle(true)}
-            >
-              <span>🌙</span>
-              <span>Темная</span>
-            </button>
-            <button
-              className={`settings-option ${!isDarkTheme ? 'settings-option--active' : ''}`}
-              onClick={() => handleThemeToggle(false)}
-            >
-              <span>☀️</span>
-              <span>Светлая</span>
-            </button>
-          </div>
-        </div>
-
         {/* Language */}
         <div className="settings-section">
           <h3 className="settings-section__title">{t('settings.language')}</h3>
