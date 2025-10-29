@@ -281,9 +281,14 @@ router.get('/users/connected', authenticateAdmin, async (req, res) => {
       for (const [connectionId, wsSet] of wsHub.subscribers.entries()) {
         wsSet.forEach(ws => {
           // Извлекаем информацию о пользователе из WebSocket (если есть)
-          const userId = ws.userId || 'anonymous';
+          let userId = ws.userId;
           const userAgent = ws.headers?.['user-agent'] || 'Unknown';
           const ip = ws._socket?.remoteAddress || 'Unknown';
+          
+          // Если userId не установлен, создаем уникальный идентификатор для anonymous пользователей
+          if (!userId || userId === 'anonymous') {
+            userId = `anonymous-${ip}-${userAgent}`;
+          }
           
           if (!subscribersMap.has(userId)) {
             subscribersMap.set(userId, {
@@ -579,6 +584,115 @@ router.post('/broadcast', authenticateAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to broadcast message'
+    });
+  }
+});
+
+// Отправка сообщения от админа конкретному пользователю
+router.post('/message', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required'
+      });
+    }
+
+    const wsHub = req.app.get('wsHub');
+    if (!wsHub) {
+      return res.status(500).json({
+        success: false,
+        error: 'WebSocket hub not available'
+      });
+    }
+
+    // Получаем connectionIds пользователя
+    // Используем тот же метод генерации userId, что и в /users/connected
+    const userConnectionIds = new Set();
+    if (wsHub && wsHub.subscribers) {
+      for (const [connectionId, wsSet] of wsHub.subscribers.entries()) {
+        for (const ws of wsSet) {
+          if (ws.readyState !== WebSocket.OPEN) continue;
+          
+          let wsUserId = ws.userId;
+          const userAgent = ws.headers?.['user-agent'] || 'Unknown';
+          const ip = ws._socket?.remoteAddress || 'Unknown';
+          
+          // Если userId не установлен, создаем уникальный идентификатор для anonymous пользователей
+          // точно так же, как в /users/connected
+          if (!wsUserId || wsUserId === 'anonymous') {
+            wsUserId = `anonymous-${ip}-${userAgent}`;
+          }
+          
+          // Если userId совпадает, добавляем connectionId
+          if (wsUserId === userId) {
+            userConnectionIds.add(connectionId);
+          }
+        }
+      }
+    }
+
+    // Отправляем сообщение на все connectionId пользователя
+    const adminMessage = {
+      id: `admin-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      username: 'admin',
+      text: message.trim(),
+      content: message.trim(),
+      timestamp: Date.now(),
+      platform: 'admin',
+      isAdmin: true,
+      isQuestion: false,
+      sentiment: 'neutral'
+    };
+
+    let sentCount = 0;
+    for (const connectionId of userConnectionIds) {
+      const wsSet = wsHub.subscribers.get(connectionId);
+      if (wsSet) {
+        for (const ws of wsSet) {
+          if (ws.readyState === WebSocket.OPEN) {
+            try {
+              const connectionData = JSON.stringify({ 
+                type: 'message', 
+                connectionId, 
+                payload: adminMessage 
+              });
+              ws.send(connectionData);
+              sentCount++;
+            } catch (e) {
+              logger.error('Admin personal message WS send error:', e.message);
+            }
+          }
+        }
+      }
+    }
+
+    if (sentCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: `User ${userId} not found or not connected`
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: `Message sent to user ${userId}`,
+      sentCount: sentCount
+    });
+  } catch (error) {
+    logger.error('Send admin message to user error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to send message to user'
     });
   }
 });
