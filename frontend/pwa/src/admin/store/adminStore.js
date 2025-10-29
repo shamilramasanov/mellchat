@@ -97,7 +97,7 @@ const useAdminStore = create(
         try {
           set({ loading: { ...get().loading, auth: true } });
           
-          const response = await fetch('/api/admin/auth/login', {
+          const response = await fetch('/api/v1/admin/auth/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ const useAdminStore = create(
         try {
           set({ loading: { ...get().loading, metrics: true } });
           
-          const response = await fetch('/api/admin/dashboard/metrics', {
+          const response = await fetch('/api/v1/admin/dashboard/metrics', {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -174,7 +174,7 @@ const useAdminStore = create(
         try {
           set({ loading: { ...get().loading, charts: true } });
           
-          const response = await fetch(`/api/admin/dashboard/charts?range=${timeRange}`, {
+          const response = await fetch(`/api/v1/admin/dashboard/charts?range=${timeRange}`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -204,7 +204,7 @@ const useAdminStore = create(
 
       fetchAIInsights: async () => {
         try {
-          const response = await fetch('/api/admin/ai/insights', {
+          const response = await fetch('/api/v1/admin/ai/insights', {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -234,7 +234,7 @@ const useAdminStore = create(
 
       saveSettings: async (settings) => {
         try {
-          const response = await fetch('/api/admin/settings', {
+          const response = await fetch('/api/v1/admin/settings', {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -260,7 +260,7 @@ const useAdminStore = create(
           set({ loading: { ...get().loading, users: true } });
           
           const queryParams = new URLSearchParams(filters).toString();
-          const response = await fetch(`/api/admin/users?${queryParams}`, {
+          const response = await fetch(`/api/v1/admin/users?${queryParams}`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -285,7 +285,7 @@ const useAdminStore = create(
 
       blockUser: async (userId, reason, duration) => {
         try {
-          const response = await fetch('/api/admin/users/block', {
+          const response = await fetch('/api/v1/admin/users/block', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -319,7 +319,7 @@ const useAdminStore = create(
 
       fetchSystemHealth: async () => {
         try {
-          const response = await fetch('/api/admin/system/health', {
+          const response = await fetch('/api/v1/admin/system/health', {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
@@ -341,7 +341,7 @@ const useAdminStore = create(
       // AI Assistant
       sendAIMessage: async (message) => {
         try {
-          const response = await fetch('/api/admin/ai/chat', {
+          const response = await fetch('/api/v1/admin/ai/chat', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
