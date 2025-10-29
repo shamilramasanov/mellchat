@@ -11,11 +11,25 @@
   background: var(--bg-secondary);
   border-radius: 1rem;
   margin: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md); /* Возвращаем нижний отступ */
+  margin-left: calc(var(--spacing-md) + var(--safe-area-left, 0));
+  margin-right: calc(var(--spacing-md) + var(--safe-area-right, 0));
+  margin-bottom: calc(var(--spacing-md) + var(--safe-area-bottom, 0));
   border-top: none; /* Убираем верхнюю границу */
   border-right: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border); /* Возвращаем нижнюю границу */
   border-left: 1px solid var(--glass-border);
   padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg); /* Убираем все отступы сверху */
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .chat-container {
+    margin: 0 var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+    margin-left: calc(var(--spacing-sm) + var(--safe-area-left, 0));
+    margin-right: calc(var(--spacing-sm) + var(--safe-area-right, 0));
+    margin-bottom: calc(var(--spacing-sm) + var(--safe-area-bottom, 0));
+    padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
+  }
 }
 
 .chat-container__messages {
@@ -110,6 +124,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 44px; /* Минимум 44px для удобного нажатия */
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--border-radius-md);
@@ -144,7 +159,7 @@
 /* New Messages Button */
 .chat-container__new-messages-wrapper {
   position: fixed;
-  bottom: 85px; /* Чуть ниже */
+  bottom: calc(85px + var(--safe-area-bottom, 0)); /* Чуть ниже + safe area */
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999; /* Высокий z-index чтобы было поверх всего */
@@ -152,7 +167,8 @@
 }
 
 .chat-container__new-messages-btn {
-  padding: var(--spacing-xs) var(--spacing-sm); /* Уменьшаем отступы */
+  padding: var(--spacing-sm) var(--spacing-md); /* Увеличиваем отступы для мобильных */
+  min-height: 44px; /* Минимум 44px для удобного нажатия */
   border-radius: 1rem; /* Меньший радиус */
   border: 1px solid var(--glass-border);
   background: var(--bg-secondary); /* Как было */
@@ -166,7 +182,7 @@
   align-items: center;
   justify-content: center;
   
-  font-size: var(--font-size-xs); /* Уменьшаем размер шрифта */
+  font-size: var(--font-size-sm); /* Увеличиваем размер шрифта */
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
   backdrop-filter: blur(10px);
@@ -206,23 +222,18 @@
 
 /* Убираем hover и active эффекты */
 
-/* Адаптивные стили для чат-контейнера */
-@media (max-width: 767px) {
-  .chat-container {
-    margin: 0 var(--spacing-sm) var(--spacing-sm) var(--spacing-sm); /* Возвращаем нижний отступ для мобильных */
-    padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md); /* Убираем верхний отступ для мобильных */
-  }
-}
 
 
 /* Fallback button styles */
 .liquid-glass-fallback {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: calc(20px + var(--safe-area-bottom, 0));
+  right: calc(20px + var(--safe-area-right, 0));
   z-index: var(--z-fab);
   width: 56px;
   height: 56px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   border: none;
   background: var(--color-primary);
@@ -234,6 +245,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Mobile adjustments for buttons */
+@media (max-width: 767px) {
+  .liquid-glass-fallback {
+    width: 56px;
+    height: 56px;
+    min-width: 44px;
+    min-height: 44px;
+    bottom: calc(20px + var(--safe-area-bottom, 0));
+    right: calc(20px + var(--safe-area-right, 0));
+  }
+  
+  .chat-container__new-messages-wrapper {
+    bottom: calc(85px + var(--safe-area-bottom, 0));
+  }
+  
+  .chat-container__new-messages-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 44px;
+    font-size: var(--font-size-sm);
+  }
+  
+  .chat-container__load-more-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 44px;
+    font-size: var(--font-size-sm);
+  }
 }
 
 .liquid-glass-fallback:hover {

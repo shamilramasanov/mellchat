@@ -1,18 +1,28 @@
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - var(--safe-area-top) - var(--safe-area-bottom));
+  height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
   height: -webkit-fill-available;
   overflow: hidden;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
+  top: var(--safe-area-top);
+  left: var(--safe-area-left);
+  right: var(--safe-area-right);
+  bottom: var(--safe-area-bottom);
+  width: calc(100% - var(--safe-area-left) - var(--safe-area-right));
   color: var(--text-primary);
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Safari viewport height fix */
+@supports (-webkit-touch-callout: none) {
+  .app {
+    height: calc(100vh - var(--safe-area-top) - var(--safe-area-bottom));
+    height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+    height: -webkit-fill-available;
+  }
 }
 
 .app-loading {

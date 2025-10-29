@@ -168,7 +168,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .search-bar {
-    padding: var(--spacing-sm) 0 var(--spacing-sm) 0; /* Убираем отступы слева и справа для мобильных */
+    padding: var(--spacing-sm) 0 calc(var(--spacing-sm) + var(--safe-area-bottom, 0)) 0;
     gap: var(--spacing-sm);
     
     /* Ширина точно как у карточек чата для мобильных */
@@ -183,8 +183,27 @@
   }
   
   .search-bar__input {
-    padding: var(--spacing-sm); /* Увеличиваем отступы для мобильных */
-    padding-right: 2rem;
-    font-size: 0.95rem; /* Увеличиваем размер шрифта для мобильных */
+    padding: var(--spacing-md); /* Увеличиваем отступы для мобильных (минимум 44px высота) */
+    padding-right: 2.5rem;
+    font-size: 1rem; /* Увеличиваем размер шрифта для мобильных */
+    min-height: 44px; /* Минимум 44px для удобного нажатия */
+  }
+  
+  .search-bar__add-button {
+    /* Минимум 44x44px для мобильных согласно рекомендациям Apple и Google */
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.25rem;
+  }
+  
+  .search-bar__clear {
+    /* Минимум 44x44px для мобильных */
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--spacing-sm);
   }
 }

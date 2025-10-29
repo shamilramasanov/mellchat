@@ -7,6 +7,8 @@
   border-bottom: 1px solid var(--glass-border);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg); /* Закругляем нижние углы */
   padding: 0 var(--spacing-lg);
+  padding-left: calc(var(--spacing-lg) + var(--safe-area-left, 0));
+  padding-right: calc(var(--spacing-lg) + var(--safe-area-right, 0));
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   margin: 0 var(--spacing-md) 0 var(--spacing-md); /* Такая же ширина как у контейнера чата */
 }
@@ -116,6 +118,8 @@
 @media (max-width: 767px) {
   .header {
     padding: 0 var(--spacing-md);
+    padding-left: calc(var(--spacing-md) + var(--safe-area-left, 0));
+    padding-right: calc(var(--spacing-md) + var(--safe-area-right, 0));
     margin: 0 var(--spacing-sm) 0 var(--spacing-sm); /* Такая же ширина как у контейнера чата для мобильных */
   }
   
@@ -124,9 +128,12 @@
   }
   
   .header__action {
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
+    /* Минимум 44x44px для мобильных согласно рекомендациям Apple и Google */
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.25rem;
   }
 }
 

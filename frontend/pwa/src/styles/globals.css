@@ -128,6 +128,21 @@ body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  
+  /* Safe area для мобильных устройств */
+  padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* iOS Safari viewport height fix */
+@supports (-webkit-touch-callout: none) {
+  body {
+    /* iOS Safari viewport height fix */
+    min-height: -webkit-fill-available;
+    padding-left: max(var(--safe-area-left), 0);
+    padding-right: max(var(--safe-area-right), 0);
+  }
 }
 
 
@@ -176,11 +191,6 @@ body {
 
 /* ===== iOS Specific ===== */
 @supports (-webkit-touch-callout: none) {
-  body {
-    /* iOS Safari viewport height fix */
-    min-height: -webkit-fill-available;
-  }
-  
   /* Prevent iOS zoom on input focus */
   input, textarea, select {
     font-size: 16px !important;
