@@ -214,6 +214,16 @@ class DatabaseManagementService {
    */
   async getConnectionPoolStats() {
     try {
+      // Сначала проверим, есть ли таблица messages с новыми полями
+      const checkMigration = await databaseService.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'messages' 
+        AND column_name IN ('connection_id', 'is_spam', 'is_deleted', 'moderation_reason', 'sentiment')
+      `);
+      
+      logger.info('Migration check result:', checkMigration.rows.length, 'new columns found');
+
       const query = `
         SELECT 
           count(*) as total_connections,
@@ -232,7 +242,8 @@ class DatabaseManagementService {
         activeConnections: parseInt(row.active_connections),
         idleConnections: parseInt(row.idle_connections),
         idleInTransaction: parseInt(row.idle_in_transaction),
-        utilizationRate: row.total_connections > 0 ? (parseInt(row.active_connections) / parseInt(row.total_connections)) * 100 : 0
+        utilizationRate: row.total_connections > 0 ? (parseInt(row.active_connections) / parseInt(row.total_connections)) * 100 : 0,
+        migrationStatus: checkMigration.rows.length >= 5 ? 'applied' : 'pending'
       };
     } catch (error) {
       logger.error('Get connection pool stats error:', error);
@@ -242,7 +253,9 @@ class DatabaseManagementService {
         activeConnections: 0,
         idleConnections: 0,
         idleInTransaction: 0,
-        utilizationRate: 0
+        utilizationRate: 0,
+        migrationStatus: 'error',
+        error: error.message
       };
     }
   }
@@ -252,23 +265,52 @@ class DatabaseManagementService {
    */
   async getDatabaseOverview() {
     try {
-      const [tableSizes, indexUsage, slowQueries, poolStats] = await Promise.all([
-        this.getTableSizes(),
-        this.getIndexUsage(),
-        this.getSlowQueries(10),
-        this.getConnectionPoolStats()
+      logger.info('Getting database overview...');
+      
+      // Проверяем подключение к БД
+      const connectionTest = await databaseService.query('SELECT NOW() as current_time');
+      logger.info('Database connection test successful:', connectionTest.rows[0]);
+
+      // Получаем данные с обработкой ошибок
+      const results = await Promise.allSettled([
+        this.getTableSizes().catch(err => {
+          logger.error('Table sizes error:', err);
+          return { error: 'Failed to get table sizes', details: err.message };
+        }),
+        this.getIndexUsage().catch(err => {
+          logger.error('Index usage error:', err);
+          return { error: 'Failed to get index usage', details: err.message };
+        }),
+        this.getSlowQueries(10).catch(err => {
+          logger.error('Slow queries error:', err);
+          return { error: 'Failed to get slow queries', details: err.message };
+        }),
+        this.getConnectionPoolStats().catch(err => {
+          logger.error('Connection pool stats error:', err);
+          return { error: 'Failed to get connection pool stats', details: err.message };
+        })
       ]);
+
+      const [tableSizes, indexUsage, slowQueries, poolStats] = results.map(result => 
+        result.status === 'fulfilled' ? result.value : result.reason
+      );
 
       return {
         tables: tableSizes,
         indexes: indexUsage,
         slowQueries: slowQueries,
         connectionPool: poolStats,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        status: 'success'
       };
     } catch (error) {
       logger.error('Get database overview error:', error);
-      throw error;
+      return {
+        error: 'Database overview failed',
+        details: error.message,
+        timestamp: new Date().toISOString(),
+        status: 'error'
+      };
     }
   }
 }
