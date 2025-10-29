@@ -118,8 +118,9 @@
 }
 
 .admin-sidebar__menu-btn.active {
-  background: var(--accent-primary);
-  color: white;
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--text-primary);
+  border-left: 3px solid var(--accent-primary);
 }
 
 .admin-sidebar__menu-btn.active::before {
@@ -129,7 +130,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: white;
+  background: var(--accent-primary);
 }
 
 .admin-sidebar__menu-icon {
@@ -146,6 +147,11 @@
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
   margin-top: var(--spacing-xs);
+}
+
+.admin-sidebar__menu-btn.active .admin-sidebar__menu-description {
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .admin-sidebar__footer {
