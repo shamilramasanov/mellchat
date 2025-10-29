@@ -18,6 +18,7 @@ const RecentStreams = () => {
   const removeStream = useStreamsStore((state) => state.removeStream);
   const toggleStreamCard = useStreamsStore((state) => state.toggleStreamCard);
   const collapsedStreamIds = useStreamsStore((state) => state.collapsedStreamIds);
+  const setActiveStream = useStreamsStore((state) => state.setActiveStream);
   
   // Subscribe to messages so component re-renders when messages change
   // ВАЖНО: подписываемся на messages.length чтобы ре-рендер при изменении!
@@ -28,12 +29,27 @@ const RecentStreams = () => {
   const [showAddStream, setShowAddStream] = useState(false);
   
   // Показываем недавние стримы, которые НЕ в activeStreams
-  const streamsToShow = recentStreams.filter(stream => {
-    // Проверяем, есть ли стрим в activeStreams
-    const isInActiveStreams = activeStreams.some(s => s.id === stream.id);
-    // Показываем только те, которых нет в activeStreams
-    return !isInActiveStreams;
-  });
+  // ПЛЮС коллапсированные стримы из activeStreams
+  const streamsToShow = useMemo(() => {
+    // Стримы из recentStreams, которых нет в activeStreams
+    const recentNotActive = recentStreams.filter(stream => {
+      const isInActiveStreams = activeStreams.some(s => s.id === stream.id);
+      return !isInActiveStreams;
+    });
+    
+    // Коллапсированные стримы из activeStreams
+    const collapsedActive = activeStreams.filter(stream => 
+      collapsedStreamIds.includes(stream.id)
+    );
+    
+    // Объединяем и убираем дубликаты
+    const allStreams = [...recentNotActive, ...collapsedActive];
+    const uniqueStreams = allStreams.filter((stream, index, self) =>
+      index === self.findIndex(s => s.id === stream.id)
+    );
+    
+    return uniqueStreams;
+  }, [recentStreams, activeStreams, collapsedStreamIds]);
   
   // DEBUG: логирование для отладки
   console.log('🔍 RecentStreams RERENDER:', {
@@ -103,13 +119,20 @@ const RecentStreams = () => {
   }, [streamsToShow, getAllStreamsStats]);
 
   const handleStreamClick = (stream) => {
-    // If stream is collapsed, expand it first
+    // Если стрим коллапсирован, развернуть его и сделать активным
     if (collapsedStreamIds.includes(stream.id)) {
-      toggleStreamCard(stream.id);
+      toggleStreamCard(stream.id); // Разворачиваем
+      setActiveStream(stream.id); // Делаем активным
+    } else {
+      // Если стрим не в activeStreams, добавляем его
+      const isInActiveStreams = activeStreams.some(s => s.id === stream.id);
+      if (!isInActiveStreams) {
+        addStream(stream);
+      } else {
+        // Если уже в activeStreams, просто делаем активным
+        setActiveStream(stream.id);
+      }
     }
-    
-    // Always add stream to active (since we only show recent streams now)
-    addStream(stream);
   };
 
   const handleRemove = async (e, streamId) => {
