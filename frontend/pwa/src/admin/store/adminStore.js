@@ -86,6 +86,7 @@ const useAdminStore = create(
       wsConnection: null,
       isConnected: false,
       lastUpdate: null,
+      reconnectAttempts: 0,
 
       // === LOADING STATES ===
       loading: {
@@ -381,7 +382,7 @@ const useAdminStore = create(
 
           ws.onopen = () => {
             console.log('Admin WebSocket connected');
-            set({ isConnected: true });
+            set({ isConnected: true, reconnectAttempts: 0 }); // Сбрасываем счетчик при успешном подключении
             
             // Подписываемся на админ метрики
             ws.send(JSON.stringify({ type: 'admin:subscribe' }));
@@ -407,14 +408,32 @@ const useAdminStore = create(
             }
           };
 
-          ws.onclose = () => {
-            console.log('Admin WebSocket disconnected');
-            set({ isConnected: false });
+          ws.onclose = (event) => {
+            console.log('Admin WebSocket disconnected', event.code, event.reason);
+            set({ isConnected: false, wsConnection: null });
             
-            // Переподключаемся через 5 секунд
-            setTimeout(() => {
-              get().connectWebSocket();
-            }, 5000);
+            // Переподключаемся только если это не было намеренное закрытие (код 1000)
+            // и не было критической ошибки (коды 1006, 1011, 1012)
+            if (event.code !== 1000 && event.code !== 1006 && event.code !== 1011 && event.code !== 1012) {
+              const { reconnectAttempts = 0 } = get();
+              
+              // Ограничиваем количество попыток до 10
+              if (reconnectAttempts < 10) {
+                const delay = Math.min(5000 * (reconnectAttempts + 1), 30000); // Увеличиваем задержку до 30 сек
+                console.log(`Reconnecting Admin WebSocket in ${delay}ms (attempt ${reconnectAttempts + 1}/10)`);
+                
+                setTimeout(() => {
+                  const current = get();
+                  // Проверяем, что соединение все еще закрыто и не было создано новое
+                  if (!current.wsConnection && !current.isConnected) {
+                    set({ reconnectAttempts: reconnectAttempts + 1 });
+                    get().connectWebSocket();
+                  }
+                }, delay);
+              } else {
+                console.warn('Max reconnection attempts reached for Admin WebSocket');
+              }
+            }
           };
 
           ws.onerror = (error) => {
@@ -433,8 +452,20 @@ const useAdminStore = create(
         const { wsConnection } = get();
         
         if (wsConnection) {
-          wsConnection.send(JSON.stringify({ type: 'admin:unsubscribe' }));
-          wsConnection.close();
+          // Проверяем состояние WebSocket перед отправкой
+          if (wsConnection.readyState === WebSocket.OPEN) {
+            try {
+              wsConnection.send(JSON.stringify({ type: 'admin:unsubscribe' }));
+            } catch (error) {
+              console.warn('Failed to send unsubscribe message:', error);
+            }
+          }
+          
+          // Закрываем соединение только если оно еще не закрыто
+          if (wsConnection.readyState !== WebSocket.CLOSED && wsConnection.readyState !== WebSocket.CLOSING) {
+            wsConnection.close();
+          }
+          
           set({ wsConnection: null, isConnected: false });
         }
       }
