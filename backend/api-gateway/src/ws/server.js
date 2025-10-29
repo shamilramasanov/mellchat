@@ -287,28 +287,35 @@ class WsHub {
 }
 
 function createWsServer(httpServer) {
-  const hub = new WsHub(httpServer);
-  logger.info(`WebSocket server attached to HTTP server`);
+  logger.info('Creating WebSocket server...');
   
-  // Периодическая отправка метрик админ панели каждые 30 секунд
-  const metricsInterval = setInterval(async () => {
-    try {
-      // Ленивая загрузка adminMetricsService
-      if (!global.adminMetricsService) {
-        global.adminMetricsService = require('../services/adminMetricsService');
+  try {
+    const hub = new WsHub(httpServer);
+    logger.info(`✅ WebSocket server attached to HTTP server`);
+    
+    // Периодическая отправка метрик админ панели каждые 30 секунд
+    const metricsInterval = setInterval(async () => {
+      try {
+        // Ленивая загрузка adminMetricsService
+        if (!global.adminMetricsService) {
+          global.adminMetricsService = require('../services/adminMetricsService');
+        }
+        
+        if (global.adminMetricsService) {
+          const metrics = await global.adminMetricsService.getAllMetrics();
+          await hub.broadcastAdminMetrics(metrics);
+        }
+      } catch (error) {
+        logger.error('Error in metrics interval:', error.message);
       }
-      
-      if (global.adminMetricsService) {
-        const metrics = await global.adminMetricsService.getAllMetrics();
-        await hub.broadcastAdminMetrics(metrics);
-      }
-    } catch (error) {
-      logger.error('Error in metrics interval:', error.message);
-    }
-  }, 30000);
-  metricsInterval.unref();
-  
-  return hub;
+    }, 30000);
+    metricsInterval.unref();
+    
+    return hub;
+  } catch (error) {
+    logger.error('❌ Failed to create WebSocket server:', error);
+    throw error;
+  }
 }
 
 module.exports = { createWsServer };

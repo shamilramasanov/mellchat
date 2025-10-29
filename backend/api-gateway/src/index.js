@@ -36,6 +36,14 @@ const { createWsServer } = require('./ws/server');
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
+logger.info(`Starting server with config:`, {
+  PORT,
+  HOST,
+  NODE_ENV: process.env.NODE_ENV,
+  DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+  REDIS_URL: process.env.REDIS_URL ? 'SET' : 'NOT SET'
+});
+
 // Security middleware
 app.use(helmet());
 
@@ -199,28 +207,38 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-const httpServer = app.listen(PORT, HOST, () => {
-  logger.info(`API Gateway started on ${HOST}:${PORT}`, {
-    host: HOST,
-    port: PORT,
-    environment: process.env.NODE_ENV,
+logger.info('Attempting to start HTTP server...');
+try {
+  const httpServer = app.listen(PORT, HOST, () => {
+    logger.info(`✅ API Gateway started successfully on ${HOST}:${PORT}`, {
+      host: HOST,
+      port: PORT,
+      environment: process.env.NODE_ENV,
+    });
   });
-});
 
-// Обработка ошибок сервера
-httpServer.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    logger.error(`Port ${PORT} is already in use`);
-  } else {
-    logger.error('Server error:', error);
-  }
+  // Обработка ошибок сервера
+  httpServer.on('error', (error) => {
+    logger.error('❌ HTTP Server error:', error);
+    if (error.code === 'EADDRINUSE') {
+      logger.error(`Port ${PORT} is already in use`);
+    } else {
+      logger.error('Server error:', error);
+    }
+    process.exit(1);
+  });
+
+  // Start WebSocket server on the same port as HTTP
+  logger.info('Starting WebSocket server...');
+  const wsHub = createWsServer(httpServer);
+  app.set('wsHub', wsHub);
+  global.wsHub = wsHub; // Добавляем в глобальную переменную для AdminMetricsService
+  logger.info('✅ WebSocket server started');
+
+} catch (error) {
+  logger.error('❌ Failed to start server:', error);
   process.exit(1);
-});
-
-// Start WebSocket server on the same port as HTTP
-const wsHub = createWsServer(httpServer);
-app.set('wsHub', wsHub);
-global.wsHub = wsHub; // Добавляем в глобальную переменную для AdminMetricsService
+}
 
 // Добавляем adminMetricsService в глобальную переменную (ленивая загрузка)
 global.adminMetricsService = null;
