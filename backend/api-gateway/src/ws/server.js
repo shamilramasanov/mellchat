@@ -15,6 +15,11 @@ class WsHub {
     this.wss.on('connection', (ws) => {
       ws.isAlive = true;
       ws.on('pong', () => { ws.isAlive = true; });
+      
+      // Сохраняем userId если он передается при подключении
+      // Можно добавить через headers или initial message
+      ws.userId = null; // Будет установлен через специальное сообщение или headers
+      ws.userSessions = new Set(); // Храним все connectionId, на которые подписан этот пользователь
 
       ws.on('message', (raw) => {
         try {
@@ -25,12 +30,22 @@ class WsHub {
             this.subscribers.set(msg.connectionId, set);
             this.lastActivity.set(msg.connectionId, Date.now());
             logger.info(`Client subscribed to ${msg.connectionId}, total subscribers: ${set.size}`);
+            
+            // Сохраняем userId если он передается в сообщении
+            if (msg.userId) {
+              ws.userId = msg.userId;
+              ws.userSessions.add(msg.connectionId);
+            }
           } else if (msg.type === 'unsubscribe' && msg.connectionId) {
             const set = this.subscribers.get(msg.connectionId);
             if (set) { 
               set.delete(ws); 
               if (set.size === 0) this.subscribers.delete(msg.connectionId); 
               logger.info(`Client unsubscribed from ${msg.connectionId}`);
+            }
+            
+            if (ws.userSessions) {
+              ws.userSessions.delete(msg.connectionId);
             }
           } else if (msg.type === 'admin:subscribe') {
             // Админ подписка на метрики
@@ -268,6 +283,67 @@ class WsHub {
     } catch (error) {
       logger.error('Error broadcasting admin metrics:', error.message);
     }
+  }
+
+  // Отправка сообщения от админа конкретному пользователю
+  async sendAdminMessageToUser(userId, message) {
+    const adminMessage = {
+      id: `admin-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      username: 'admin',
+      text: message,
+      content: message,
+      timestamp: Date.now(),
+      platform: 'admin',
+      isAdmin: true,
+      isQuestion: false,
+      sentiment: 'neutral'
+    };
+
+    // Ищем все WebSocket соединения этого пользователя
+    let sentCount = 0;
+    const userConnectionIds = new Set();
+
+    // Проходим по всем подпискам и ищем connectionId пользователя
+    for (const [connectionId, wsSet] of this.subscribers.entries()) {
+      for (const ws of wsSet) {
+        if (ws.userId === userId && ws.readyState === WebSocket.OPEN) {
+          userConnectionIds.add(connectionId);
+        }
+      }
+    }
+
+    // Если userId не найден через ws.userId, пытаемся найти через список подключенных пользователей
+    // (это fallback - основная идентификация должна быть через ws.userId)
+    if (userConnectionIds.size === 0) {
+      // Используем альтернативный метод - ищем по IP/UserAgent или другим признакам
+      // Пока используем простой подход - отправляем на все connectionId из списка пользователя
+      logger.warn(`User ${userId} not found via ws.userId, trying alternative method`);
+    }
+
+    // Отправляем сообщение на все найденные connectionId пользователя
+    for (const connectionId of userConnectionIds) {
+      const wsSet = this.subscribers.get(connectionId);
+      if (wsSet) {
+        for (const ws of wsSet) {
+          if (ws.userId === userId && ws.readyState === WebSocket.OPEN) {
+            try {
+              const connectionData = JSON.stringify({ 
+                type: 'message', 
+                connectionId, 
+                payload: adminMessage 
+              });
+              ws.send(connectionData);
+              sentCount++;
+            } catch (e) {
+              logger.error('Admin personal message WS send error:', e.message);
+            }
+          }
+        }
+      }
+    }
+
+    logger.info(`📬 Admin message sent to user ${userId}: ${sentCount} messages delivered`);
+    return { success: true, sentCount };
   }
 
   // Отправка сообщения от админа всем подключенным пользователям

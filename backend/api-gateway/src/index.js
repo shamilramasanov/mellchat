@@ -279,6 +279,17 @@ try {
   throw error;
 }
 
+// Streams status check route
+logger.info('Setting up streams routes...');
+try {
+  const streamsRoutes = require('./routes/streams');
+  app.use('/api/v1/streams', rateLimiters.general, streamsRoutes);
+  logger.info('✅ Streams routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up streams routes:', error);
+  throw error;
+}
+
 // YouTube Live Chat routes
 logger.info('Setting up YouTube routes...');
 try {

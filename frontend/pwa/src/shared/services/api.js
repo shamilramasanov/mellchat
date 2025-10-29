@@ -130,6 +130,12 @@ export const streamsAPI = {
    * Get active streams
    */
   getActive: () => api.get('/streams'),
+  
+  /**
+   * Check stream status on all platforms for a channel name
+   * @param {string} channelName - Channel name to check
+   */
+  checkStreamStatus: (channelName) => api.get(`/streams/check/${encodeURIComponent(channelName)}`),
 };
 
 /**

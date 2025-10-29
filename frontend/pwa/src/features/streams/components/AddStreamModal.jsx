@@ -15,6 +15,10 @@ const AddStreamModal = ({ isOpen, onClose }) => {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pasteSuggested, setPasteSuggested] = useState(false);
+  const [streamCheckResults, setStreamCheckResults] = useState(null);
+  const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+  const [authorName, setAuthorName] = useState('');
+  const [isCheckingStreams, setIsCheckingStreams] = useState(false);
   const inputRef = useRef(null);
   
   const addStream = useStreamsStore((state) => state.addStream);
@@ -64,6 +68,10 @@ const AddStreamModal = ({ isOpen, onClose }) => {
     if (!isOpen) {
       setUrl('');
       setPasteSuggested(false);
+      setStreamCheckResults(null);
+      setSelectedPlatforms([]);
+      setAuthorName('');
+      setIsCheckingStreams(false);
     } else {
       // Небольшая задержка перед проверкой буфера обмена при открытии
       setTimeout(() => {
@@ -131,116 +139,126 @@ const AddStreamModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Если это имя автора - пытаемся подключиться ко всем платформам
+    // Если это имя автора - сначала проверяем статус стримов на всех платформах
     if (isAuthorName(inputValue)) {
-      setIsLoading(true);
       const authorName = inputValue;
-      const platforms = [PLATFORMS.TWITCH, PLATFORMS.KICK]; // YouTube требует videoId, пропускаем
-      const connectedPlatforms = [];
-      const inactivePlatforms = [];
-
+      
+      // Проверяем статус стримов через бэкенд
+      setIsLoading(true);
+      setIsCheckingStreams(true);
       try {
-        // Сначала проверяем Kick API на наличие активного стрима
-        const checkKickStream = async () => {
-          try {
-            const response = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(authorName)}`, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              }
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              // Проверяем, есть ли активный стрим
-              const hasLiveStream = data.livestream && data.livestream.id;
-              return hasLiveStream;
-            }
-            return false;
-          } catch (error) {
-            console.log(`⚠️ Failed to check Kick stream status:`, error.message);
-            // Если не удалось проверить, разрешаем подключение (fallback)
-            return true;
-          }
-        };
-
-        // Проверяем Kick перед подключением
-        const kickHasStream = await checkKickStream();
-        if (!kickHasStream) {
-          inactivePlatforms.push(PLATFORMS.KICK);
-        }
-
-        // Пытаемся подключиться ко всем платформам параллельно
-        const connectionPromises = platforms.map(async (platform) => {
-          // Пропускаем Kick, если нет активного стрима
-          if (platform === PLATFORMS.KICK && !kickHasStream) {
-            return null;
-          }
-
-          try {
-            const streamUrl = createStreamURL(authorName, platform);
-            if (!streamUrl) return null;
-            
-            const response = await streamsAPI.connect(streamUrl);
-            if (response?.connection) {
-              const stream = createStreamFromURL(streamUrl);
-              if (stream) {
-                return {
-                  platform,
-                  stream: {
-                    ...stream,
-                    connectionId: response.connection.id,
-                    status: 'connected',
-                    connectedAt: response.connection.connectedAt,
-                    viewers: response.connection.viewers || 0,
-                    title: response.connection.title || stream.title,
-                    author: response.connection.channel || stream.streamId,
-                  }
-                };
-              }
-            }
-          } catch (error) {
-            console.log(`⚠️ Failed to connect to ${platform}:`, error.message);
-            return null;
-          }
-        });
-
-        const results = await Promise.all(connectionPromises);
+        const checkResponse = await streamsAPI.checkStreamStatus(authorName);
         
-        // Добавляем все успешно подключенные стримы
-        results.forEach((result) => {
-          if (result && result.stream) {
-            addStream(result.stream);
-            connectedPlatforms.push(result.platform);
-          }
-        });
-
-        // Показываем результат
-        if (connectedPlatforms.length > 0) {
-          let message = `Подключено на ${connectedPlatforms.length} платформах: ${connectedPlatforms.join(', ')}`;
-          if (inactivePlatforms.length > 0) {
-            message += `\n${inactivePlatforms.join(', ')}: нет активного стрима`;
-          }
-          toast.success(message);
-          setUrl('');
-          onClose();
+        if (checkResponse?.platforms && Object.keys(checkResponse.platforms).length > 0) {
+          // Показываем UI для выбора платформ
+          setStreamCheckResults(checkResponse.platforms);
+          setAuthorName(authorName);
+          
+          // Автоматически выбираем все онлайн платформы
+          const livePlatforms = Object.keys(checkResponse.platforms).filter(
+            platform => checkResponse.platforms[platform].isLive
+          );
+          setSelectedPlatforms(livePlatforms);
+          
+          setIsCheckingStreams(false);
+          setIsLoading(false);
+          return; // Показываем выбор платформ, не закрываем модалку
         } else {
-          if (inactivePlatforms.length > 0) {
-            toast.error(`Не найден активный стрим для "${authorName}" на платформах: ${inactivePlatforms.join(', ')}`);
-          } else {
-            toast.error(`Не удалось подключиться к "${authorName}" ни на одной платформе. Проверьте имя автора.`);
-          }
+          toast.error(`Не найден активный стрим для "${authorName}" ни на одной платформе`);
+          setIsLoading(false);
+          setIsCheckingStreams(false);
         }
       } catch (error) {
-        console.error('❌ Multi-platform connect error:', error);
-        toast.error(t('errors.connectionFailed'));
-      } finally {
+        console.error('❌ Stream status check error:', error);
+        toast.error('Ошибка проверки статуса стримов');
         setIsLoading(false);
+        setIsCheckingStreams(false);
       }
       return;
     }
 
     // Если это не валидный URL и не имя автора
     toast.error('Введите валидную ссылку на стрим или имя автора');
+  };
+
+  // Подключение к выбранным платформам
+  const handleConnectSelectedPlatforms = async () => {
+    if (selectedPlatforms.length === 0) {
+      toast.error('Выберите хотя бы одну платформу');
+      return;
+    }
+
+    setIsLoading(true);
+    const connectedPlatforms = [];
+    
+    try {
+      const connectionPromises = selectedPlatforms.map(async (platform) => {
+        try {
+          const streamUrl = createStreamURL(authorName, platform);
+          if (!streamUrl) return null;
+          
+          const response = await streamsAPI.connect(streamUrl);
+          if (response?.connection) {
+            const stream = createStreamFromURL(streamUrl);
+            if (stream) {
+              return {
+                platform,
+                stream: {
+                  ...stream,
+                  connectionId: response.connection.id,
+                  status: 'connected',
+                  connectedAt: response.connection.connectedAt,
+                  viewers: response.connection.viewers || 0,
+                  title: response.connection.title || stream.title,
+                  author: response.connection.channel || stream.streamId,
+                }
+              };
+            }
+          }
+        } catch (error) {
+          console.log(`⚠️ Failed to connect to ${platform}:`, error.message);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(connectionPromises);
+      
+      // Добавляем все успешно подключенные стримы
+      results.forEach((result) => {
+        if (result && result.stream) {
+          addStream(result.stream);
+          connectedPlatforms.push(result.platform);
+        }
+      });
+
+      // Показываем результат
+      if (connectedPlatforms.length > 0) {
+        toast.success(`Подключено на ${connectedPlatforms.length} платформах: ${connectedPlatforms.join(', ')}`);
+        setUrl('');
+        setStreamCheckResults(null);
+        setSelectedPlatforms([]);
+        setAuthorName('');
+        onClose();
+      } else {
+        toast.error('Не удалось подключиться ни к одной платформе');
+      }
+    } catch (error) {
+      console.error('❌ Multi-platform connect error:', error);
+      toast.error(t('errors.connectionFailed'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Обработка выбора платформы
+  const handlePlatformToggle = (platform) => {
+    setSelectedPlatforms(prev => {
+      if (prev.includes(platform)) {
+        return prev.filter(p => p !== platform);
+      } else {
+        return [...prev, platform];
+      }
+    });
   };
   
   if (!isOpen) return null;
@@ -298,21 +316,99 @@ const AddStreamModal = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            <div className="add-stream-modal__buttons">
-              <button 
-                className="add-stream-modal__button add-stream-modal__button--secondary"
-                onClick={onClose}
-              >
-                {t('streams.cancel')}
-              </button>
-              <button 
-                className="add-stream-modal__button add-stream-modal__button--primary"
-                onClick={handleConnect}
-                disabled={!url || isLoading}
-              >
-                {isLoading ? '⏳' : t('streams.connect')}
-              </button>
-            </div>
+            {/* Результаты проверки статуса стримов и выбор платформ */}
+            {isCheckingStreams && (
+              <div className="add-stream-modal__checking">
+                <span>🔍 Проверка статуса стримов...</span>
+              </div>
+            )}
+
+            {streamCheckResults && !isCheckingStreams && (
+              <div className="add-stream-modal__platform-selection">
+                <h3 className="add-stream-modal__selection-title">
+                  Найдены стримы для "{authorName}":
+                </h3>
+                <div className="add-stream-modal__platforms-list">
+                  {Object.entries(streamCheckResults).map(([platformKey, platformData]) => (
+                    <label 
+                      key={platformKey}
+                      className={`add-stream-modal__platform-item ${platformData.isLive ? 'add-stream-modal__platform-item--live' : 'add-stream-modal__platform-item--offline'}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPlatforms.includes(platformKey)}
+                        onChange={() => handlePlatformToggle(platformKey)}
+                        disabled={!platformData.isLive}
+                        className="add-stream-modal__platform-checkbox"
+                      />
+                      <div className="add-stream-modal__platform-info">
+                        <div className="add-stream-modal__platform-header">
+                          <img 
+                            src={PLATFORM_LOGOS[platformKey]} 
+                            alt={platformKey}
+                            className="add-stream-modal__platform-logo-small"
+                          />
+                          <span className="add-stream-modal__platform-name-item">
+                            {platformKey}
+                          </span>
+                          <span className={`add-stream-modal__platform-status ${platformData.isLive ? 'add-stream-modal__platform-status--live' : 'add-stream-modal__platform-status--offline'}`}>
+                            {platformData.isLive ? '🟢 Онлайн' : '⚪ Оффлайн'}
+                          </span>
+                        </div>
+                        {platformData.isLive && (
+                          <div className="add-stream-modal__platform-details">
+                            <div className="add-stream-modal__platform-title">{platformData.title}</div>
+                            {platformData.viewers !== undefined && (
+                              <div className="add-stream-modal__platform-viewers">
+                                👁️ {platformData.viewers} зрителей
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div className="add-stream-modal__selection-actions">
+                  <button
+                    className="add-stream-modal__button add-stream-modal__button--secondary"
+                    onClick={() => {
+                      setStreamCheckResults(null);
+                      setSelectedPlatforms([]);
+                      setAuthorName('');
+                      setUrl('');
+                    }}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    className="add-stream-modal__button add-stream-modal__button--primary"
+                    onClick={handleConnectSelectedPlatforms}
+                    disabled={selectedPlatforms.length === 0 || isLoading}
+                  >
+                    {isLoading ? '⏳ Подключение...' : `Подключиться (${selectedPlatforms.length})`}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!streamCheckResults && (
+              <div className="add-stream-modal__buttons">
+                <button 
+                  className="add-stream-modal__button add-stream-modal__button--secondary"
+                  onClick={onClose}
+                >
+                  {t('streams.cancel')}
+                </button>
+                <button 
+                  className="add-stream-modal__button add-stream-modal__button--primary"
+                  onClick={handleConnect}
+                  disabled={!url || isLoading}
+                >
+                  {isLoading ? '⏳' : t('streams.connect')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
