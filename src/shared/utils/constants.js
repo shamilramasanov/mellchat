@@ -190,7 +190,7 @@ export const API_ENDPOINTS = {
 
 // Regex Patterns
 export const PATTERNS = {
-  YOUTUBE_URL: /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+  YOUTUBE_URL: /(?:youtube\.com\/(?:live\/|watch\?v=)|youtu\.be\/)([a-zA-Z0-9_-]+)/,
   TWITCH_URL: /twitch\.tv\/([a-zA-Z0-9_]+)/,
   KICK_URL: /kick\.com\/([a-zA-Z0-9_-]+)/,
   QUESTION: /\?/,
