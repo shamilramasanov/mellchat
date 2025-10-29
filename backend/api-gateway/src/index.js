@@ -229,8 +229,14 @@ try {
     throw new Error('databaseRoutes is undefined - import failed');
   }
   
+  // Проверяем, что rateLimiters.messages не undefined
+  if (!rateLimiters || !rateLimiters.messages) {
+    throw new Error('rateLimiters.messages is undefined - rate limiter initialization failed');
+  }
+  
   logger.info('databaseRoutes type:', typeof databaseRoutes);
   logger.info('databaseRoutes constructor:', databaseRoutes.constructor.name);
+  logger.info('rateLimiters.messages type:', typeof rateLimiters.messages);
   
   app.use('/api/v1/database', rateLimiters.messages, databaseRoutes);
   logger.info('✅ databaseRoutes loaded');
