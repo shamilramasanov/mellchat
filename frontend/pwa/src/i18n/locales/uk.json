@@ -130,6 +130,109 @@
     "loading": "Завантаження...",
     "error": "Помилка",
     "success": "Успішно"
+  },
+  "admin": {
+    "title": "Адмін Панель",
+    "login": {
+      "title": "Вхід в Адмін Панель",
+      "subtitle": "Введіть ваші облікові дані для доступу до адмін панелі",
+      "username": "Ім'я користувача",
+      "password": "Пароль",
+      "loginButton": "Увійти",
+      "invalidCredentials": "Невірне ім'я користувача або пароль",
+      "loginError": "Помилка входу. Спробуйте ще раз."
+    },
+    "sidebar": {
+      "dashboard": "Панель керування",
+      "analytics": "Аналітика",
+      "moderation": "Модерація",
+      "system": "Система",
+      "database": "База даних",
+      "security": "Безпека",
+      "aiAssistant": "ШІ Помічник"
+    },
+    "header": {
+      "welcome": "Ласкаво просимо",
+      "logout": "Вийти",
+      "activeTab": "Активна вкладка"
+    },
+    "dashboard": {
+      "title": "Панель керування",
+      "metrics": {
+        "activeConnections": "Активні підключення",
+        "messagesPerSecond": "Повідомлень/сек",
+        "usersOnline": "Користувачів онлайн",
+        "platformStatus": "Статус платформ",
+        "dbPerformance": "Продуктивність БД",
+        "redisStatus": "Статус Redis",
+        "aiStatus": "Статус ШІ"
+      },
+      "charts": {
+        "messageFlow": "Потік повідомлень",
+        "platformDistribution": "Розподіл платформ",
+        "sentimentTrends": "Тренди настроїв",
+        "systemLoad": "Навантаження системи"
+      },
+      "aiInsights": {
+        "title": "ШІ Аналітика",
+        "recommendations": "Рекомендації",
+        "insights": "Аналітика",
+        "alerts": "Сповіщення",
+        "priority": {
+          "high": "Високий",
+          "medium": "Середній",
+          "low": "Низький"
+        },
+        "actions": {
+          "viewDetails": "Подробиці",
+          "optimizeNow": "Оптимізувати",
+          "adjustSettings": "Налаштування",
+          "viewAnalytics": "Аналітика",
+          "scaleUp": "Масштабувати",
+          "cleanCache": "Очистити кеш"
+        }
+      },
+      "systemAlerts": {
+        "title": "Системні сповіщення",
+        "noAlerts": "Немає активних сповіщень",
+        "warning": "Попередження",
+        "error": "Помилка",
+        "info": "Інформація"
+      }
+    },
+    "aiAssistant": {
+      "title": "ШІ Помічник",
+      "placeholder": "Запитайте мене щось про систему...",
+      "sendButton": "Надіслати",
+      "thinking": "ШІ думає...",
+      "noMessages": "Поки немає повідомлень. Почніть розмову!",
+      "error": "Не вдалося отримати відповідь ШІ. Спробуйте ще раз."
+    },
+    "common": {
+      "loading": "Завантаження...",
+      "error": "Помилка",
+      "success": "Успішно",
+      "retry": "Повторити",
+      "refresh": "Оновити",
+      "save": "Зберегти",
+      "cancel": "Скасувати",
+      "confirm": "Підтвердити",
+      "delete": "Видалити",
+      "edit": "Редагувати",
+      "view": "Перегляд",
+      "close": "Закрити",
+      "back": "Назад",
+      "next": "Далі",
+      "previous": "Попередній",
+      "search": "Пошук",
+      "filter": "Фільтр",
+      "sort": "Сортування",
+      "export": "Експорт",
+      "import": "Імпорт",
+      "settings": "Налаштування",
+      "help": "Допомога",
+      "about": "Про програму"
+    }
   }
 }
 

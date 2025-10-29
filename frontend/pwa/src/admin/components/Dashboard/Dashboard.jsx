@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useAdminStore from '../../store/adminStore';
 import MetricCard from './MetricCard';
 import ChartContainer from './ChartContainer';
@@ -8,6 +9,7 @@ import SystemAlerts from './SystemAlerts';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const {
     metrics,
     charts,
@@ -60,7 +62,7 @@ const Dashboard = () => {
       {/* Header */}
       <div className="admin-dashboard__header">
         <div className="admin-dashboard__title">
-          <h1>Dashboard</h1>
+          <h1>{t('admin.dashboard.title')}</h1>
           <div className="admin-dashboard__controls">
             <select 
               value={timeRange} 
@@ -95,7 +97,7 @@ const Dashboard = () => {
           className="admin-dashboard__metrics-grid"
         >
           <MetricCard
-            title="Active Connections"
+            title={t('admin.dashboard.metrics.activeConnections')}
             value={metrics.activeConnections}
             icon="🔌"
             color="blue"
@@ -104,7 +106,7 @@ const Dashboard = () => {
           />
           
           <MetricCard
-            title="Messages/sec"
+            title={t('admin.dashboard.metrics.messagesPerSecond')}
             value={metrics.messagesPerSecond.toFixed(1)}
             icon="💬"
             color="green"
@@ -113,7 +115,7 @@ const Dashboard = () => {
           />
           
           <MetricCard
-            title="Users Online"
+            title={t('admin.dashboard.metrics.usersOnline')}
             value={metrics.usersOnline}
             icon="👥"
             color="purple"
@@ -122,7 +124,7 @@ const Dashboard = () => {
           />
           
           <MetricCard
-            title="DB Response Time"
+            title={t('admin.dashboard.metrics.dbPerformance')}
             value={`${metrics.dbPerformance.avgResponseTime}ms`}
             icon="🗄️"
             color="orange"
@@ -134,7 +136,7 @@ const Dashboard = () => {
 
       {/* Platform Status */}
       <div className="admin-dashboard__platforms">
-        <h2>Platform Status</h2>
+        <h2>{t('admin.dashboard.metrics.platformStatus')}</h2>
         <div className="admin-dashboard__platform-grid">
           {Object.entries(metrics.platformStatus).map(([platform, status]) => (
             <div key={platform} className={`platform-status platform-status--${status}`}>

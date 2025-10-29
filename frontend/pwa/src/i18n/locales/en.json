@@ -134,6 +134,109 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "login": {
+      "title": "Admin Login",
+      "subtitle": "Enter your credentials to access the admin panel",
+      "username": "Username",
+      "password": "Password",
+      "loginButton": "Login",
+      "invalidCredentials": "Invalid username or password",
+      "loginError": "Login failed. Please try again."
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "analytics": "Analytics",
+      "moderation": "Moderation",
+      "system": "System",
+      "database": "Database",
+      "security": "Security",
+      "aiAssistant": "AI Assistant"
+    },
+    "header": {
+      "welcome": "Welcome",
+      "logout": "Logout",
+      "activeTab": "Active Tab"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "metrics": {
+        "activeConnections": "Active Connections",
+        "messagesPerSecond": "Messages/sec",
+        "usersOnline": "Users Online",
+        "platformStatus": "Platform Status",
+        "dbPerformance": "DB Performance",
+        "redisStatus": "Redis Status",
+        "aiStatus": "AI Status"
+      },
+      "charts": {
+        "messageFlow": "Message Flow",
+        "platformDistribution": "Platform Distribution",
+        "sentimentTrends": "Sentiment Trends",
+        "systemLoad": "System Load"
+      },
+      "aiInsights": {
+        "title": "AI Insights",
+        "recommendations": "Recommendations",
+        "insights": "Insights",
+        "alerts": "Alerts",
+        "priority": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "actions": {
+          "viewDetails": "View Details",
+          "optimizeNow": "Optimize Now",
+          "adjustSettings": "Adjust Settings",
+          "viewAnalytics": "View Analytics",
+          "scaleUp": "Scale Up",
+          "cleanCache": "Clean Cache"
+        }
+      },
+      "systemAlerts": {
+        "title": "System Alerts",
+        "noAlerts": "No active alerts",
+        "warning": "Warning",
+        "error": "Error",
+        "info": "Info"
+      }
+    },
+    "aiAssistant": {
+      "title": "AI Assistant",
+      "placeholder": "Ask me anything about the system...",
+      "sendButton": "Send",
+      "thinking": "AI is thinking...",
+      "noMessages": "No messages yet. Start a conversation!",
+      "error": "Failed to get AI response. Please try again."
+    },
+    "common": {
+      "loading": "Loading...",
+      "error": "Error",
+      "success": "Success",
+      "retry": "Retry",
+      "refresh": "Refresh",
+      "save": "Save",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "delete": "Delete",
+      "edit": "Edit",
+      "view": "View",
+      "close": "Close",
+      "back": "Back",
+      "next": "Next",
+      "previous": "Previous",
+      "search": "Search",
+      "filter": "Filter",
+      "sort": "Sort",
+      "export": "Export",
+      "import": "Import",
+      "settings": "Settings",
+      "help": "Help",
+      "about": "About"
+    }
   }
 }
 

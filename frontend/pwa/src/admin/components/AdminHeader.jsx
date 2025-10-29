@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useAdminStore from '../store/adminStore';
+import { LANGUAGES } from '../../shared/utils/constants';
 
 const AdminHeader = ({ activeTab, onToggleSidebar }) => {
+  const { t, i18n } = useTranslation();
   const { adminUser, logout } = useAdminStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -11,17 +14,30 @@ const AdminHeader = ({ activeTab, onToggleSidebar }) => {
     setShowUserMenu(false);
   };
 
+  const handleLanguageChange = (lang) => {
+    i18n.changeLanguage(lang);
+  };
+
+  const getLanguageFlag = (lang) => {
+    const flags = {
+      [LANGUAGES.EN]: '🇺🇸',
+      [LANGUAGES.RU]: '🇷🇺',
+      [LANGUAGES.UK]: '🇺🇦'
+    };
+    return flags[lang] || '🌐';
+  };
+
   const getTabTitle = (tab) => {
     const titles = {
-      dashboard: 'Dashboard',
-      analytics: 'Analytics',
-      moderation: 'Moderation',
-      system: 'System Management',
-      database: 'Database Management',
-      security: 'Security & Access',
-      'ai-assistant': 'AI Assistant'
+      dashboard: t('admin.sidebar.dashboard'),
+      analytics: t('admin.sidebar.analytics'),
+      moderation: t('admin.sidebar.moderation'),
+      system: t('admin.sidebar.system'),
+      database: t('admin.sidebar.database'),
+      security: t('admin.sidebar.security'),
+      'ai-assistant': t('admin.sidebar.aiAssistant')
     };
-    return titles[tab] || 'Admin Panel';
+    return titles[tab] || t('admin.title');
   };
 
   return (
@@ -43,12 +59,29 @@ const AdminHeader = ({ activeTab, onToggleSidebar }) => {
         <div className="admin-header__title">
           <h1>{getTabTitle(activeTab)}</h1>
           <span className="admin-header__breadcrumb">
-            Admin Panel / {getTabTitle(activeTab)}
+            {t('admin.title')} / {getTabTitle(activeTab)}
           </span>
         </div>
       </div>
 
       <div className="admin-header__right">
+        <div className="admin-header__language">
+          <div className="admin-header__language-selector">
+            {Object.values(LANGUAGES).map((lang) => (
+              <button
+                key={lang}
+                className={`admin-header__language-btn ${
+                  i18n.language === lang ? 'active' : ''
+                }`}
+                onClick={() => handleLanguageChange(lang)}
+                title={lang.toUpperCase()}
+              >
+                {getLanguageFlag(lang)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="admin-header__notifications">
           <button 
             className="admin-header__notification-btn"
@@ -89,11 +122,11 @@ const AdminHeader = ({ activeTab, onToggleSidebar }) => {
             >
               <div className="admin-header__user-menu-item">
                 <span className="admin-header__menu-icon">👤</span>
-                Profile Settings
+                {t('admin.common.settings')}
               </div>
               <div className="admin-header__user-menu-item">
                 <span className="admin-header__menu-icon">⚙️</span>
-                Preferences
+                {t('admin.common.settings')}
               </div>
               <div className="admin-header__user-menu-divider"></div>
               <div 
@@ -101,7 +134,7 @@ const AdminHeader = ({ activeTab, onToggleSidebar }) => {
                 onClick={handleLogout}
               >
                 <span className="admin-header__menu-icon">🚪</span>
-                Logout
+                {t('admin.header.logout')}
               </div>
             </motion.div>
           )}

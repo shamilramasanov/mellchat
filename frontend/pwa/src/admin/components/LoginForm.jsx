@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useAdminStore from '../store/adminStore';
 
 const LoginForm = () => {
+  const { t } = useTranslation();
   const { login } = useAdminStore();
   const [credentials, setCredentials] = useState({
     username: '',
@@ -15,7 +17,7 @@ const LoginForm = () => {
     e.preventDefault();
     
     if (!credentials.username || !credentials.password) {
-      setError('Please fill in all fields');
+      setError(t('admin.login.invalidCredentials'));
       return;
     }
 
@@ -25,7 +27,7 @@ const LoginForm = () => {
     const result = await login(credentials);
     
     if (!result.success) {
-      setError(result.error || 'Login failed');
+      setError(result.error || t('admin.login.loginError'));
     }
     
     setLoading(false);
@@ -51,17 +53,17 @@ const LoginForm = () => {
         <div className="admin-login__header">
           <div className="admin-login__logo">
             <span className="admin-login__logo-icon">🎯</span>
-            <h1 className="admin-login__logo-text">MellChat Admin</h1>
+            <h1 className="admin-login__logo-text">{t('admin.title')}</h1>
           </div>
           <p className="admin-login__subtitle">
-            Secure access to system management
+            {t('admin.login.subtitle')}
           </p>
         </div>
 
         <form className="admin-login__form" onSubmit={handleSubmit}>
           <div className="admin-login__field">
             <label htmlFor="username" className="admin-login__label">
-              Username
+              {t('admin.login.username')}
             </label>
             <input
               type="text"
@@ -70,7 +72,7 @@ const LoginForm = () => {
               value={credentials.username}
               onChange={handleInputChange}
               className="admin-login__input"
-              placeholder="Enter your username"
+              placeholder={t('admin.login.username')}
               disabled={loading}
               autoComplete="username"
             />
@@ -78,7 +80,7 @@ const LoginForm = () => {
 
           <div className="admin-login__field">
             <label htmlFor="password" className="admin-login__label">
-              Password
+              {t('admin.login.password')}
             </label>
             <input
               type="password"
@@ -87,7 +89,7 @@ const LoginForm = () => {
               value={credentials.password}
               onChange={handleInputChange}
               className="admin-login__input"
-              placeholder="Enter your password"
+              placeholder={t('admin.login.password')}
               disabled={loading}
               autoComplete="current-password"
             />
@@ -112,12 +114,12 @@ const LoginForm = () => {
             {loading ? (
               <>
                 <span className="admin-login__spinner">⏳</span>
-                Signing in...
+                {t('admin.common.loading')}
               </>
             ) : (
               <>
                 <span className="admin-login__submit-icon">🚀</span>
-                Sign In
+                {t('admin.login.loginButton')}
               </>
             )}
           </button>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const AdminSidebar = ({ 
   activeTab, 
@@ -7,46 +8,48 @@ const AdminSidebar = ({
   collapsed, 
   onToggleCollapse 
 }) => {
+  const { t } = useTranslation();
+  
   const menuItems = [
     {
       id: 'dashboard',
-      label: 'Dashboard',
+      label: t('admin.sidebar.dashboard'),
       icon: '📊',
       description: 'System overview and metrics'
     },
     {
       id: 'analytics',
-      label: 'Analytics',
+      label: t('admin.sidebar.analytics'),
       icon: '📈',
       description: 'Reports and insights'
     },
     {
       id: 'moderation',
-      label: 'Moderation',
+      label: t('admin.sidebar.moderation'),
       icon: '🛡️',
       description: 'AI and manual moderation'
     },
     {
       id: 'system',
-      label: 'System',
+      label: t('admin.sidebar.system'),
       icon: '⚙️',
       description: 'Configuration and monitoring'
     },
     {
       id: 'database',
-      label: 'Database',
+      label: t('admin.sidebar.database'),
       icon: '🗄️',
       description: 'DB management and optimization'
     },
     {
       id: 'security',
-      label: 'Security',
+      label: t('admin.sidebar.security'),
       icon: '🔒',
       description: 'Access control and audit'
     },
     {
       id: 'ai-assistant',
-      label: 'AI Assistant',
+      label: t('admin.sidebar.aiAssistant'),
       icon: '🤖',
       description: 'Chat with AI helper'
     }
@@ -63,7 +66,7 @@ const AdminSidebar = ({
         <div className="admin-sidebar__logo">
           <span className="admin-sidebar__logo-icon">🎯</span>
           {!collapsed && (
-            <span className="admin-sidebar__logo-text">MellChat Admin</span>
+            <span className="admin-sidebar__logo-text">{t('admin.title')}</span>
           )}
         </div>
         

@@ -134,6 +134,109 @@
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успешно"
+  },
+  "admin": {
+    "title": "Админ Панель",
+    "login": {
+      "title": "Вход в Админ Панель",
+      "subtitle": "Введите ваши учетные данные для доступа к админ панели",
+      "username": "Имя пользователя",
+      "password": "Пароль",
+      "loginButton": "Войти",
+      "invalidCredentials": "Неверное имя пользователя или пароль",
+      "loginError": "Ошибка входа. Попробуйте еще раз."
+    },
+    "sidebar": {
+      "dashboard": "Панель управления",
+      "analytics": "Аналитика",
+      "moderation": "Модерация",
+      "system": "Система",
+      "database": "База данных",
+      "security": "Безопасность",
+      "aiAssistant": "ИИ Помощник"
+    },
+    "header": {
+      "welcome": "Добро пожаловать",
+      "logout": "Выйти",
+      "activeTab": "Активная вкладка"
+    },
+    "dashboard": {
+      "title": "Панель управления",
+      "metrics": {
+        "activeConnections": "Активные подключения",
+        "messagesPerSecond": "Сообщений/сек",
+        "usersOnline": "Пользователей онлайн",
+        "platformStatus": "Статус платформ",
+        "dbPerformance": "Производительность БД",
+        "redisStatus": "Статус Redis",
+        "aiStatus": "Статус ИИ"
+      },
+      "charts": {
+        "messageFlow": "Поток сообщений",
+        "platformDistribution": "Распределение платформ",
+        "sentimentTrends": "Тренды настроений",
+        "systemLoad": "Нагрузка системы"
+      },
+      "aiInsights": {
+        "title": "ИИ Аналитика",
+        "recommendations": "Рекомендации",
+        "insights": "Аналитика",
+        "alerts": "Уведомления",
+        "priority": {
+          "high": "Высокий",
+          "medium": "Средний",
+          "low": "Низкий"
+        },
+        "actions": {
+          "viewDetails": "Подробности",
+          "optimizeNow": "Оптимизировать",
+          "adjustSettings": "Настройки",
+          "viewAnalytics": "Аналитика",
+          "scaleUp": "Масштабировать",
+          "cleanCache": "Очистить кэш"
+        }
+      },
+      "systemAlerts": {
+        "title": "Системные уведомления",
+        "noAlerts": "Нет активных уведомлений",
+        "warning": "Предупреждение",
+        "error": "Ошибка",
+        "info": "Информация"
+      }
+    },
+    "aiAssistant": {
+      "title": "ИИ Помощник",
+      "placeholder": "Спросите меня что-нибудь о системе...",
+      "sendButton": "Отправить",
+      "thinking": "ИИ думает...",
+      "noMessages": "Пока нет сообщений. Начните разговор!",
+      "error": "Не удалось получить ответ ИИ. Попробуйте еще раз."
+    },
+    "common": {
+      "loading": "Загрузка...",
+      "error": "Ошибка",
+      "success": "Успешно",
+      "retry": "Повторить",
+      "refresh": "Обновить",
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "confirm": "Подтвердить",
+      "delete": "Удалить",
+      "edit": "Редактировать",
+      "view": "Просмотр",
+      "close": "Закрыть",
+      "back": "Назад",
+      "next": "Далее",
+      "previous": "Предыдущий",
+      "search": "Поиск",
+      "filter": "Фильтр",
+      "sort": "Сортировка",
+      "export": "Экспорт",
+      "import": "Импорт",
+      "settings": "Настройки",
+      "help": "Помощь",
+      "about": "О программе"
+    }
   }
 }
 
