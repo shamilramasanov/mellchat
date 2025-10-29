@@ -242,6 +242,9 @@ try {
   logger.info('✅ databaseRoutes loaded');
   
   logger.info('Loading adaptiveMessagesRoutes...');
+  if (!rateLimiters.messages) {
+    throw new Error('rateLimiters.messages is undefined');
+  }
   app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
   logger.info('✅ adaptiveMessagesRoutes loaded');
   
@@ -324,6 +327,9 @@ try {
 // Messages routes - лимит для сообщений
 logger.info('Setting up messages routes...');
 try {
+  if (!rateLimiters.messages) {
+    throw new Error('rateLimiters.messages is undefined - rate limiter initialization failed');
+  }
   app.use('/api/v1/messages', rateLimiters.messages, messagesRoutes);
   logger.info('✅ Messages routes configured');
 } catch (error) {
