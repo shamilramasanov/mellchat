@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const router = express.Router();
 const geminiService = require('../../services/geminiService');
 const analyticsService = require('../../services/analyticsService');
+const moderationService = require('../../services/moderationService');
+const databaseManagementService = require('../../services/databaseManagementService');
 const logger = require('../../utils/logger');
 
 // Mock admin user (в реальном проекте это будет в БД)
@@ -983,6 +985,256 @@ router.post('/analytics/generate-report', authenticateAdmin, async (req, res) =>
     logger.error('Generate analytics report error:', error);
     res.status(500).json({ 
       error: 'Failed to generate report',
+      message: error.message 
+    });
+  }
+});
+
+// ==================== MODERATION ENDPOINTS ====================
+
+// POST /api/v1/admin/moderation/analyze
+router.post('/moderation/analyze', authenticateAdmin, async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || !message.text && !message.content) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const analysis = await moderationService.analyzeContent(message);
+
+    res.json({
+      success: true,
+      ...analysis
+    });
+  } catch (error) {
+    logger.error('Moderation analyze error:', error);
+    res.status(500).json({ 
+      error: 'Failed to analyze message',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/moderation/moderate
+router.post('/moderation/moderate', authenticateAdmin, async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || !message.id) {
+      return res.status(400).json({ error: 'Message with ID is required' });
+    }
+
+    const result = await moderationService.moderateMessage(message);
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    logger.error('Moderation moderate error:', error);
+    res.status(500).json({ 
+      error: 'Failed to moderate message',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/moderation/stats
+router.get('/moderation/stats', authenticateAdmin, async (req, res) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const stats = await moderationService.getModerationStats(timeRange);
+    
+    res.json({
+      success: true,
+      ...stats
+    });
+  } catch (error) {
+    logger.error('Get moderation stats error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch moderation stats',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/moderation/history
+router.get('/moderation/history', authenticateAdmin, async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const history = await moderationService.getModerationHistory(parseInt(limit), parseInt(offset));
+    
+    res.json({
+      success: true,
+      history,
+      count: history.length
+    });
+  } catch (error) {
+    logger.error('Get moderation history error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch moderation history',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/moderation/block-user
+router.post('/moderation/block-user', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, reason, duration } = req.body;
+
+    if (!userId || !reason) {
+      return res.status(400).json({ error: 'User ID and reason are required' });
+    }
+
+    const result = await moderationService.blockUser(userId, reason, duration);
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    logger.error('Block user error:', error);
+    res.status(500).json({ 
+      error: 'Failed to block user',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/moderation/unblock-user
+router.post('/moderation/unblock-user', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const result = await moderationService.unblockUser(userId);
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    logger.error('Unblock user error:', error);
+    res.status(500).json({ 
+      error: 'Failed to unblock user',
+      message: error.message 
+    });
+  }
+});
+
+// ==================== DATABASE MANAGEMENT ENDPOINTS ====================
+
+// GET /api/v1/admin/database/overview
+router.get('/database/overview', authenticateAdmin, async (req, res) => {
+  try {
+    const overview = await databaseManagementService.getDatabaseOverview();
+    
+    res.json({
+      success: true,
+      ...overview
+    });
+  } catch (error) {
+    logger.error('Get database overview error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch database overview',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/database/tables
+router.get('/database/tables', authenticateAdmin, async (req, res) => {
+  try {
+    const tables = await databaseManagementService.getTableSizes();
+    
+    res.json({
+      success: true,
+      tables
+    });
+  } catch (error) {
+    logger.error('Get database tables error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch table sizes',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/database/indexes
+router.get('/database/indexes', authenticateAdmin, async (req, res) => {
+  try {
+    const indexes = await databaseManagementService.getIndexUsage();
+    
+    res.json({
+      success: true,
+      indexes
+    });
+  } catch (error) {
+    logger.error('Get database indexes error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch index usage',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/database/slow-queries
+router.get('/database/slow-queries', authenticateAdmin, async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const queries = await databaseManagementService.getSlowQueries(parseInt(limit));
+    
+    res.json({
+      success: true,
+      queries
+    });
+  } catch (error) {
+    logger.error('Get slow queries error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch slow queries',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/database/connections
+router.get('/database/connections', authenticateAdmin, async (req, res) => {
+  try {
+    const stats = await databaseManagementService.getConnectionPoolStats();
+    
+    res.json({
+      success: true,
+      ...stats
+    });
+  } catch (error) {
+    logger.error('Get connection pool stats error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch connection pool stats',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/database/analyze
+router.post('/database/analyze', authenticateAdmin, async (req, res) => {
+  try {
+    const analysis = await databaseManagementService.analyzeDatabase();
+    
+    res.json({
+      success: true,
+      ...analysis
+    });
+  } catch (error) {
+    logger.error('Analyze database error:', error);
+    res.status(500).json({ 
+      error: 'Failed to analyze database',
       message: error.message 
     });
   }

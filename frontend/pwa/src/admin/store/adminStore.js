@@ -89,12 +89,24 @@ const useAdminStore = create(
       lastUpdate: null,
       reconnectAttempts: 0,
 
+      // === ANALYTICS DATA ===
+      analytics: {
+        platform: null,
+        time: null,
+        streams: null,
+        users: null,
+        contentQuality: null,
+        userActivity: null,
+        full: null
+      },
+
       // === LOADING STATES ===
       loading: {
         metrics: false,
         charts: false,
         users: false,
-        settings: false
+        settings: false,
+        analytics: false
       },
 
       // === ACTIONS ===
@@ -490,6 +502,86 @@ const useAdminStore = create(
           set({ systemHealth: { ...get().systemHealth, ...health } });
 
           return { success: true };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
+      // === ANALYTICS METHODS ===
+      fetchAnalytics: async (type = 'full', timeRange = '24h', limit = 20) => {
+        try {
+          set({ loading: { ...get().loading, analytics: true } });
+          
+          const endpoint = type === 'full' 
+            ? `/analytics/full`
+            : `/analytics/${type}`;
+          
+          const queryParams = new URLSearchParams({ timeRange });
+          if (limit && (type === 'streams' || type === 'users')) {
+            queryParams.append('limit', limit);
+          }
+          
+          const response = await fetch(`${API_URL}/api/v1/admin${endpoint}?${queryParams}`, {
+            headers: {
+              'Authorization': `Bearer ${get().token}`
+            }
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to fetch analytics');
+          }
+
+          const data = await response.json();
+          
+          if (type === 'full') {
+            set({ 
+              analytics: {
+                platform: data.platform,
+                time: data.time,
+                streams: data.streams,
+                users: data.users,
+                contentQuality: data.contentQuality,
+                userActivity: data.userActivity,
+                full: data
+              },
+              loading: { ...get().loading, analytics: false }
+            });
+          } else {
+            set({ 
+              analytics: {
+                ...get().analytics,
+                [type]: data
+              },
+              loading: { ...get().loading, analytics: false }
+            });
+          }
+
+          return { success: true, data };
+        } catch (error) {
+          set({ loading: { ...get().loading, analytics: false } });
+          return { success: false, error: error.message };
+        }
+      },
+
+      generateAnalyticsReport: async (timeRange = '24h') => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/analytics/generate-report`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`
+            },
+            body: JSON.stringify({ timeRange })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to generate report');
+          }
+
+          const data = await response.json();
+          return { success: true, ...data };
         } catch (error) {
           return { success: false, error: error.message };
         }
