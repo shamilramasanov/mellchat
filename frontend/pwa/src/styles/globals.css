@@ -127,7 +127,8 @@ body {
   /* iOS PWA - Prevent bounce/overscroll */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  /* Разрешаем скролл во всех направлениях для мобильных */
+  touch-action: pan-y pan-x;
   
   /* Safe area для мобильных устройств */
   padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);

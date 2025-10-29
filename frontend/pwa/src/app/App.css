@@ -13,7 +13,10 @@
   width: calc(100% - var(--safe-area-left) - var(--safe-area-right));
   color: var(--text-primary);
   overscroll-behavior: none;
+  /* Разрешаем скролл внутри дочерних элементов */
   -webkit-overflow-scrolling: touch;
+  /* Разрешаем скролл пальцами */
+  touch-action: pan-y pan-x;
 }
 
 /* iOS Safari viewport height fix */

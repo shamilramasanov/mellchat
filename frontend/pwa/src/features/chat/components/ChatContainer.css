@@ -54,6 +54,13 @@
   /* Custom scrollbar - НЕЙТРАЛЬНЫЙ */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  
+  /* iOS smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Разрешаем скролл пальцами */
+  touch-action: pan-y;
+  /* Отключаем bounce только для этого контейнера, но разрешаем скролл */
+  overscroll-behavior-y: contain;
 }
 
 /* Убираем градиентную тень - карточки должны быть полностью прозрачными */
