@@ -32,28 +32,55 @@ const RecentStreams = () => {
   
   // Показываем недавние стримы, которые НЕ в activeStreams
   // ПЛЮС коллапсированные стримы из activeStreams
+  // ВАЖНО: Когда activeStreamId === null (переход домой), показываем все стримы из recentStreams
   const streamsToShow = useMemo(() => {
-    // Стримы из recentStreams, которых нет в activeStreams ИЛИ которые коллапсированы
+    // Если перешли домой (activeStreamId === null), показываем все стримы из recentStreams
+    if (activeStreamId === null) {
+      // Показываем все стримы из recentStreams, которые НЕ в activeStreams
+      const recentNotActive = recentStreams.filter(stream => 
+        !activeStreams.some(s => s.id === stream.id)
+      );
+      
+      // Плюс коллапсированные стримы из activeStreams
+      const collapsedActive = activeStreams.filter(stream => 
+        collapsedStreamIds.includes(stream.id)
+      );
+      
+      const allStreams = [...recentNotActive, ...collapsedActive];
+      const uniqueStreams = allStreams.filter((stream, index, self) =>
+        index === self.findIndex(s => s.id === stream.id)
+      );
+      
+      console.log('🔍 streamsToShow (home view):', {
+        recentStreamsCount: recentStreams.length,
+        activeStreamsCount: activeStreams.length,
+        activeStreamId,
+        collapsedCount: collapsedStreamIds.length,
+        streamsToShowCount: uniqueStreams.length,
+        streamsToShow: uniqueStreams.map(s => ({ id: s.id, title: s.title, platform: s.platform }))
+      });
+      
+      return uniqueStreams;
+    }
+    
+    // Иначе показываем только те, которые не в activeStreams ИЛИ коллапсированы
     const recentNotActive = recentStreams.filter(stream => {
       const isInActiveStreams = activeStreams.some(s => s.id === stream.id);
       const isCollapsed = collapsedStreamIds.includes(stream.id);
-      // Показываем, если не в activeStreams ИЛИ если коллапсирован
       return !isInActiveStreams || isCollapsed;
     });
     
-    // Коллапсированные стримы из activeStreams
     const collapsedActive = activeStreams.filter(stream => 
       collapsedStreamIds.includes(stream.id)
     );
     
-    // Объединяем и убираем дубликаты
     const allStreams = [...recentNotActive, ...collapsedActive];
     const uniqueStreams = allStreams.filter((stream, index, self) =>
       index === self.findIndex(s => s.id === stream.id)
     );
     
     return uniqueStreams;
-  }, [recentStreams, activeStreams, collapsedStreamIdsString]); // Используем строку для отслеживания изменений массива
+  }, [recentStreams, activeStreams, collapsedStreamIdsString, activeStreamId]);
   
   // DEBUG: логирование для отладки
   console.log('🔍 RecentStreams RERENDER:', {
