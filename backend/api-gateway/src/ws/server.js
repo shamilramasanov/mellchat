@@ -6,8 +6,8 @@ const sentimentService = require('../services/sentimentService');
 
 // Simple WS hub with per-connectionId subscriptions
 class WsHub {
-  constructor(server) {
-    this.wss = new WebSocket.Server({ server });
+  constructor(server, options = {}) {
+    this.wss = new WebSocket.Server({ server, ...options });
     this.subscribers = new Map(); // connectionId -> Set(ws)
     this.lastActivity = new Map(); // connectionId -> timestamp
     this.adminSubscribers = new Set(); // WebSocket connections for admin panel
@@ -428,8 +428,15 @@ function createWsServer(httpServer) {
   logger.info('Creating WebSocket server...');
   
   try {
-    const hub = new WsHub(httpServer);
-    logger.info(`✅ WebSocket server attached to HTTP server`);
+    // Настройка WebSocket сервера с поддержкой Railway
+    const wssOptions = {
+      server: httpServer,
+      path: '/ws', // Добавляем путь для WebSocket
+      perMessageDeflate: false, // Отключаем сжатие для лучшей совместимости
+    };
+    
+    const hub = new WsHub(httpServer, wssOptions);
+    logger.info(`✅ WebSocket server attached to HTTP server on /ws path`);
     
     // Периодическая отправка метрик админ панели каждые 30 секунд
     const metricsInterval = setInterval(async () => {

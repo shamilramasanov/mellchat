@@ -96,10 +96,22 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // ВРЕМЕННО: Разрешаем ВСЕ запросы для отладки CORS на Railway
+    // В production разрешаем только определенные домены
     if (process.env.NODE_ENV === 'production') {
-      logger.info('CORS allowed (production - all origins):', { origin });
-      return callback(null, true);
+      // Проверяем, что origin входит в список разрешенных
+      if (allowedOrigins.includes(origin)) {
+        logger.info('CORS allowed (production):', { origin });
+        return callback(null, true);
+      }
+      
+      // Разрешаем Vercel preview URLs
+      if (origin && origin.includes('.vercel.app')) {
+        logger.info('CORS allowed (Vercel preview):', { origin });
+        return callback(null, true);
+      }
+      
+      logger.warn('CORS blocked in production:', { origin });
+      return callback(new Error('Not allowed by CORS in production'));
     }
     
     if (allowedOrigins.includes(origin)) {
@@ -141,9 +153,7 @@ logger.info('✅ CORS middleware configured');
 app.options('*', cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (process.env.NODE_ENV === 'production') {
-      return callback(null, true);
-    }
+    
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
@@ -156,10 +166,21 @@ app.options('*', cors({
       process.env.CORS_ORIGIN,
       process.env.FRONTEND_URL
     ].filter(Boolean);
+    
+    if (process.env.NODE_ENV === 'production') {
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (origin && origin.includes('.vercel.app')) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS in production'));
+    }
+    
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(null, true); // Allow all in production
+    return callback(null, true); // Allow all in development
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
