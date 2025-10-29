@@ -1,7 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const adminMetricsService = require('../../services/adminMetricsService');
 const router = express.Router();
 
 // Mock admin user (в реальном проекте это будет в БД)
@@ -83,8 +82,13 @@ router.post('/auth/login', async (req, res) => {
 // GET /api/v1/admin/dashboard/metrics
 router.get('/dashboard/metrics', authenticateAdmin, async (req, res) => {
   try {
+    // Ленивая загрузка adminMetricsService
+    if (!global.adminMetricsService) {
+      global.adminMetricsService = require('../../services/adminMetricsService');
+    }
+    
     // Получаем реальные метрики из системы
-    const metrics = await adminMetricsService.getAllMetrics();
+    const metrics = await global.adminMetricsService.getAllMetrics();
     
     res.json(metrics);
   } catch (error) {
@@ -98,8 +102,13 @@ router.get('/dashboard/charts', authenticateAdmin, async (req, res) => {
   try {
     const { range = '24h' } = req.query;
     
+    // Ленивая загрузка adminMetricsService
+    if (!global.adminMetricsService) {
+      global.adminMetricsService = require('../../services/adminMetricsService');
+    }
+    
     // Получаем реальные данные для графиков
-    const charts = await adminMetricsService.getChartData(range);
+    const charts = await global.adminMetricsService.getChartData(range);
     
     res.json(charts);
   } catch (error) {

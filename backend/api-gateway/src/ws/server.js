@@ -293,7 +293,11 @@ function createWsServer(httpServer) {
   // Периодическая отправка метрик админ панели каждые 30 секунд
   const metricsInterval = setInterval(async () => {
     try {
-      // Получаем метрики через глобальную переменную
+      // Ленивая загрузка adminMetricsService
+      if (!global.adminMetricsService) {
+        global.adminMetricsService = require('../services/adminMetricsService');
+      }
+      
       if (global.adminMetricsService) {
         const metrics = await global.adminMetricsService.getAllMetrics();
         await hub.broadcastAdminMetrics(metrics);
