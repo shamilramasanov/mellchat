@@ -135,8 +135,34 @@ app.use(cors({
 }));
 logger.info('✅ CORS middleware configured');
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle preflight requests with same CORS configuration
+app.options('*', cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (process.env.NODE_ENV === 'production') {
+      return callback(null, true);
+    }
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://192.168.19.76:5173',
+      'https://mellchat.vercel.app',
+      'https://mellchat-v5y7.vercel.app',
+      'https://mellchat.live',
+      'https://www.mellchat.live',
+      process.env.CORS_ORIGIN,
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Allow all in production
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Rate limiting middleware (применяем перед body parsing)
 app.use(rateLimitStats); // Логируем статистику устройств
