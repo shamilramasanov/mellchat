@@ -118,6 +118,7 @@ export const useChatStore = create(
             const activeStreamId = get().activeStreamId;
             
             // Выполняем поиск в БД (только для дополнения результатов)
+            // ВАЖНО: Не устанавливаем loading в true, чтобы не блокировать локальную фильтрацию
             if (activeStreamId) {
               get().searchMessagesInDatabase(activeStreamId, query);
             }
@@ -151,7 +152,8 @@ export const useChatStore = create(
 
       // Поиск сообщений в базе данных
       searchMessagesInDatabase: async (streamId, searchQuery, limit = 100) => {
-        set({ loading: true, error: null });
+        // НЕ устанавливаем loading в true, чтобы не блокировать локальную фильтрацию
+        // Локальная фильтрация работает мгновенно, а поиск в БД идет в фоне
         
         try {
           console.log('🔍 Searching messages in database:', { streamId, searchQuery });
@@ -183,7 +185,6 @@ export const useChatStore = create(
             
             set({ 
               messages: allMessages.slice(-200), // Ограничиваем до 200 для памяти
-              loading: false,
               searchResults: true // Флаг что это результаты поиска
             });
             
@@ -196,7 +197,6 @@ export const useChatStore = create(
           console.error('❌ Search failed:', error);
           // Не устанавливаем error в state, чтобы не блокировать локальную фильтрацию
           set({ 
-            loading: false,
             searchResults: false
           });
           return { success: false, error: error.message };
