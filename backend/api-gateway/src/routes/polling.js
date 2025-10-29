@@ -17,6 +17,8 @@ router.get('/messages/:connectionId', async (req, res) => {
       afterId: lastMessageId
     });
     
+    logger.info(`📥 Polling returned ${messages?.length || 0} messages for ${connectionId}`);
+    
     res.json({
       success: true,
       messages: messages || [],

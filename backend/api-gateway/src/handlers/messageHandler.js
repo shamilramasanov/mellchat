@@ -312,7 +312,6 @@ class MessageHandler {
       let query = `
         SELECT * FROM messages 
         WHERE platform = $1 AND channel = $2
-        AND is_spam = false
       `;
       const params = [platform, channel];
       
@@ -349,8 +348,7 @@ class MessageHandler {
         SELECT COUNT(*) as count 
         FROM messages 
         WHERE platform = $1 AND channel = $2
-        AND id > $3 
-        AND is_spam = false
+        AND id > $3
       `;
       
       const result = await databaseService.query(query, [platform, channel, lastMessageId]);
