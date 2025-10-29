@@ -47,7 +47,7 @@ const MessageCard = ({ message }) => {
                    >
                      {message.username}
                    </span>
-            {message.platform && (
+            {message.platform && message.platform !== 'admin' && !message.isAdmin && (
               <div className="message-card__platform">
                 <img 
                   src={PLATFORM_LOGOS[message.platform]} 
