@@ -434,10 +434,33 @@ try {
 
   // Start WebSocket server on the same port as HTTP
   logger.info('Starting WebSocket server...');
-  const wsHub = createWsServer(httpServer);
-  app.set('wsHub', wsHub);
-  global.wsHub = wsHub; // Добавляем в глобальную переменную для AdminMetricsService
-  logger.info('✅ WebSocket server started');
+  let wsHub;
+  try {
+    wsHub = createWsServer(httpServer);
+    app.set('wsHub', wsHub);
+    global.wsHub = wsHub; // Добавляем в глобальную переменную для AdminMetricsService
+    logger.info('✅ WebSocket server started');
+  } catch (error) {
+    logger.error('❌ Failed to start WebSocket server:', error);
+    logger.warn('⚠️ WebSocket disabled, using polling fallback');
+    // Создаем mock wsHub для совместимости
+    wsHub = {
+      emitMessage: () => {}, // Пустая функция
+      getStats: () => ({ totalConnections: 0, totalSubscribers: 0 })
+    };
+    app.set('wsHub', wsHub);
+    global.wsHub = wsHub;
+  }
+  
+  // Добавляем endpoint для проверки WebSocket статуса
+  app.get('/ws/status', (req, res) => {
+    res.json({
+      status: 'active',
+      path: '/ws',
+      connections: wsHub.getStats().totalConnections,
+      subscribers: wsHub.getStats().totalSubscribers
+    });
+  });
 
 } catch (error) {
   logger.error('❌ Failed to start server:', error);

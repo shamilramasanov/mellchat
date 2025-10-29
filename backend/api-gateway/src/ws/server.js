@@ -433,10 +433,23 @@ function createWsServer(httpServer) {
       server: httpServer,
       path: '/ws', // Добавляем путь для WebSocket
       perMessageDeflate: false, // Отключаем сжатие для лучшей совместимости
+      verifyClient: (info) => {
+        logger.info(`WebSocket connection attempt from: ${info.origin}`);
+        return true; // Принимаем все соединения
+      }
     };
     
     const hub = new WsHub(httpServer, wssOptions);
     logger.info(`✅ WebSocket server attached to HTTP server on /ws path`);
+    
+    // Добавляем обработчик ошибок
+    hub.wss.on('error', (error) => {
+      logger.error('WebSocket server error:', error);
+    });
+    
+    hub.wss.on('connection', (ws, req) => {
+      logger.info(`WebSocket connection established from: ${req.socket.remoteAddress}`);
+    });
     
     // Периодическая отправка метрик админ панели каждые 30 секунд
     const metricsInterval = setInterval(async () => {

@@ -51,22 +51,29 @@ youtubeManager.on('message', async (msg) => {
     const connectionId = `youtube-${msg.channel}`;
     const wsHub = router.wsHubRef && router.wsHubRef();
     
+    logger.info(`📨 YouTube message received: ${msg.username}: ${msg.message}`);
+    
     // Сохраняем в базу данных
     try {
       await messageHandler.addMessage(msg, connectionId);
+      logger.info(`💾 YouTube message saved to DB: ${connectionId}`);
     } catch (error) {
       logger.error('Error saving YouTube message to DB:', error);
     }
     
-    if (wsHub) {
+    if (wsHub && typeof wsHub.emitMessage === 'function') {
       // Process emojis before sending to WebSocket
       try {
         const processedMsg = await emojiService.processMessage(msg, 'youtube');
         wsHub.emitMessage(connectionId, processedMsg);
+        logger.info(`📡 YouTube message sent via WebSocket: ${connectionId}`);
       } catch (error) {
         logger.error('Failed to process emojis for WS message:', error);
         wsHub.emitMessage(connectionId, msg); // Send original message
+        logger.info(`📡 YouTube message sent via WebSocket (fallback): ${connectionId}`);
       }
+    } else {
+      logger.warn(`⚠️ WebSocket not available, message not sent: ${connectionId}`);
     }
   } catch (error) {
     logger.error('Error in YouTube message event:', error);
