@@ -36,3 +36,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </I18nextProvider>
 );
 
+// Vercel trigger
