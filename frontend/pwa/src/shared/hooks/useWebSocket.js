@@ -163,10 +163,21 @@ export const useWebSocket = () => {
 
   // Subscribe to a stream connection
   const subscribe = useCallback((connectionId) => {
+    if (!connectionId) {
+      console.warn('⚠️ Cannot subscribe: connectionId is empty');
+      return;
+    }
     if (!currentConnectionIds.current.has(connectionId)) {
       currentConnectionIds.current.add(connectionId);
-      emit('subscribe', { connectionId });
-      console.log('🔌 Subscribed to:', connectionId, 'Total subscriptions:', currentConnectionIds.current.size);
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        emit('subscribe', { connectionId });
+        console.log('🔌 Subscribed to:', connectionId, 'Total subscriptions:', currentConnectionIds.current.size);
+      } else {
+        console.warn('⚠️ WebSocket not ready, connectionId will be subscribed on reconnect:', connectionId);
+        // connectionId уже добавлен в currentConnectionIds, будет подписан при переподключении
+      }
+    } else {
+      console.log('🔌 Already subscribed to:', connectionId);
     }
   }, [emit]);
 

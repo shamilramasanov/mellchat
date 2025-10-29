@@ -42,14 +42,20 @@ const StreamSubscriptionManager = () => {
     // Объединяем и убираем дубликаты
     const allConnectionIds = [...new Set([...activeConnectionIds, ...recentConnectionIds])];
 
-    // Подписываемся на все стримы (из activeStreams и recentStreams)
-    allConnectionIds.forEach(connectionId => {
-      subscribe(connectionId);
-    });
+    if (allConnectionIds.length > 0) {
+      console.log(`📡 StreamSubscriptionManager: Subscribing to ${allConnectionIds.length} connections:`, allConnectionIds);
+    }
 
-    // НЕ отписываемся - подписки управляются через unsubscribe() в других местах
+    // Подписываемся на все стримы (из activeStreams и recentStreams)
+    // Используем небольшую задержку для первого подключения, чтобы дать время восстановлению
+    const subscribeTimeout = setTimeout(() => {
+      allConnectionIds.forEach(connectionId => {
+        subscribe(connectionId);
+      });
+    }, isConnected ? 500 : 2000); // Если уже подключен, ждем меньше
+
     return () => {
-      // Ничего не делаем - подписки сохраняются
+      clearTimeout(subscribeTimeout);
     };
   }, [isConnected, activeStreams, recentStreams, subscribe]);
 

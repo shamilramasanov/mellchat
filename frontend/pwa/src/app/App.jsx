@@ -50,17 +50,21 @@ function App() {
   }, []);
 
   // Восстанавливаем подключения к стримам из recentStreams при загрузке страницы
+  // ВАЖНО: Всегда переподключаемся ко всем стримам из recentStreams, даже если у них есть connectionId
+  // потому что connectionId может быть устаревшим после перезагрузки сервера
   useEffect(() => {
     if (!isAuth || isLoading) return;
 
     const restoreRecentStreamsConnections = async () => {
+      // Восстанавливаем ВСЕ стримы из recentStreams, у которых есть platform и streamId
       const streamsToRestore = recentStreams.filter(stream => {
-        // Восстанавливаем только те стримы, у которых есть platform и streamId, но нет connectionId
-        // или connectionId может быть устаревшим
-        return stream.platform && stream.streamId && !stream.connectionId;
+        return stream.platform && stream.streamId;
       });
 
-      if (streamsToRestore.length === 0) return;
+      if (streamsToRestore.length === 0) {
+        console.log('📋 No recent streams to restore');
+        return;
+      }
 
       console.log(`🔄 Restoring ${streamsToRestore.length} recent stream connections...`);
 
@@ -98,10 +102,10 @@ function App() {
     };
 
     // Ждем немного перед восстановлением, чтобы WebSocket успел подключиться
-    const timeoutId = setTimeout(restoreRecentStreamsConnections, 1000);
+    const timeoutId = setTimeout(restoreRecentStreamsConnections, 1500);
     
     return () => clearTimeout(timeoutId);
-  }, [isAuth, isLoading, recentStreams]);
+  }, [isAuth, isLoading, recentStreams, updateRecentStreamConnectionId]);
 
   // Disconnect only active streams when user closes the browser tab
   // Recent streams should continue receiving messages
