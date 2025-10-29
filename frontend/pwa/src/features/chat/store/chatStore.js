@@ -15,6 +15,7 @@ export const useChatStore = create(
       searchQuery: '', // Поисковый запрос
       searchResults: false, // Флаг что показываем результаты поиска
       searchTimeout: null, // Таймер для debounce поиска
+      searchQueryDebounced: '', // Debounced версия запроса для локальной фильтрации
       activeStreamId: null, // Текущий активный стрим для поиска
       databaseConnected: false, // Статус подключения к БД
       loadingStrategy: null, // Текущая стратегия загрузки
@@ -66,7 +67,7 @@ export const useChatStore = create(
       
       // Простая функция для получения сообщений стрима
       getStreamMessages: (streamId) => {
-        const { messages, searchQuery, moodEnabled } = get();
+        const { messages, searchQueryDebounced, moodEnabled } = get();
         let streamMessages = messages.filter(m => m.streamId === streamId);
 
         // Если настроение выключено - показываем все сообщения
@@ -93,7 +94,7 @@ export const useChatStore = create(
           streamId,
           totalMessages: messages.length,
           streamMessagesCount: streamMessages.length,
-          searchQuery: searchQuery.trim(),
+          searchQueryDebounced: searchQueryDebounced.trim(),
           firstFewStreamMessages: streamMessages.slice(0, 3).map(m => ({ id: m.id, timestamp: m.timestamp })),
           allStreamIds: [...new Set(messages.map(m => m.streamId))],
           streamIdCounts: messages.reduce((acc, m) => {
@@ -102,9 +103,9 @@ export const useChatStore = create(
           }, {})
         });
 
-        // Применяем поиск если есть запрос
-        if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase();
+        // Применяем поиск если есть debounced запрос
+        if (searchQueryDebounced.trim()) {
+          const query = searchQueryDebounced.toLowerCase();
           streamMessages = streamMessages.filter(m =>
             m.username.toLowerCase().includes(query) ||
             (m.text || m.content || '').toLowerCase().includes(query)
@@ -116,6 +117,7 @@ export const useChatStore = create(
 
       // Функции поиска
       setSearchQuery: (query) => {
+        // Обновляем searchQuery сразу для отображения в UI
         set({ searchQuery: query });
         
         // Очищаем предыдущий таймер
@@ -123,18 +125,24 @@ export const useChatStore = create(
           clearTimeout(get().searchTimeout);
         }
         
-        // Если запрос не пустой, устанавливаем debounce таймер
+        // Если запрос не пустой, устанавливаем debounce таймер для поиска в БД и локальной фильтрации
         if (query.trim()) {
           const timeout = setTimeout(() => {
             const activeStreamId = get().activeStreamId;
+            
+            // Обновляем debounced версию для локальной фильтрации
+            set({ searchQueryDebounced: query });
+            
+            // Выполняем поиск в БД
             if (activeStreamId) {
               get().searchMessagesInDatabase(activeStreamId, query);
             }
-          }, 500); // 500ms задержка
+          }, 500); // 500ms задержка для поиска
           
           set({ searchTimeout: timeout });
         } else {
           // Если запрос пустой, сразу очищаем поиск
+          set({ searchQueryDebounced: '' });
           get().clearSearch();
         }
       },
@@ -147,7 +155,7 @@ export const useChatStore = create(
           clearTimeout(searchTimeout);
         }
         
-        set({ searchQuery: '', searchResults: false, searchTimeout: null });
+        set({ searchQuery: '', searchQueryDebounced: '', searchResults: false, searchTimeout: null });
         
         // Восстанавливаем все сообщения если был активный стрим
         if (activeStreamId) {
@@ -203,7 +211,7 @@ export const useChatStore = create(
 
       // Восстановление всех сообщений после поиска
       restoreAllMessages: async (streamId) => {
-        set({ searchQuery: '', searchResults: false });
+        set({ searchQuery: '', searchQueryDebounced: '', searchResults: false });
         return get().loadMessagesFromDatabase(streamId, 100);
       },
 

@@ -34,7 +34,7 @@ const ChatContainer = ({ onAddStream }) => {
   const getNextQuestionId = useChatStore((s) => s.getNextQuestionId);
   const getNextUnreadQuestionId = useChatStore((s) => s.getNextUnreadQuestionId);
   const setSearchQuery = useChatStore((s) => s.setSearchQuery);
-  const searchQuery = useChatStore((s) => s.searchQuery);
+  const searchQueryDebounced = useChatStore((s) => s.searchQueryDebounced);
   const loadMessagesFromDatabase = useChatStore((s) => s.loadMessagesFromDatabase);
   const loadMessagesAdaptive = useChatStore((s) => s.loadMessagesAdaptive) || (() => Promise.resolve({ success: false }));
   const hasMoreMessages = useChatStore((s) => s.hasMoreMessages) || false;
@@ -84,7 +84,7 @@ const ChatContainer = ({ onAddStream }) => {
     if (!activeStreamId) return [];
     const messages = getStreamMessages(activeStreamId);
     return Array.isArray(messages) ? messages : [];
-  }, [getStreamMessages, activeStreamId, messages, searchQuery, moodEnabled]);
+  }, [getStreamMessages, activeStreamId, messages, searchQueryDebounced, moodEnabled]);
 
   const hasMessages = streamMessages.length > 0;
   const hasStreams = activeStreams.length > 0;
@@ -343,11 +343,8 @@ const ChatContainer = ({ onAddStream }) => {
   // === Обработка поиска ===
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
-    // Скроллим вниз после поиска
-    setTimeout(() => {
-      scrollToBottom('smooth');
-    }, 100);
-  }, [setSearchQuery, scrollToBottom]);
+    // Не скроллим автоматически при поиске, пользователь сам решит куда скроллить
+  }, [setSearchQuery]);
 
   // === Обработка загрузки большего количества сообщений ===
   const handleLoadMore = useCallback(async () => {

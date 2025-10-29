@@ -16,7 +16,8 @@ const SearchBar = ({ onSearch, placeholder, onAddStream }) => {
   const handleChange = useCallback((e) => {
     const value = e.target.value;
     setQuery(value);
-    onSearch(value); // Вызываем поиск при каждом изменении
+    // Вызываем onSearch для немедленного обновления UI (debounce будет в store)
+    onSearch(value);
   }, [onSearch]);
 
   const handleSubmit = (e) => {
