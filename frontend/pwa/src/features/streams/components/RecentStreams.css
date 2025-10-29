@@ -115,8 +115,8 @@
 /* Бейдж непрочитанных сообщений (зеленый) */
 .recent-stream-card__unread-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: 16px;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.3));
   border: 1px solid rgba(16, 185, 129, 0.5);
   color: var(--color-success);
@@ -125,23 +125,33 @@
   margin-top: var(--spacing-xs);
   cursor: default;
   transition: all var(--transition-fast);
+  text-align: center;
 }
 
 .recent-stream-card__unread-badge--clickable {
   cursor: pointer;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.4));
+  border: 2px solid rgba(16, 185, 129, 0.7);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
 .recent-stream-card__unread-badge--clickable:hover {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.4));
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(16, 185, 129, 0.5));
+  border-color: rgba(16, 185, 129, 0.9);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+.recent-stream-card__unread-badge--clickable:active {
+  transform: translateY(0) scale(1.0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
 /* Бейдж непрочитанных вопросов (синий) */
 .recent-stream-card__unread-questions-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: 16px;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.3));
   border: 1px solid rgba(59, 130, 246, 0.5);
   color: #3B82F6;
@@ -150,16 +160,26 @@
   margin-top: var(--spacing-xs);
   cursor: default;
   transition: all var(--transition-fast);
+  text-align: center;
 }
 
 .recent-stream-card__unread-questions-badge--clickable {
   cursor: pointer;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.4));
+  border: 2px solid rgba(59, 130, 246, 0.7);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .recent-stream-card__unread-questions-badge--clickable:hover {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.4));
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.5));
+  border-color: rgba(59, 130, 246, 0.9);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+}
+
+.recent-stream-card__unread-questions-badge--clickable:active {
+  transform: translateY(0) scale(1.0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .recent-stream-card__author-link {
