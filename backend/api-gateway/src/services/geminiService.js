@@ -131,7 +131,7 @@ ${JSON.stringify(messages.slice(0, 50), null, 2)}
 }`;
 
     try {
-      const response = await this.makeRequest('gemini-pro', prompt);
+      const response = await this.makeRequest('gemini-2.5-flash', prompt);
       
       // Пытаемся распарсить JSON из ответа
       try {
@@ -177,7 +177,7 @@ ${JSON.stringify(metrics, null, 2)}
 Формат отчета должен быть структурированным и читаемым.`;
 
     try {
-      const response = await this.makeRequest('gemini-pro', prompt);
+      const response = await this.makeRequest('gemini-2.5-flash', prompt);
       return {
         report: response,
         generatedAt: new Date().toISOString(),
@@ -211,7 +211,7 @@ ${JSON.stringify(systemMetrics, null, 2)}
 }`;
 
     try {
-      const response = await this.makeRequest('gemini-pro', prompt);
+      const response = await this.makeRequest('gemini-2.5-flash', prompt);
       
       try {
         const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -251,7 +251,7 @@ ${JSON.stringify(systemState, null, 2)}
 4. Профилактические меры`;
 
     try {
-      const response = await this.makeRequest('gemini-pro', prompt);
+      const response = await this.makeRequest('gemini-2.5-flash', prompt);
       return {
         diagnosis: response,
         timestamp: new Date().toISOString()
@@ -282,7 +282,7 @@ ${JSON.stringify(systemState, null, 2)}
 Вопрос админа: ${message}`;
 
     try {
-      const response = await this.makeRequest('gemini-pro', prompt, context);
+      const response = await this.makeRequest('gemini-2.5-flash', prompt, context);
       return {
         response: response.trim(),
         timestamp: new Date().toISOString()
@@ -314,7 +314,7 @@ ${JSON.stringify(metrics, null, 2)}
 ]`;
 
     try {
-      const response = await this.makeRequest('gemini-pro', prompt);
+      const response = await this.makeRequest('gemini-2.5-flash', prompt);
       
       try {
         const jsonMatch = response.match(/\[[\s\S]*\]/);
