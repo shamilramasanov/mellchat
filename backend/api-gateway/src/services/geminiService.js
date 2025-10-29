@@ -7,6 +7,8 @@ class GeminiService {
     
     if (!this.apiKey) {
       logger.warn('⚠️ GEMINI_API_KEY не установлен. Gemini функции будут недоступны.');
+    } else {
+      logger.info('✅ Gemini API key configured');
     }
   }
 
@@ -15,6 +17,39 @@ class GeminiService {
    */
   isAvailable() {
     return !!this.apiKey;
+  }
+
+  /**
+   * Получение списка доступных моделей
+   */
+  async getAvailableModels() {
+    if (!this.isAvailable()) {
+      throw new Error('Gemini API key not configured');
+    }
+
+    try {
+      const url = `${this.baseUrl}/models`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      logger.info('Available Gemini models:', data.models?.length || 0);
+      
+      return data.models || [];
+    } catch (error) {
+      logger.error('Failed to get Gemini models:', error);
+      throw error;
+    }
   }
 
   /**

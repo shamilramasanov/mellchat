@@ -37,6 +37,32 @@ router.post('/chat', async (req, res) => {
   }
 });
 
+// Get available Gemini models
+router.get('/models', async (req, res) => {
+  try {
+    const models = await geminiService.getAvailableModels();
+    
+    res.json({
+      success: true,
+      models: models.map(model => ({
+        name: model.name,
+        displayName: model.displayName,
+        description: model.description,
+        supportedGenerationMethods: model.supportedGenerationMethods
+      })),
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Get Gemini models error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get available models',
+      details: error.message
+    });
+  }
+});
+
 // Get AI recommendations
 router.get('/recommendations', async (req, res) => {
   try {
