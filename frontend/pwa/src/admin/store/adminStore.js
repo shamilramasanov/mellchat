@@ -618,7 +618,7 @@ const useAdminStore = create(
       // === AI ASSISTANT METHODS ===
       sendAIMessage: async (message, conversationHistory = []) => {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
+          const response = await fetch(`${API_URL}/api/v1/ai/chat`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -640,7 +640,7 @@ const useAdminStore = create(
 
       getAIRecommendations: async (metrics = {}) => {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/v1/ai/recommendations?metrics=${encodeURIComponent(JSON.stringify(metrics))}`, {
+          const response = await fetch(`${API_URL}/api/v1/ai/recommendations?metrics=${encodeURIComponent(JSON.stringify(metrics))}`, {
             headers: {
               'Authorization': `Bearer ${get().token}`
             }
