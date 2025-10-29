@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import useAdminStore from '../store/adminStore';
+import useAdminStore from '../../store/adminStore';
 import MetricCard from './MetricCard';
 import ChartContainer from './ChartContainer';
 import AIInsights from './AIInsights';
