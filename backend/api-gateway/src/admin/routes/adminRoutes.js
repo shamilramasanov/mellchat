@@ -32,7 +32,7 @@ const authenticateAdmin = (req, res, next) => {
   }
 };
 
-// POST /api/admin/auth/login
+// POST /api/v1/admin/auth/login
 router.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -79,7 +79,7 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
-// GET /api/admin/dashboard/metrics
+// GET /api/v1/admin/dashboard/metrics
 router.get('/dashboard/metrics', authenticateAdmin, async (req, res) => {
   try {
     // Получаем реальные метрики из системы
@@ -113,7 +113,7 @@ router.get('/dashboard/metrics', authenticateAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/dashboard/charts
+// GET /api/v1/admin/dashboard/charts
 router.get('/dashboard/charts', authenticateAdmin, async (req, res) => {
   try {
     const { range = '24h' } = req.query;
@@ -199,7 +199,7 @@ router.get('/dashboard/charts', authenticateAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/ai/insights
+// GET /api/v1/admin/ai/insights
 router.get('/ai/insights', authenticateAdmin, async (req, res) => {
   try {
     const insights = {
@@ -281,7 +281,7 @@ router.get('/ai/insights', authenticateAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/ai/chat
+// POST /api/v1/admin/ai/chat
 router.post('/ai/chat', authenticateAdmin, async (req, res) => {
   try {
     const { message } = req.body;
@@ -315,7 +315,7 @@ router.post('/ai/chat', authenticateAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/system/health
+// GET /api/v1/admin/system/health
 router.get('/system/health', authenticateAdmin, async (req, res) => {
   try {
     const health = {

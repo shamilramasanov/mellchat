@@ -64,9 +64,9 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // ВРЕМЕННО: Разрешаем все запросы для отладки CORS на Railway
-    if (process.env.NODE_ENV === 'production' && origin && (origin.includes('mellchat.live') || origin.includes('.vercel.app'))) {
-      logger.info('CORS allowed (production wildcard):', { origin });
+    // ВРЕМЕННО: Разрешаем ВСЕ запросы для отладки CORS на Railway
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('CORS allowed (production - all origins):', { origin });
       return callback(null, true);
     }
     
@@ -156,8 +156,8 @@ app.use('/api/v1/adaptive', rateLimiters.messages, adaptiveMessagesRoutes);
 app.use('/api/v1/date-messages', rateLimiters.messages, dateMessagesRoutes);
 app.use('/api/v1/pagination-messages', rateLimiters.messages, paginationMessagesRoutes);
 
-// Admin routes - строгий лимит
-app.use('/api/v1/admin', rateLimiters.auth, adminRoutes);
+// Admin routes - специальный лимит для админ панели
+app.use('/api/v1/admin', rateLimiters.admin, adminRoutes);
 
 // Connect route - общий лимит
 app.use('/api/v1/connect', rateLimiters.general, connectRoutes);
