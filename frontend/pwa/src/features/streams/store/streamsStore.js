@@ -405,7 +405,8 @@ export const useStreamsStore = create(
           title: s.title,
           platform: s.platform,
           isLive: s.isLive,
-          lastViewed: s.lastViewed
+          lastViewed: s.lastViewed,
+          connectionId: s.connectionId // Сохраняем connectionId для WebSocket подписки
         })),
       }),
     }

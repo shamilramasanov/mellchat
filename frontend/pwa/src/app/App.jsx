@@ -45,10 +45,12 @@ function App() {
     }, 500);
   }, []);
 
-  // Disconnect all streams when user closes the browser tab
+  // Disconnect only active streams when user closes the browser tab
+  // Recent streams should continue receiving messages
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // Log disconnect attempt
+      // Отключаем только activeStreams, но НЕ recentStreams
+      // чтобы они продолжали получать сообщения после перезагрузки страницы
       if ('sendBeacon' in navigator) {
         // Use sendBeacon for reliable delivery during page unload
         activeStreams.forEach(stream => {
@@ -57,7 +59,7 @@ function App() {
         });
       }
       
-      // Also call disconnectAllStreams
+      // Disconnect only active streams, not recent streams
       disconnectAllStreams();
     };
 

@@ -11,30 +11,39 @@ import { useChatStore } from '../../chat/store/chatStore';
 const StreamSubscriptionManager = () => {
   const { subscribe, unsubscribe, on, off, isConnected } = useWebSocketContext();
   const activeStreams = useStreamsStore((state) => state.activeStreams);
+  const recentStreams = useStreamsStore((state) => state.recentStreams);
   const addMessage = useChatStore((state) => state.addMessage);
   const activeStreamsRef = useRef(activeStreams);
+  const recentStreamsRef = useRef(recentStreams);
 
-  // Всегда держим актуальный список activeStreams
+  // Всегда держим актуальный список стримов
   useEffect(() => {
     activeStreamsRef.current = activeStreams;
   }, [activeStreams]);
+
+  useEffect(() => {
+    recentStreamsRef.current = recentStreams;
+  }, [recentStreams]);
 
   useEffect(() => {
     if (!isConnected) {
       return;
     }
 
-    if (activeStreams.length === 0) {
-      return;
-    }
-
-    // Получаем все connectionIds из activeStreams
-    const connectionIds = activeStreams
+    // Получаем все connectionIds из activeStreams И recentStreams
+    const activeConnectionIds = activeStreams
       .map(s => s.connectionId)
       .filter(Boolean);
 
-    // Подписываемся на все стримы
-    connectionIds.forEach(connectionId => {
+    const recentConnectionIds = recentStreams
+      .map(s => s.connectionId)
+      .filter(Boolean);
+
+    // Объединяем и убираем дубликаты
+    const allConnectionIds = [...new Set([...activeConnectionIds, ...recentConnectionIds])];
+
+    // Подписываемся на все стримы (из activeStreams и recentStreams)
+    allConnectionIds.forEach(connectionId => {
       subscribe(connectionId);
     });
 
@@ -42,7 +51,7 @@ const StreamSubscriptionManager = () => {
     return () => {
       // Ничего не делаем - подписки сохраняются
     };
-  }, [isConnected, activeStreams, subscribe]);
+  }, [isConnected, activeStreams, recentStreams, subscribe]);
 
   useEffect(() => {
     // Listen for incoming messages
@@ -50,8 +59,11 @@ const StreamSubscriptionManager = () => {
       // Data format: { connectionId, message }
       // where message is the payload from backend
       if (data && data.message && data.connectionId) {
-        // Find stream by connectionId to get stable streamId
-        const stream = activeStreamsRef.current.find(s => s.connectionId === data.connectionId);
+        // Find stream by connectionId сначала в activeStreams, потом в recentStreams
+        let stream = activeStreamsRef.current.find(s => s.connectionId === data.connectionId);
+        if (!stream) {
+          stream = recentStreamsRef.current.find(s => s.connectionId === data.connectionId);
+        }
         
         if (!stream) {
           // Silently ignore messages for removed streams
@@ -68,7 +80,8 @@ const StreamSubscriptionManager = () => {
         
         console.log('📨 StreamSubscriptionManager: Adding message for stream:', stream.id, {
           messageId: messageWithStreamId.id,
-          text: messageWithStreamId.text?.substring(0, 50)
+          text: messageWithStreamId.text?.substring(0, 50),
+          isRecent: !activeStreamsRef.current.find(s => s.connectionId === data.connectionId)
         });
         
         addMessage(messageWithStreamId);
