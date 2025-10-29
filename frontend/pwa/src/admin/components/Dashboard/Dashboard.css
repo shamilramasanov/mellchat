@@ -39,6 +39,19 @@
   font-size: var(--font-size-sm);
 }
 
+.admin-dashboard__time-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.admin-dashboard__time-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 .admin-dashboard__refresh-btn {
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--glass-border);
@@ -51,12 +64,24 @@
 }
 
 .admin-dashboard__refresh-btn:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
+.admin-dashboard__refresh-btn:active {
+  background: var(--bg-tertiary);
+  transform: translateY(0);
+}
+
 .admin-dashboard__refresh-btn.active {
-  background: var(--accent-primary);
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.admin-dashboard__refresh-btn.active:hover {
+  background: #2563eb;
   color: white;
 }
 
