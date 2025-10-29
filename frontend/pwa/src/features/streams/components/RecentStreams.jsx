@@ -168,13 +168,7 @@ const RecentStreams = () => {
           <div className="recent-streams__header">
             <h2 className="recent-streams__title">
               {t('streams.recent')}
-              <span className="recent-streams__limit">
-                ({activeStreams.length}/3)
-              </span>
             </h2>
-            <p className="recent-streams__subtitle">
-              {t('streams.recentSubtitle')}
-            </p>
           </div>
 
           {streamsToShow.length === 0 ? (
