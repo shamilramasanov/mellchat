@@ -82,6 +82,11 @@ const useAdminStore = create(
         alerts: []
       },
 
+      // === WEBSOCKET ===
+      wsConnection: null,
+      isConnected: false,
+      lastUpdate: null,
+
       // === LOADING STATES ===
       loading: {
         metrics: false,
@@ -358,6 +363,79 @@ const useAdminStore = create(
           return { success: true, response: data.response };
         } catch (error) {
           return { success: false, error: error.message };
+        }
+      },
+
+      // === WEBSOCKET METHODS ===
+      connectWebSocket: () => {
+        const { wsConnection, disconnectWebSocket } = get();
+        
+        if (wsConnection) {
+          disconnectWebSocket();
+        }
+
+        try {
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const wsUrl = `${protocol}//${window.location.host}`;
+          const ws = new WebSocket(wsUrl);
+
+          ws.onopen = () => {
+            console.log('Admin WebSocket connected');
+            set({ isConnected: true });
+            
+            // Подписываемся на админ метрики
+            ws.send(JSON.stringify({ type: 'admin:subscribe' }));
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              
+              if (data.type === 'admin:metrics') {
+                set({ 
+                  metrics: data.data,
+                  lastUpdate: data.timestamp
+                });
+              } else if (data.type === 'admin:alert') {
+                const { aiAlerts } = get();
+                set({ 
+                  aiAlerts: [...aiAlerts, data.data]
+                });
+              }
+            } catch (error) {
+              console.error('Error parsing WebSocket message:', error);
+            }
+          };
+
+          ws.onclose = () => {
+            console.log('Admin WebSocket disconnected');
+            set({ isConnected: false });
+            
+            // Переподключаемся через 5 секунд
+            setTimeout(() => {
+              get().connectWebSocket();
+            }, 5000);
+          };
+
+          ws.onerror = (error) => {
+            console.error('Admin WebSocket error:', error);
+            set({ isConnected: false });
+          };
+
+          set({ wsConnection: ws });
+        } catch (error) {
+          console.error('Failed to connect WebSocket:', error);
+          set({ isConnected: false });
+        }
+      },
+
+      disconnectWebSocket: () => {
+        const { wsConnection } = get();
+        
+        if (wsConnection) {
+          wsConnection.send(JSON.stringify({ type: 'admin:unsubscribe' }));
+          wsConnection.close();
+          set({ wsConnection: null, isConnected: false });
         }
       }
     }),

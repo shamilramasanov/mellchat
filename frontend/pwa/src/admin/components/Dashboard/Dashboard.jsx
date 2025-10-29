@@ -37,6 +37,19 @@ const Dashboard = () => {
     loadDashboardData();
   }, [timeRange]);
 
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const { connectWebSocket, disconnectWebSocket } = useAdminStore.getState();
+    
+    // Подключаемся к WebSocket
+    connectWebSocket();
+    
+    // Отключаемся при размонтировании
+    return () => {
+      disconnectWebSocket();
+    };
+  }, []);
+
   // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!autoRefresh) return;
