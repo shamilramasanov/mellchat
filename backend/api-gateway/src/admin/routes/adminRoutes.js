@@ -547,4 +547,40 @@ router.get('/connections/list', authenticateAdmin, async (req, res) => {
 // Экспортируем blockedUsers для использования в других модулях
 router.blockedUsers = blockedUsers;
 
+// Отправка сообщения от админа всем подключенным пользователям
+router.post('/broadcast', authenticateAdmin, async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required'
+      });
+    }
+
+    const wsHub = req.app.get('wsHub');
+    if (!wsHub) {
+      return res.status(500).json({
+        success: false,
+        error: 'WebSocket hub not available'
+      });
+    }
+
+    const result = await wsHub.broadcastAdminMessage(message.trim());
+    
+    res.json({
+      success: true,
+      message: `Message sent to ${result.sentCount} clients`,
+      sentCount: result.sentCount
+    });
+  } catch (error) {
+    logger.error('Broadcast admin message error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to broadcast message'
+    });
+  }
+});
+
 module.exports = router;

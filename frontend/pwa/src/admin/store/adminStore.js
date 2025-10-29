@@ -421,6 +421,30 @@ const useAdminStore = create(
         }
       },
 
+      // Отправка сообщения всем подключенным пользователям
+      broadcastMessage: async (message) => {
+        try {
+          const response = await fetch(`${API_URL}/api/v1/admin/broadcast`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`
+            },
+            body: JSON.stringify({ message })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to broadcast message');
+          }
+
+          const data = await response.json();
+          return { success: true, sentCount: data.sentCount, message: data.message };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+
       // System Health
       updateSystemHealth: (health) => {
         set({ systemHealth: { ...get().systemHealth, ...health } });

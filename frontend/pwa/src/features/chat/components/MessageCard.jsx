@@ -37,7 +37,7 @@ const MessageCard = ({ message }) => {
       transition={{ duration: 0.3 }}
       data-message-id={message.id}
     >
-      <div className={`message-card ${message.isQuestion ? 'message-card--question' : ''}`}>
+      <div className={`message-card ${message.isQuestion ? 'message-card--question' : ''} ${message.isAdmin || message.platform === 'admin' ? 'message-card--admin' : ''}`}>
         {/* Top Row: Left side (Username/Platform) and Right side (Message Text + Timestamp) */}
         <div className="message-card__top">
           <div className="message-card__left">

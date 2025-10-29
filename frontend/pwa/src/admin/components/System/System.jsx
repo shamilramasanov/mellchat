@@ -12,7 +12,8 @@ const System = () => {
     fetchBlockedUsers,
     blockUser,
     unblockUser,
-    blockedUsers
+    blockedUsers,
+    broadcastMessage
   } = useAdminStore();
 
   const [connections, setConnections] = useState([]);
@@ -20,6 +21,8 @@ const System = () => {
   const [loading, setLoading] = useState(false);
   const [blockReason, setBlockReason] = useState('');
   const [blockingUserId, setBlockingUserId] = useState(null);
+  const [adminMessage, setAdminMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -91,6 +94,30 @@ const System = () => {
     }
   };
 
+  const handleBroadcastMessage = async () => {
+    if (!adminMessage.trim()) {
+      alert('Введите сообщение');
+      return;
+    }
+
+    if (!confirm(`Отправить сообщение всем подключенным пользователям?`)) return;
+
+    setSendingMessage(true);
+    try {
+      const result = await broadcastMessage(adminMessage.trim());
+      if (result.success) {
+        alert(`Сообщение отправлено ${result.sentCount} пользователям`);
+        setAdminMessage('');
+      } else {
+        alert(`Ошибка: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   return (
     <div className="admin-system">
       <div className="admin-system__header">
@@ -99,6 +126,53 @@ const System = () => {
           {loading ? '🔄 Обновление...' : '🔄 Обновить'}
         </button>
       </div>
+
+      {/* Отправка сообщения всем пользователям */}
+      <section className="admin-system__section">
+        <h2>📢 Отправка сообщения всем подключенным пользователям</h2>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <textarea
+            value={adminMessage}
+            onChange={(e) => setAdminMessage(e.target.value)}
+            placeholder="Введите сообщение для отправки всем пользователям..."
+            style={{
+              flex: 1,
+              padding: '10px',
+              fontSize: '14px',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '8px',
+              background: 'var(--bg-tertiary)',
+              color: 'var(--text-primary)',
+              minHeight: '80px',
+              resize: 'vertical'
+            }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && e.ctrlKey) {
+                handleBroadcastMessage();
+              }
+            }}
+          />
+          <button
+            onClick={handleBroadcastMessage}
+            disabled={sendingMessage || !adminMessage.trim()}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              background: sendingMessage ? 'var(--bg-tertiary)' : 'var(--accent-primary)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: sendingMessage || !adminMessage.trim() ? 'not-allowed' : 'pointer',
+              opacity: sendingMessage || !adminMessage.trim() ? 0.5 : 1
+            }}
+          >
+            {sendingMessage ? '📤 Отправка...' : '📢 Отправить'}
+          </button>
+        </div>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+          Сообщение появится в чате всех подключенных пользователей с зеленым фоном от имени "admin"
+        </p>
+      </section>
 
       {/* Активные подключения */}
       <section className="admin-system__section">

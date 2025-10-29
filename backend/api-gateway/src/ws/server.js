@@ -270,6 +270,50 @@ class WsHub {
     }
   }
 
+  // Отправка сообщения от админа всем подключенным пользователям
+  async broadcastAdminMessage(message) {
+    const adminMessage = {
+      id: `admin-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      username: 'admin',
+      text: message,
+      content: message,
+      timestamp: Date.now(),
+      platform: 'admin',
+      isAdmin: true,
+      isQuestion: false,
+      sentiment: 'neutral'
+    };
+
+    const data = JSON.stringify({ 
+      type: 'admin:message', 
+      payload: adminMessage,
+      timestamp: new Date().toISOString()
+    });
+
+    // Отправляем всем подписчикам всех подключений
+    let sentCount = 0;
+    for (const [connectionId, wsSet] of this.subscribers.entries()) {
+      for (const ws of wsSet) {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            const connectionData = JSON.stringify({ 
+              type: 'message', 
+              connectionId, 
+              payload: adminMessage 
+            });
+            ws.send(connectionData);
+            sentCount++;
+          } catch (e) {
+            logger.error('Admin message WS send error:', e.message);
+          }
+        }
+      }
+    }
+
+    logger.info(`📢 Admin message broadcast to ${sentCount} clients`);
+    return { success: true, sentCount };
+  }
+
   // Отправка алертов админ панели
   broadcastAdminAlert(alert) {
     if (this.adminSubscribers.size === 0) return;
