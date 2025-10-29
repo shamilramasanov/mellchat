@@ -112,11 +112,7 @@ export default defineConfig({
         // Force update Service Worker
         mode: 'production',
         // Force cache busting with new SW name
-        swDest: 'sw-v3.js',
-        // Force update all caches
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
+        swDest: 'sw-v3.js'
       }
     })
   ],

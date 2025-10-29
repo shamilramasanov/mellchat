@@ -13,3 +13,7 @@ restartPolicyMaxRetries = 10
 # Railway will use the backend/api-gateway directory
 [build.context]
 context = "backend/api-gateway"
+
+# Skip frontend build for backend deployment
+[build.ignore]
+ignore = ["frontend/**", "docs/**", "*.md"]
