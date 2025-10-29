@@ -3,8 +3,26 @@ const router = express.Router();
 const logger = require('../utils/logger');
 const geminiService = require('../services/geminiService');
 
+// CORS middleware for AI routes
+const addCorsHeaders = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+};
+
+// Handle OPTIONS requests for CORS
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
+
 // AI Chat endpoint
-router.post('/chat', async (req, res) => {
+router.post('/chat', addCorsHeaders, async (req, res) => {
   try {
     const { message, conversationHistory = [] } = req.body;
     
@@ -38,7 +56,7 @@ router.post('/chat', async (req, res) => {
 });
 
 // Get available Gemini models
-router.get('/models', async (req, res) => {
+router.get('/models', addCorsHeaders, async (req, res) => {
   try {
     const models = await geminiService.getAvailableModels();
     
@@ -64,7 +82,7 @@ router.get('/models', async (req, res) => {
 });
 
 // Get AI recommendations
-router.get('/recommendations', async (req, res) => {
+router.get('/recommendations', addCorsHeaders, async (req, res) => {
   try {
     const { metrics } = req.query;
     
@@ -94,7 +112,7 @@ router.get('/recommendations', async (req, res) => {
 });
 
 // Analyze content
-router.post('/analyze', async (req, res) => {
+router.post('/analyze', addCorsHeaders, async (req, res) => {
   try {
     const { messages } = req.body;
     
@@ -122,7 +140,7 @@ router.post('/analyze', async (req, res) => {
 });
 
 // Generate report
-router.post('/report', async (req, res) => {
+router.post('/report', addCorsHeaders, async (req, res) => {
   try {
     const { metrics, timeRange = '24h' } = req.body;
     
@@ -150,7 +168,7 @@ router.post('/report', async (req, res) => {
 });
 
 // System optimization
-router.post('/optimize', async (req, res) => {
+router.post('/optimize', addCorsHeaders, async (req, res) => {
   try {
     const { systemMetrics } = req.body;
     
@@ -178,7 +196,7 @@ router.post('/optimize', async (req, res) => {
 });
 
 // Troubleshoot issues
-router.post('/troubleshoot', async (req, res) => {
+router.post('/troubleshoot', addCorsHeaders, async (req, res) => {
   try {
     const { errorLogs = [], systemState = {} } = req.body;
     
