@@ -31,6 +31,8 @@ const ChatContainer = ({ onAddStream }) => {
   const getStreamMessages = useChatStore((s) => s.getStreamMessages);
   const getFirstUnreadMessageId = useChatStore((s) => s.getFirstUnreadMessageId);
   const getFirstUnreadQuestionId = useChatStore((s) => s.getFirstUnreadQuestionId);
+  const getNextQuestionId = useChatStore((s) => s.getNextQuestionId);
+  const getNextUnreadQuestionId = useChatStore((s) => s.getNextUnreadQuestionId);
   const setSearchQuery = useChatStore((s) => s.setSearchQuery);
   const searchQuery = useChatStore((s) => s.searchQuery);
   const loadMessagesFromDatabase = useChatStore((s) => s.loadMessagesFromDatabase);
@@ -58,6 +60,8 @@ const ChatContainer = ({ onAddStream }) => {
   const lastLoadMoreTimeRef = useRef(0);
   const autoLoadTriggeredRef = useRef(false);
   const lastLoadedMessageIdRef = useRef(null);
+  const currentQuestionIdRef = useRef(null); // Текущий вопрос для циклической навигации
+  const questionsModeRef = useRef('unread'); // 'unread' или 'all' - режим навигации
 
   // === State ===
   const [showNewBtn, setShowNewBtn] = useState(false);
@@ -154,16 +158,122 @@ const ChatContainer = ({ onAddStream }) => {
     }, 100);
   }, [getFirstUnreadMessageId, scrollToBottom, markMessagesAsRead]);
 
-  // Скролл к первому непрочитанному вопросу
+  // Скролл к первому непрочитанному вопросу с циклической навигацией
   const scrollToFirstUnreadQuestion = useCallback((streamId, behavior = 'smooth') => {
     if (!streamId) return;
     
+    // Если уже есть текущий вопрос (повторный клик)
+    if (currentQuestionIdRef.current) {
+      // Если мы в режиме непрочитанных вопросов
+      if (questionsModeRef.current === 'unread') {
+        const nextUnreadQuestionId = getNextUnreadQuestionId(streamId, currentQuestionIdRef.current);
+        
+        if (nextUnreadQuestionId) {
+          // Есть еще непрочитанные вопросы
+          currentQuestionIdRef.current = nextUnreadQuestionId;
+          
+          setTimeout(() => {
+            const el = containerRef.current;
+            if (!el) return;
+
+            const questionElement = el.querySelector(`[data-message-id="${nextUnreadQuestionId}"]`);
+            if (questionElement) {
+              questionElement.scrollIntoView({ behavior, block: 'center' });
+              
+              setTimeout(() => {
+                markMessagesAsRead(streamId, nextUnreadQuestionId);
+              }, 500);
+            }
+          }, 100);
+          
+          return;
+        } else {
+          // Непрочитанные вопросы закончились, переходим к первому вопросу в чате
+          questionsModeRef.current = 'all';
+          const firstQuestionId = getNextQuestionId(streamId, null);
+          
+          if (firstQuestionId) {
+            currentQuestionIdRef.current = firstQuestionId;
+            
+            setTimeout(() => {
+              const el = containerRef.current;
+              if (!el) return;
+
+              const questionElement = el.querySelector(`[data-message-id="${firstQuestionId}"]`);
+              if (questionElement) {
+                questionElement.scrollIntoView({ behavior, block: 'center' });
+                
+                setTimeout(() => {
+                  markMessagesAsRead(streamId, firstQuestionId);
+                }, 500);
+              }
+            }, 100);
+          }
+          
+          return;
+        }
+      } else {
+        // Режим навигации по всем вопросам
+        const nextQuestionId = getNextQuestionId(streamId, currentQuestionIdRef.current);
+        
+        if (nextQuestionId) {
+          currentQuestionIdRef.current = nextQuestionId;
+          
+          setTimeout(() => {
+            const el = containerRef.current;
+            if (!el) return;
+
+            const questionElement = el.querySelector(`[data-message-id="${nextQuestionId}"]`);
+            if (questionElement) {
+              questionElement.scrollIntoView({ behavior, block: 'center' });
+              
+              setTimeout(() => {
+                markMessagesAsRead(streamId, nextQuestionId);
+              }, 500);
+            }
+          }, 100);
+        }
+        
+        return;
+      }
+    }
+    
+    // Первый клик - ищем первый непрочитанный вопрос
+    questionsModeRef.current = 'unread';
     const questionId = getFirstUnreadQuestionId(streamId);
+    
     if (!questionId) {
-      // Если нет непрочитанных вопросов, скроллим в конец
-      scrollToBottom(behavior);
+      // Если нет непрочитанных вопросов, переходим к первому вопросу в чате
+      questionsModeRef.current = 'all';
+      const firstQuestionId = getNextQuestionId(streamId, null);
+      
+      if (firstQuestionId) {
+        currentQuestionIdRef.current = firstQuestionId;
+        
+        setTimeout(() => {
+          const el = containerRef.current;
+          if (!el) return;
+
+          const questionElement = el.querySelector(`[data-message-id="${firstQuestionId}"]`);
+          if (questionElement) {
+            questionElement.scrollIntoView({ behavior, block: 'center' });
+            
+            setTimeout(() => {
+              markMessagesAsRead(streamId, firstQuestionId);
+            }, 500);
+          }
+        }, 100);
+      } else {
+        // Если вопросов вообще нет, скроллим в конец
+        scrollToBottom(behavior);
+        currentQuestionIdRef.current = null;
+        questionsModeRef.current = 'unread';
+      }
       return;
     }
+
+    // Нашли непрочитанный вопрос
+    currentQuestionIdRef.current = questionId;
 
     // Ждем немного чтобы DOM обновился
     setTimeout(() => {
@@ -182,9 +292,11 @@ const ChatContainer = ({ onAddStream }) => {
       } else {
         // Если элемент не найден, скроллим в конец
         scrollToBottom(behavior);
+        currentQuestionIdRef.current = null;
+        questionsModeRef.current = 'unread';
       }
     }, 100);
-  }, [getFirstUnreadQuestionId, scrollToBottom, markMessagesAsRead]);
+  }, [getFirstUnreadQuestionId, getNextQuestionId, getNextUnreadQuestionId, scrollToBottom, markMessagesAsRead]);
 
   // Отдельная функция для автоскролла (без проверки hasMessages)
   const forceScrollToBottom = useCallback((behavior = 'instant') => {
@@ -374,6 +486,10 @@ const ChatContainer = ({ onAddStream }) => {
   useEffect(() => {
     if (activeStreamId) {
       setActiveStreamId(activeStreamId);
+      
+      // Сбрасываем текущий вопрос при смене стрима
+      currentQuestionIdRef.current = null;
+      questionsModeRef.current = 'unread';
       
       // Когда открываем стрим - помечаем ВСЕ сообщения как прочитанные
       // Добавляем небольшую задержку чтобы сообщения успели загрузиться

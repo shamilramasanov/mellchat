@@ -955,9 +955,7 @@ export const useChatStore = create(
         const lastReadId = lastReadMessageIds[streamId];
         
         if (!lastReadId || streamMessages.length === 0) {
-          // Если нет прочитанных, ищем первый вопрос
-          const firstQuestion = streamMessages.find(m => m.isQuestion);
-          return firstQuestion?.id || streamMessages[streamMessages.length - 1]?.id;
+          return null; // Возвращаем null если нет прочитанных сообщений
         }
         
         // Находим индекс последнего прочитанного сообщения
@@ -970,8 +968,91 @@ export const useChatStore = create(
           }
         }
         
-        // Если непрочитанных вопросов нет, возвращаем последнее сообщение
-        return streamMessages[streamMessages.length - 1]?.id;
+        // Если непрочитанных вопросов нет, возвращаем null
+        return null;
+      },
+
+      // Получить следующий непрочитанный вопрос после указанного ID
+      getNextUnreadQuestionId: (streamId, currentQuestionId) => {
+        const { messages, lastReadMessageIds } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        const lastReadId = lastReadMessageIds[streamId];
+        
+        if (!lastReadId || streamMessages.length === 0) {
+          return null;
+        }
+        
+        const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+        
+        // Если currentQuestionId не указан, возвращаем первый непрочитанный
+        if (!currentQuestionId) {
+          for (let i = lastReadIndex + 1; i < streamMessages.length; i++) {
+            if (streamMessages[i].isQuestion) {
+              return streamMessages[i].id;
+            }
+          }
+          return null;
+        }
+        
+        // Находим индекс текущего вопроса
+        const currentIndex = streamMessages.findIndex(m => m.id === currentQuestionId);
+        
+        if (currentIndex === -1 || currentIndex <= lastReadIndex) {
+          // Текущий вопрос не найден или он прочитан, возвращаем первый непрочитанный
+          for (let i = lastReadIndex + 1; i < streamMessages.length; i++) {
+            if (streamMessages[i].isQuestion) {
+              return streamMessages[i].id;
+            }
+          }
+          return null;
+        }
+        
+        // Ищем следующий непрочитанный вопрос после текущего
+        for (let i = currentIndex + 1; i < streamMessages.length; i++) {
+          if (streamMessages[i].isQuestion) {
+            return streamMessages[i].id;
+          }
+        }
+        
+        // Непрочитанных вопросов больше нет
+        return null;
+      },
+
+      // Получить все вопросы для стрима
+      getAllQuestions: (streamId) => {
+        const { messages } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        return streamMessages.filter(m => m.isQuestion);
+      },
+
+      // Получить следующий вопрос после указанного ID
+      getNextQuestionId: (streamId, currentQuestionId) => {
+        const { messages } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        const questions = streamMessages.filter(m => m.isQuestion);
+        
+        if (questions.length === 0) return null;
+        
+        // Если currentQuestionId не указан, возвращаем первый вопрос
+        if (!currentQuestionId) {
+          return questions[0]?.id;
+        }
+        
+        // Находим индекс текущего вопроса
+        const currentIndex = questions.findIndex(q => q.id === currentQuestionId);
+        
+        if (currentIndex === -1) {
+          // Текущий вопрос не найден, возвращаем первый
+          return questions[0]?.id;
+        }
+        
+        // Если это не последний вопрос, возвращаем следующий
+        if (currentIndex < questions.length - 1) {
+          return questions[currentIndex + 1]?.id;
+        }
+        
+        // Если это последний вопрос, возвращаем первый (цикл)
+        return questions[0]?.id;
       }
     }),
     {
