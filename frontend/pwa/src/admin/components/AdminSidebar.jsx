@@ -63,13 +63,6 @@ const AdminSidebar = ({
       transition={{ duration: 0.3 }}
     >
       <div className="admin-sidebar__header">
-        <div className="admin-sidebar__logo">
-          <span className="admin-sidebar__logo-icon">🎯</span>
-          {!collapsed && (
-            <span className="admin-sidebar__logo-text">{t('admin.title')}</span>
-          )}
-        </div>
-        
         <button 
           className="admin-sidebar__toggle"
           onClick={onToggleCollapse}

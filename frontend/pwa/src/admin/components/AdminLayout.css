@@ -45,7 +45,7 @@
 .admin-sidebar__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--glass-border);
 }
