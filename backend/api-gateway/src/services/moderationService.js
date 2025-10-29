@@ -319,6 +319,78 @@ class ModerationService {
   }
 
   /**
+   * Получение статистики модерации
+   */
+  async getModerationStats(timeRange = '24h') {
+    try {
+      const interval = this._getInterval(timeRange);
+      
+      const query = `
+        SELECT 
+          COUNT(*) as total_messages,
+          COUNT(*) FILTER (WHERE is_deleted = true) as blocked_messages,
+          COUNT(*) FILTER (WHERE is_spam = true) as spam_messages,
+          COUNT(DISTINCT username) FILTER (WHERE is_deleted = true) as blocked_users,
+          AVG(CASE WHEN is_spam = true THEN 1 ELSE 0 END) * 100 as spam_percentage
+        FROM messages
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+      `;
+
+      const result = await databaseService.query(query);
+      const row = result.rows[0];
+      
+      return {
+        totalMessages: parseInt(row.total_messages),
+        blockedMessages: parseInt(row.blocked_messages),
+        spamMessages: parseInt(row.spam_messages),
+        blockedUsers: parseInt(row.blocked_users),
+        spamPercentage: parseFloat(row.spam_percentage || 0),
+        moderationRate: row.total_messages > 0 ? (parseInt(row.blocked_messages) / parseInt(row.total_messages)) * 100 : 0
+      };
+    } catch (error) {
+      logger.error('Get moderation stats error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Получение истории модерации
+   */
+  async getModerationHistory(limit = 50, offset = 0) {
+    try {
+      const query = `
+        SELECT 
+          id,
+          username,
+          text,
+          platform,
+          is_deleted,
+          moderation_reason,
+          created_at
+        FROM messages
+        WHERE is_deleted = true OR is_spam = true
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+      `;
+
+      const result = await databaseService.query(query, [limit, offset]);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        username: row.username,
+        text: row.text,
+        platform: row.platform,
+        isBlocked: row.is_deleted,
+        reason: row.moderation_reason,
+        timestamp: row.created_at
+      }));
+    } catch (error) {
+      logger.error('Get moderation history error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Преобразование timeRange в SQL интервал
    */
   _getInterval(timeRange) {

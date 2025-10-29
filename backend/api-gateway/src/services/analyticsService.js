@@ -404,6 +404,169 @@ class AnalyticsService {
   /**
    * Полная сводка аналитики
    */
+  async getTimeAnalytics(timeRange = '24h') {
+    try {
+      const interval = this._getInterval(timeRange);
+      
+      const query = `
+        SELECT 
+          DATE_TRUNC('hour', created_at) as hour,
+          COUNT(*) as message_count,
+          COUNT(DISTINCT username) as unique_users
+        FROM messages
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+        GROUP BY DATE_TRUNC('hour', created_at)
+        ORDER BY hour
+      `;
+
+      const result = await databaseService.query(query);
+      
+      return {
+        hourly: result.rows.map(row => ({
+          hour: row.hour,
+          messageCount: parseInt(row.message_count),
+          uniqueUsers: parseInt(row.unique_users)
+        })),
+        totalMessages: result.rows.reduce((sum, row) => sum + parseInt(row.message_count), 0)
+      };
+    } catch (error) {
+      logger.error('Error getting time analytics:', error);
+      throw error;
+    }
+  }
+
+  async getStreamAnalytics(timeRange = '24h') {
+    try {
+      const interval = this._getInterval(timeRange);
+      
+      const query = `
+        SELECT 
+          platform,
+          COUNT(DISTINCT connection_id) as active_streams,
+          COUNT(*) as total_messages,
+          AVG(LENGTH(text)) as avg_message_length
+        FROM messages
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+        GROUP BY platform
+        ORDER BY total_messages DESC
+      `;
+
+      const result = await databaseService.query(query);
+      
+      return {
+        streams: result.rows.map(row => ({
+          platform: row.platform,
+          activeStreams: parseInt(row.active_streams),
+          totalMessages: parseInt(row.total_messages),
+          avgMessageLength: parseFloat(row.avg_message_length || 0)
+        })),
+        totalActiveStreams: result.rows.reduce((sum, row) => sum + parseInt(row.active_streams), 0)
+      };
+    } catch (error) {
+      logger.error('Error getting stream analytics:', error);
+      throw error;
+    }
+  }
+
+  async getUserAnalytics(timeRange = '24h') {
+    try {
+      const interval = this._getInterval(timeRange);
+      
+      const query = `
+        SELECT 
+          username,
+          platform,
+          COUNT(*) as message_count,
+          COUNT(*) FILTER (WHERE is_question = true) as questions_count,
+          MAX(created_at) as last_activity
+        FROM messages
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+        GROUP BY username, platform
+        ORDER BY message_count DESC
+        LIMIT 50
+      `;
+
+      const result = await databaseService.query(query);
+      
+      return {
+        topUsers: result.rows.map(row => ({
+          username: row.username,
+          platform: row.platform,
+          messageCount: parseInt(row.message_count),
+          questionsCount: parseInt(row.questions_count),
+          lastActivity: row.last_activity
+        })),
+        totalUsers: result.rows.length
+      };
+    } catch (error) {
+      logger.error('Error getting user analytics:', error);
+      throw error;
+    }
+  }
+
+  async getContentQualityAnalytics(timeRange = '24h') {
+    try {
+      const interval = this._getInterval(timeRange);
+      
+      const query = `
+        SELECT 
+          COUNT(*) as total_messages,
+          COUNT(*) FILTER (WHERE is_question = true) as questions_count,
+          COUNT(*) FILTER (WHERE is_spam = true) as spam_count,
+          AVG(LENGTH(text)) as avg_length,
+          COUNT(*) FILTER (WHERE LENGTH(text) > 100) as long_messages
+        FROM messages
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+      `;
+
+      const result = await databaseService.query(query);
+      const row = result.rows[0];
+      
+      return {
+        totalMessages: parseInt(row.total_messages),
+        questionsCount: parseInt(row.questions_count),
+        spamCount: parseInt(row.spam_count),
+        avgLength: parseFloat(row.avg_length || 0),
+        longMessages: parseInt(row.long_messages),
+        qualityScore: Math.max(0, 100 - (parseInt(row.spam_count) / parseInt(row.total_messages)) * 100)
+      };
+    } catch (error) {
+      logger.error('Error getting content quality analytics:', error);
+      throw error;
+    }
+  }
+
+  async getUserActivityAnalytics(timeRange = '7d') {
+    try {
+      const interval = this._getInterval(timeRange);
+      
+      const query = `
+        SELECT 
+          DATE_TRUNC('day', created_at) as day,
+          COUNT(DISTINCT username) as unique_users,
+          COUNT(*) as total_messages
+        FROM messages
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+        GROUP BY DATE_TRUNC('day', created_at)
+        ORDER BY day
+      `;
+
+      const result = await databaseService.query(query);
+      
+      return {
+        daily: result.rows.map(row => ({
+          day: row.day,
+          uniqueUsers: parseInt(row.unique_users),
+          totalMessages: parseInt(row.total_messages)
+        })),
+        totalUniqueUsers: new Set(result.rows.flatMap(row => [row.unique_users])).size
+      };
+    } catch (error) {
+      logger.error('Error getting user activity analytics:', error);
+      throw error;
+    }
+  }
+
   async getFullAnalytics(timeRange = '24h') {
     try {
       const [

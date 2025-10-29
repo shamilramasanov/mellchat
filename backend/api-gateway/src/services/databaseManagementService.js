@@ -210,6 +210,44 @@ class DatabaseManagementService {
   }
 
   /**
+   * Статистика пула соединений
+   */
+  async getConnectionPoolStats() {
+    try {
+      const query = `
+        SELECT 
+          count(*) as total_connections,
+          count(*) FILTER (WHERE state = 'active') as active_connections,
+          count(*) FILTER (WHERE state = 'idle') as idle_connections,
+          count(*) FILTER (WHERE state = 'idle in transaction') as idle_in_transaction
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+      `;
+
+      const result = await databaseService.query(query);
+      const row = result.rows[0];
+      
+      return {
+        totalConnections: parseInt(row.total_connections),
+        activeConnections: parseInt(row.active_connections),
+        idleConnections: parseInt(row.idle_connections),
+        idleInTransaction: parseInt(row.idle_in_transaction),
+        utilizationRate: row.total_connections > 0 ? (parseInt(row.active_connections) / parseInt(row.total_connections)) * 100 : 0
+      };
+    } catch (error) {
+      logger.error('Get connection pool stats error:', error);
+      // Возвращаем базовую информацию если запрос не удался
+      return {
+        totalConnections: 0,
+        activeConnections: 0,
+        idleConnections: 0,
+        idleInTransaction: 0,
+        utilizationRate: 0
+      };
+    }
+  }
+
+  /**
    * Полная сводка по БД
    */
   async getDatabaseOverview() {

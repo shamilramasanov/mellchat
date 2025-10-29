@@ -8,6 +8,15 @@ const moderationService = require('../../services/moderationService');
 const databaseManagementService = require('../../services/databaseManagementService');
 const logger = require('../../utils/logger');
 
+// Handle CORS preflight requests for admin routes
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
+
 // Mock admin user (в реальном проекте это будет в БД)
 const ADMIN_USER = {
   id: '1',
@@ -21,6 +30,15 @@ const ADMIN_USER = {
 };
 
 const auditService = require('../../services/auditService');
+
+// Middleware для добавления CORS заголовков
+const addCorsHeaders = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+};
 
 // Middleware для проверки JWT токена и логирования
 const authenticateAdmin = async (req, res, next) => {
@@ -70,7 +88,7 @@ const requireRole = (...roles) => {
 };
 
 // POST /api/v1/admin/auth/login
-router.post('/auth/login', async (req, res) => {
+router.post('/auth/login', addCorsHeaders, async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -117,7 +135,7 @@ router.post('/auth/login', async (req, res) => {
 });
 
 // GET /api/v1/admin/dashboard/metrics
-router.get('/dashboard/metrics', authenticateAdmin, async (req, res) => {
+router.get('/dashboard/metrics', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     // Ленивая загрузка adminMetricsService
     if (!global.adminMetricsService) {
@@ -135,7 +153,7 @@ router.get('/dashboard/metrics', authenticateAdmin, async (req, res) => {
 });
 
 // GET /api/v1/admin/dashboard/charts
-router.get('/dashboard/charts', authenticateAdmin, async (req, res) => {
+router.get('/dashboard/charts', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     const { range = '24h' } = req.query;
     
@@ -842,7 +860,7 @@ router.post('/message', authenticateAdmin, async (req, res) => {
 // ==================== ANALYTICS ENDPOINTS ====================
 
 // GET /api/v1/admin/analytics/full
-router.get('/analytics/full', authenticateAdmin, async (req, res) => {
+router.get('/analytics/full', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     const { timeRange = '24h' } = req.query;
     
@@ -1073,7 +1091,7 @@ router.post('/moderation/moderate', authenticateAdmin, async (req, res) => {
 });
 
 // GET /api/v1/admin/moderation/stats
-router.get('/moderation/stats', authenticateAdmin, async (req, res) => {
+router.get('/moderation/stats', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     const { timeRange = '24h' } = req.query;
     
@@ -1093,7 +1111,7 @@ router.get('/moderation/stats', authenticateAdmin, async (req, res) => {
 });
 
 // GET /api/v1/admin/moderation/history
-router.get('/moderation/history', authenticateAdmin, async (req, res) => {
+router.get('/moderation/history', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     const { limit = 50, offset = 0 } = req.query;
     
@@ -1164,7 +1182,7 @@ router.post('/moderation/unblock-user', authenticateAdmin, async (req, res) => {
 // ==================== DATABASE MANAGEMENT ENDPOINTS ====================
 
 // GET /api/v1/admin/database/overview
-router.get('/database/overview', authenticateAdmin, async (req, res) => {
+router.get('/database/overview', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     const overview = await databaseManagementService.getDatabaseOverview();
     
@@ -1275,7 +1293,7 @@ router.post('/database/analyze', authenticateAdmin, async (req, res) => {
 // ==================== SECURITY ENDPOINTS ====================
 
 // GET /api/v1/admin/security/audit-log
-router.get('/security/audit-log', authenticateAdmin, async (req, res) => {
+router.get('/security/audit-log', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
     const { limit = 100, offset = 0, adminUserId, action, targetType, fromDate, toDate } = req.query;
     

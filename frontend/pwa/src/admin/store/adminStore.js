@@ -663,8 +663,8 @@ const useAdminStore = create(
         }
 
         try {
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          const wsUrl = `${protocol}//${window.location.host}`;
+          // Используем правильный WebSocket URL для Railway backend
+          const wsUrl = 'wss://mellchat-production.up.railway.app/ws';
           const ws = new WebSocket(wsUrl);
 
           ws.onopen = () => {
