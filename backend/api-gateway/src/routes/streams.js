@@ -12,21 +12,56 @@ const CACHE_TTL = 60 * 1000; // 60 секунд
 async function checkTwitchStream(channelName) {
   try {
     const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
+    const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
     
     if (!TWITCH_CLIENT_ID) {
       logger.warn('Twitch CLIENT_ID not configured, skipping Twitch check');
       return { isLive: false, error: 'Twitch API not configured' };
     }
 
+    // Получаем App Access Token для авторизации (если есть client secret)
+    let accessToken = null;
+    if (TWITCH_CLIENT_SECRET) {
+      try {
+        const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            client_id: TWITCH_CLIENT_ID,
+            client_secret: TWITCH_CLIENT_SECRET,
+            grant_type: 'client_credentials'
+          })
+        });
+
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          accessToken = tokenData.access_token;
+        }
+      } catch (error) {
+        logger.warn('Failed to get Twitch app token:', error.message);
+      }
+    }
+
+    // Если токена нет, используем только Client-ID (может не работать для новых версий API)
+    const headers = {
+      'Client-ID': TWITCH_CLIENT_ID
+    };
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     // Получаем user_id канала
     const userResponse = await fetch(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(channelName)}`, {
-      headers: {
-        'Client-ID': TWITCH_CLIENT_ID
-      }
+      headers
     });
 
     if (!userResponse.ok) {
-      return { isLive: false, error: 'Channel not found' };
+      const errorText = await userResponse.text();
+      logger.error(`Twitch users API error for ${channelName}:`, { status: userResponse.status, error: errorText });
+      return { isLive: false, error: `API error: ${userResponse.status}` };
     }
 
     const userData = await userResponse.json();
@@ -38,13 +73,13 @@ async function checkTwitchStream(channelName) {
 
     // Проверяем статус стрима
     const streamResponse = await fetch(`https://api.twitch.tv/helix/streams?user_id=${userId}`, {
-      headers: {
-        'Client-ID': TWITCH_CLIENT_ID
-      }
+      headers
     });
 
     if (!streamResponse.ok) {
-      return { isLive: false, error: 'Failed to check stream status' };
+      const errorText = await streamResponse.text();
+      logger.error(`Twitch streams API error for ${channelName}:`, { status: streamResponse.status, error: errorText });
+      return { isLive: false, error: `API error: ${streamResponse.status}` };
     }
 
     const streamData = await streamResponse.json();
@@ -137,8 +172,12 @@ router.get('/check/:channelName', async (req, res) => {
       checkKickStream(channelName)
     ]);
 
+    logger.info(`Twitch result for ${channelName}:`, { isLive: twitchResult.isLive, error: twitchResult.error });
+    logger.info(`Kick result for ${channelName}:`, { isLive: kickResult.isLive, error: kickResult.error });
+
     const platforms = {};
     
+    // Twitch: показываем только если есть результат (даже если оффлайн)
     if (twitchResult.isLive) {
       platforms.twitch = {
         isLive: true,
@@ -147,14 +186,22 @@ router.get('/check/:channelName', async (req, res) => {
         game: twitchResult.game,
         startedAt: twitchResult.startedAt
       };
-    } else if (!twitchResult.error || twitchResult.error !== 'Channel not found') {
-      // Только если канал найден, но стрим не идет
+    } else if (twitchResult.error) {
+      // Показываем только если это не критическая ошибка (канал не найден)
+      if (twitchResult.error !== 'Channel not found' && !twitchResult.error.includes('API error')) {
+        platforms.twitch = {
+          isLive: false,
+          error: twitchResult.error
+        };
+      }
+    } else {
+      // Канал найден, но стрим не идет
       platforms.twitch = {
-        isLive: false,
-        error: twitchResult.error
+        isLive: false
       };
     }
 
+    // Kick: показываем только если есть результат (даже если оффлайн)
     if (kickResult.isLive) {
       platforms.kick = {
         isLive: true,
@@ -162,11 +209,18 @@ router.get('/check/:channelName', async (req, res) => {
         viewers: kickResult.viewers,
         startedAt: kickResult.startedAt
       };
-    } else if (!kickResult.error || kickResult.error !== 'Channel not found or API blocked') {
-      // Только если канал найден, но стрим не идет
+    } else if (kickResult.error) {
+      // Показываем только если это не критическая ошибка
+      if (kickResult.error !== 'Channel not found or API blocked') {
+        platforms.kick = {
+          isLive: false,
+          error: kickResult.error
+        };
+      }
+    } else {
+      // Канал найден, но стрим не идет
       platforms.kick = {
-        isLive: false,
-        error: kickResult.error
+        isLive: false
       };
     }
 
