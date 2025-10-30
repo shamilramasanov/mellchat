@@ -246,6 +246,13 @@ const RecentStreams = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="recent-streams__header">
+            <button 
+              className="recent-streams__back-button"
+              onClick={() => window.history.back()}
+              title={t('common.back')}
+            >
+              ← {t('common.back')}
+            </button>
             <h2 className="recent-streams__title">
               {t('streams.recent')}
             </h2>

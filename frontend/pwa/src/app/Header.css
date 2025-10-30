@@ -44,7 +44,7 @@
 }
 
 .header__logo .gradient-text {
-  font-size: var(--font-size-xl);
+  font-size: calc(var(--font-size-xl) / 3); /* Уменьшаем в 3 раза */
   font-weight: var(--font-weight-bold);
   letter-spacing: -0.5px;
 }
