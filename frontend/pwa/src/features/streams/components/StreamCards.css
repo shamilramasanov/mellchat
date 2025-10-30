@@ -300,9 +300,9 @@
   }
   
       .stream-card {
-        min-width: 240px;
-        width: 240px;
-        height: 120px; /* Увеличиваем высоту */
+        min-width: 280px; /* Еще больше */
+        width: 280px;
+        height: 140px; /* Еще больше */
         flex-shrink: 0;
         scroll-snap-align: start;
         padding: var(--spacing-sm);

@@ -49,7 +49,7 @@ const AddStreamModal = ({ isOpen, onClose }) => {
       setTimeout(() => {
         if (url && isValidStreamURL(url)) {
           toast.success('✅ Ссылка распознана!');
-        }
+    }
       }, 100);
     }
   };
@@ -77,7 +77,7 @@ const AddStreamModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       const stream = createStreamFromURL(url);
-      if (stream) {
+            if (stream) {
         addStream(stream);
         toast.success('✅ Стрим успешно подключен!');
         setUrl('');
@@ -159,21 +159,21 @@ const AddStreamModal = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            <div className="add-stream-modal__buttons">
-              <button 
-                className="add-stream-modal__button add-stream-modal__button--secondary"
-                onClick={onClose}
-              >
-                {t('streams.cancel')}
-              </button>
-              <button 
-                className="add-stream-modal__button add-stream-modal__button--primary"
-                onClick={handleConnect}
+              <div className="add-stream-modal__buttons">
+                <button 
+                  className="add-stream-modal__button add-stream-modal__button--secondary"
+                  onClick={onClose}
+                >
+                  {t('streams.cancel')}
+                </button>
+                <button 
+                  className="add-stream-modal__button add-stream-modal__button--primary"
+                  onClick={handleConnect}
                 disabled={!isValidStreamURL(url) || isLoading}
-              >
+                >
                 {isLoading ? '⏳ Подключение...' : t('streams.connect')}
-              </button>
-            </div>
+                </button>
+              </div>
           </div>
         </div>
       </div>

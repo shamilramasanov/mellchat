@@ -179,25 +179,25 @@ function App() {
   return (
     <ThemeProvider>
       <FontScaleProvider>
-        <Router>
-          <AnimatedBackground />
-          <ServerErrorBanner />
-          <ApiErrorToast />
-          <Routes>
-            {/* Admin Panel Route */}
-            <Route path="/admin/*" element={<AdminLayout />} />
-            
-            {/* Main App Routes */}
-              <Route path="/*" element={
-                <div className="app">
-                  <StreamSubscriptionManager />
-                  <Header />
-                  <MainView />
-                </div>
-              } />
-          </Routes>
-          {/* <PerformanceDashboard /> */}
-        </Router>
+    <Router>
+      <AnimatedBackground />
+      <ServerErrorBanner />
+      <ApiErrorToast />
+      <Routes>
+        {/* Admin Panel Route */}
+        <Route path="/admin/*" element={<AdminLayout />} />
+        
+        {/* Main App Routes */}
+        <Route path="/*" element={
+          <div className="app">
+            <StreamSubscriptionManager />
+            <Header />
+            <MainView />
+          </div>
+        } />
+      </Routes>
+      {/* <PerformanceDashboard /> */}
+    </Router>
       </FontScaleProvider>
     </ThemeProvider>
   );

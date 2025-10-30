@@ -64,11 +64,11 @@ const StreamCards = () => {
         const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0, unreadCount: 0, unreadQuestionCount: 0 };
         
         return (
-        <div
-          key={stream.id}
-          className={`stream-card ${activeStreamId === stream.id ? 'stream-card--active' : ''}`}
+          <div
+            key={stream.id}
+            className={`stream-card ${activeStreamId === stream.id ? 'stream-card--active' : ''}`}
           onClick={() => handleStreamClick(stream.id)}
-        >
+          >
             {/* Collapse button */}
             <button
               className="stream-card__collapse"

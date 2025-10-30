@@ -116,7 +116,7 @@ class YouTubePersistentManager extends EventEmitter {
     // Ищем следующий доступный ключ
     let attempts = 0;
     do {
-      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
       attempts++;
       
       if (attempts >= this.apiKeys.length) {
@@ -427,10 +427,10 @@ class YouTubePersistentManager extends EventEmitter {
       // Добавляем timeout и retry логику для API вызовов
       const response = await this.makeApiCallWithRetry(async () => {
         return await this.youtube.liveChatMessages.list({
-          key: this.getCurrentApiKey(),
-          liveChatId: connection.liveChatId,
-          part: 'snippet,authorDetails',
-          pageToken: connection.nextPageToken
+        key: this.getCurrentApiKey(),
+        liveChatId: connection.liveChatId,
+        part: 'snippet,authorDetails',
+        pageToken: connection.nextPageToken
         });
       });
     connection.nextPageToken = response.data.nextPageToken;
@@ -470,7 +470,7 @@ class YouTubePersistentManager extends EventEmitter {
       connection.lastPollAt = Date.now();
     }
     } catch (error) {
-      logger.error(`Error polling messages for ${videoId}:`, error);
+        logger.error(`Error polling messages for ${videoId}:`, error);
       
       // Увеличиваем счетчик ошибок для соединения
       if (connection) {
