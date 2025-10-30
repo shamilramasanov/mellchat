@@ -58,7 +58,7 @@
 
 .message-card__username {
   font-weight: var(--font-weight-semibold);
-  font-size: calc(var(--font-size-sm) * 0.9); /* Еще чуть меньше */
+  font-size: calc(var(--font-size-sm) * 0.75); /* Еще меньше */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -97,7 +97,7 @@
 }
 
 .message-card__text {
-  font-size: calc(var(--font-size-sm) * 0.9); /* Еще чуть меньше */
+  font-size: calc(var(--font-size-sm) * 0.75); /* Еще меньше */
   color: var(--text-primary);
   line-height: 1.4; /* Увеличиваем межстрочный интервал для лучшей читаемости */
   word-wrap: break-word;
@@ -162,7 +162,7 @@
   
   .message-card__text {
     margin-left: 0; /* Убираем отступ на мобильных */
-    font-size: calc(var(--font-size-sm) * 0.9); /* Еще чуть меньше */
+    font-size: calc(var(--font-size-sm) * 0.75); /* Еще меньше */
     line-height: 1.4; /* Улучшаем читаемость */
   }
   

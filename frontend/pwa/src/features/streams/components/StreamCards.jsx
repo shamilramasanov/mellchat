@@ -85,9 +85,7 @@ const StreamCards = () => {
             
             {/* Platform Logo */}
             <div className="stream-card__header">
-              <div className="stream-card__logo">
-                {stream.platform === 'twitch' ? '📺' : stream.platform === 'youtube' ? '📹' : '🎮'}
-              </div>
+        {/* Убираем иконки платформ */}
               {stream.isLive && <span className="stream-card__live">🔴 LIVE</span>}
             </div>
             

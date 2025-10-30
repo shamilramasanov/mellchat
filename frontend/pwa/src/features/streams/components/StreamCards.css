@@ -138,20 +138,9 @@
   z-index: 5; /* Ниже кнопки collapse */
 }
 
-.stream-card__logo {
-  height: 20px;
-  width: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  position: relative;
-  z-index: 10;
-}
+/* Убираем стили для иконок */
 
-.stream-card--active .stream-card__logo {
-  filter: brightness(1.1);
-}
+/* Убираем стили для иконок */
 
 .stream-card__live {
   font-size: 0.625rem;

@@ -12,45 +12,34 @@ export const useThemeContext = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const theme = useTheme();
+  // Принудительно устанавливаем только темную тему
+  const theme = {
+    theme: 'dark',
+    isDark: true,
+    toggleTheme: () => {}, // Отключаем переключение
+    getThemeCSS: () => ({}),
+    getThemeColors: () => ({})
+  };
 
-  // Apply theme to document root
+  // Apply dark theme to document root
   useEffect(() => {
     const root = document.documentElement;
     
-    // Apply theme CSS variables
-    const themeCSS = theme.getThemeCSS();
-    const themeColors = theme.getThemeColors();
-    
-    const allCSS = { ...themeCSS, ...themeColors };
-    
-    Object.entries(allCSS).forEach(([property, value]) => {
-      root.style.setProperty(property, value);
-    });
+    // Принудительно устанавливаем темную тему
+    root.setAttribute('data-theme', 'dark');
+    document.body.className = 'theme-dark';
 
-    // Update meta theme-color for mobile browsers
+    // Update meta theme-color for mobile browsers - только темный
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', theme.isDark ? '#0f0f23' : '#ffffff');
+      metaThemeColor.setAttribute('content', '#0f0f23');
     } else {
       const meta = document.createElement('meta');
       meta.name = 'theme-color';
-      meta.content = theme.isDark ? '#0f0f23' : '#ffffff';
+      meta.content = '#0f0f23';
       document.head.appendChild(meta);
     }
-
-    // Add theme class to body for CSS targeting
-    document.body.className = document.body.className
-      .replace(/theme-\w+/g, '')
-      .trim() + ` theme-${theme.theme}`;
-
-    return () => {
-      // Reset on unmount
-      Object.keys(allCSS).forEach(property => {
-        root.style.removeProperty(property);
-      });
-    };
-  }, [theme.theme, theme.isDark]);
+  }, []);
 
   return (
     <ThemeContext.Provider value={theme}>

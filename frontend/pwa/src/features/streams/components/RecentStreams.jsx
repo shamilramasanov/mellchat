@@ -297,14 +297,7 @@ const RecentStreams = () => {
                         ✕
                       </button>
 
-                      {/* Platform Logo */}
-                      <div className="recent-stream-card__header">
-                        <img
-                          src={PLATFORM_LOGOS[stream.platform]}
-                          alt={stream.platform}
-                          className="recent-stream-card__logo"
-                        />
-                      </div>
+                      {/* Убираем иконки платформ */}
 
                       {/* Stream Info */}
                       <div className="recent-stream-card__info">
