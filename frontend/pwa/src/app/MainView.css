@@ -6,8 +6,8 @@
   min-height: 0; /* Important for flexbox overflow */
   /* Убираем отступ снизу - нет нижней навигации */
   padding-bottom: 0;
-  /* Принудительно задаем высоту */
-  height: 100%;
+  /* Принудительно задаем высоту до самого низа */
+  height: calc(100vh - var(--header-height) - var(--safe-area-top, 0));
   max-height: calc(100vh - var(--header-height) - var(--safe-area-top, 0));
 }
 
@@ -81,8 +81,8 @@
 /* Orientation-specific adjustments */
 @media (orientation: landscape) and (max-width: 1024px) {
   .main-view {
-    /* В ландшафте уменьшаем отступы */
-    padding-bottom: 60px;
+    /* В ландшафте убираем отступы */
+    padding-bottom: 0;
   }
   
   .main-view__streams {
@@ -93,8 +93,8 @@
 
 @media (orientation: portrait) and (max-width: 768px) {
   .main-view {
-    /* В портрете увеличиваем отступы для удобства */
-    padding-bottom: 80px;
+    /* В портрете убираем отступы */
+    padding-bottom: 0;
   }
   
   .main-view__streams {

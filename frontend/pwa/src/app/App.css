@@ -25,6 +25,9 @@
   padding-right: var(--safe-area-right);
   padding-bottom: 0;
   box-sizing: border-box;
+  /* Фиксированная высота для полного экрана */
+  height: 100vh;
+  min-height: 100vh;
 }
 
 /* iOS Safari viewport height fix */
