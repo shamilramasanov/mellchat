@@ -299,16 +299,16 @@
     overscroll-behavior: auto;
   }
   
-  .stream-card {
-    min-width: 180px;
-    width: 180px;
-    height: 80px; /* Компактная высота */
-    flex-shrink: 0;
-    scroll-snap-align: start;
-    padding: var(--spacing-xs);
-    /* Убираем hover эффекты на мобильных */
-    transition: none;
-  }
+      .stream-card {
+        min-width: 240px;
+        width: 240px;
+        height: 120px; /* Увеличиваем высоту */
+        flex-shrink: 0;
+        scroll-snap-align: start;
+        padding: var(--spacing-sm);
+        /* Убираем hover эффекты на мобильных */
+        transition: none;
+      }
   
   .stream-card:hover {
     transform: none;

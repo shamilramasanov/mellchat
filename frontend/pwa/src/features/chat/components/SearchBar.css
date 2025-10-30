@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: flex-start; /* Выравниваем по левому краю */
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) 0 var(--spacing-md) 0; /* Убираем отступы слева и справа */
+  padding: var(--spacing-md) 0 0 0; /* Убираем отступы слева, справа и снизу */
   background: transparent; /* Убираем фон полностью */
   border: none; /* Убираем границы */
   border-radius: 0; /* Убираем скругления */
@@ -12,9 +12,10 @@
   box-shadow: none; /* Убираем тень */
   
   /* Позиционирование */
-  position: relative;
+  position: sticky;
+  bottom: 0;
   z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom, var(--spacing-md)); /* Отступ снизу для safe area */
+  padding-bottom: env(safe-area-inset-bottom, 0); /* Только safe area снизу */
   
   /* Ширина точно как у карточек чата - они находятся внутри того же контейнера */
   margin-left: 0; /* Убираем отступы - мы уже внутри чат-контейнера */

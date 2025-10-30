@@ -13,7 +13,7 @@
   /* Адаптивный закругленный прямоугольник как в RecentStreams */
   background: var(--bg-secondary);
   border-radius: 1rem;
-  margin: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md); /* Возвращаем нижний отступ */
+  margin: 0 var(--spacing-md) 0 var(--spacing-md); /* Убираем нижний отступ */
   margin-left: calc(var(--spacing-md) + var(--safe-area-left, 0));
   margin-right: calc(var(--spacing-md) + var(--safe-area-right, 0));
   margin-bottom: 0;
@@ -21,7 +21,7 @@
   border-right: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border); /* Возвращаем нижнюю границу */
   border-left: 1px solid var(--glass-border);
-  padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg); /* Убираем все отступы сверху */
+  padding: 0 var(--spacing-lg) 0 var(--spacing-lg); /* Убираем все отступы сверху и снизу */
 }
 
 /* Mobile adjustments */
@@ -31,7 +31,7 @@
     margin-left: calc(var(--spacing-sm) + var(--safe-area-left, 0));
     margin-right: calc(var(--spacing-sm) + var(--safe-area-right, 0));
     margin-bottom: 0;
-    padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
+    padding: 0 var(--spacing-md) 0 var(--spacing-md);
   }
 }
 

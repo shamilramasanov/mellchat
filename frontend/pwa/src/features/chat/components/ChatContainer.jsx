@@ -4,7 +4,7 @@ import { useChatStore } from '../store/chatStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import VirtualizedMessageList from '@shared/components/VirtualizedMessageList';
 import SearchBar from './SearchBar';
-import { useWebSocketContext, PullToRefresh } from '@shared/components';
+import { useWebSocketContext } from '@shared/components';
 // import DatabaseStatus from './DatabaseStatus'; // Убрали для продакшена
 import { useAdaptiveUpdates, usePerformanceMonitor } from '@shared/hooks/useOptimization';
 import deviceDetection from '@shared/utils/deviceDetection';
@@ -804,26 +804,24 @@ const ChatContainer = ({ onAddStream }) => {
         </div>
       )}
 
-      {/* Виртуализированные сообщения с Pull-to-Refresh */}
+      {/* Виртуализированные сообщения без Pull-to-Refresh */}
       <div className="chat-container__messages">
-        <PullToRefresh onRefresh={handleRefresh} disabled={!activeStreamId}>
-          {hasMessages ? (
-            <VirtualizedMessageList
-              messages={streamMessages}
-              onScroll={handleScroll}
-              scrollToBottom={scrollToBottom}
-              isAtBottom={isAtBottom}
-              showNewMessagesButton={false}
-              onNewMessagesClick={() => scrollToBottom('smooth')}
-              containerRef={containerRef}
-            />
-          ) : (
-            <div className="chat-container__empty">
-              <span className="chat-container__empty-icon">💬</span>
-              <p>{hasStreams ? t('chat.noMessages') : t('chat.connectStream')}</p>
-            </div>
-          )}
-        </PullToRefresh>
+        {hasMessages ? (
+          <VirtualizedMessageList
+            messages={streamMessages}
+            onScroll={handleScroll}
+            scrollToBottom={scrollToBottom}
+            isAtBottom={isAtBottom}
+            showNewMessagesButton={false}
+            onNewMessagesClick={() => scrollToBottom('smooth')}
+            containerRef={containerRef}
+          />
+        ) : (
+          <div className="chat-container__empty">
+            <span className="chat-container__empty-icon">💬</span>
+            <p>{hasStreams ? t('chat.noMessages') : t('chat.connectStream')}</p>
+          </div>
+        )}
       </div>
 
 
