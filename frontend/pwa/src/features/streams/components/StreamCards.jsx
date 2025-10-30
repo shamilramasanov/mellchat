@@ -1,6 +1,6 @@
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
-import { PLATFORM_COLORS, PLATFORM_LOGOS } from '@shared/utils/constants';
+import { PLATFORM_COLORS } from '@shared/utils/constants';
 import { HapticFeedback } from '@shared/utils/hapticFeedback';
 // import { GlassCard } from '@shared/components'; // Удален - используем обычные div с glass эффектами
 import './StreamCards.css';
@@ -85,11 +85,9 @@ const StreamCards = () => {
             
             {/* Platform Logo */}
             <div className="stream-card__header">
-              <img 
-                src={PLATFORM_LOGOS[stream.platform]} 
-                alt={stream.platform}
-                className="stream-card__logo"
-              />
+              <div className="stream-card__logo">
+                {stream.platform === 'twitch' ? '📺' : stream.platform === 'youtube' ? '📹' : '🎮'}
+              </div>
               {stream.isLive && <span className="stream-card__live">🔴 LIVE</span>}
             </div>
             

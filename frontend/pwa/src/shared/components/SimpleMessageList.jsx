@@ -61,10 +61,12 @@ const SimpleMessageList = ({
       className="virtualized-list-container"
       style={{
         height: '100%',
+        minHeight: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        WebkitOverflowScrolling: 'touch'
       }}
       onScroll={handleScroll}
     >

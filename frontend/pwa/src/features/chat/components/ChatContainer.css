@@ -38,6 +38,7 @@
 .chat-container__messages {
   flex: 1;
   min-height: 0; /* Important for flexbox overflow */
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 0 0 0; /* Убираем отступы контейнера */
