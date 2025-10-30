@@ -53,6 +53,11 @@
   /* Убираем фон - карточки должны быть полностью прозрачными */
   background: transparent;
   
+  /* Исправляем скролл для iOS */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto;
+  touch-action: pan-y;
+  
   /* Принудительно задаем высоту для скролла */
   height: 100%;
   max-height: 100%;

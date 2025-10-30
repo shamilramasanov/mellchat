@@ -66,7 +66,9 @@ const SimpleMessageList = ({
         overflowX: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        WebkitOverflowScrolling: 'touch'
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'auto',
+        touchAction: 'pan-y'
       }}
       onScroll={handleScroll}
     >
