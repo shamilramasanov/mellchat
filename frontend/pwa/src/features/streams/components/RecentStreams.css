@@ -253,7 +253,7 @@
 }
 
 .recent-stream-card__author {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-lg); /* Увеличиваем с base до lg */
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   overflow: hidden;
@@ -264,7 +264,7 @@
 }
 
 .recent-stream-card__title {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base); /* Увеличиваем с sm до base */
   font-weight: var(--font-weight-regular);
   color: var(--text-secondary);
   overflow: hidden;
@@ -289,7 +289,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm); /* Увеличиваем размер статистики */
   position: relative;
   z-index: 10;
 }

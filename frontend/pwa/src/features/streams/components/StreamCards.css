@@ -163,7 +163,7 @@
 }
 
 .stream-card__author {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm); /* Увеличиваем с xs до sm */
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   overflow: hidden;
@@ -174,7 +174,7 @@
 }
 
 .stream-card__title {
-  font-size: 0.625rem;
+  font-size: var(--font-size-xs); /* Увеличиваем с 0.625rem до xs */
   font-weight: var(--font-weight-regular);
   color: var(--text-secondary);
   overflow: hidden;
@@ -199,7 +199,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm); /* Увеличиваем размер статистики */
   position: relative;
   z-index: 10;
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -289,9 +289,9 @@
   }
   
       .stream-card {
-        min-width: 280px; /* Еще больше */
-        width: 280px;
-        height: 140px; /* Еще больше */
+        min-width: 220px; /* Уменьшаем */
+        width: 220px;
+        height: 100px; /* Уменьшаем */
         flex-shrink: 0;
         scroll-snap-align: start;
         padding: var(--spacing-sm);
