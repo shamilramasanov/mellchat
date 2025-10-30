@@ -28,10 +28,11 @@ class YouTubePersistentManager extends EventEmitter {
     this.lastApiCallTime = null;
 
     // Config
-    this.POLL_INTERVAL = 60000; // 60 seconds (was 5s - caused quota issues)
-    this.MIN_POLL_INTERVAL = 30000; // 30 seconds minimum
-    this.RETRY_INTERVAL = 10000; // 10 seconds
-    this.MAX_RETRIES = 5;
+    this.POLL_INTERVAL = 30000; // 30 seconds - более частый polling
+    this.MIN_POLL_INTERVAL = 15000; // 15 seconds minimum
+    this.RETRY_INTERVAL = 5000; // 5 seconds
+    this.MAX_RETRIES = 10; // больше попыток
+    this.API_TIMEOUT = 30000; // 30 seconds timeout для API вызовов
     this.STATE_KEY_PREFIX = 'youtube:connection:';
     this.STATE_TTL_SECONDS = 3600; // 1 hour
 
@@ -41,6 +42,27 @@ class YouTubePersistentManager extends EventEmitter {
         logger.error('Failed to restore connections on startup:', err);
       });
     }, 1000);
+    
+    // Периодический health check каждые 5 минут
+    setInterval(async () => {
+      try {
+        const health = await this.healthCheck();
+        if (!health.healthy) {
+          logger.warn('YouTube connections health issues:', health.issues);
+        }
+      } catch (err) {
+        logger.error('Health check failed:', err);
+      }
+    }, 5 * 60 * 1000); // 5 минут
+    
+    // Сброс квоты API ключей каждые 30 минут
+    setInterval(() => {
+      try {
+        this.resetQuotaStatus();
+      } catch (err) {
+        logger.error('Quota reset failed:', err);
+      }
+    }, 30 * 60 * 1000); // 30 минут
   }
 
   // Get current API key
@@ -51,14 +73,68 @@ class YouTubePersistentManager extends EventEmitter {
     return this.apiKeys[this.currentKeyIndex];
   }
 
+  // Новый метод для API вызовов с retry логикой
+  async makeApiCallWithRetry(apiCall, maxRetries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Добавляем timeout для API вызова
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('API call timeout')), this.API_TIMEOUT);
+        });
+        
+        const result = await Promise.race([apiCall(), timeoutPromise]);
+        return result;
+        
+      } catch (error) {
+        lastError = error;
+        logger.warn(`API call attempt ${attempt}/${maxRetries} failed:`, error.message);
+        
+        // Если это ошибка квоты, сразу переключаемся на следующий ключ
+        if (error.message && error.message.includes('quota')) {
+          this.markKeyQuotaExceeded();
+          logger.warn('API quota exceeded, switching to next key');
+        }
+        
+        // Если это не последняя попытка, ждем перед retry
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Exponential backoff, max 10s
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+
   // Switch to next API key
   switchToNextKey() {
     const oldKey = this.getCurrentApiKey();
-    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-    const newKey = this.getCurrentApiKey();
+    const oldIndex = this.currentKeyIndex;
     
-    logger.warn(`Switching YouTube API key from ${oldKey.substring(0, 10)}... to ${newKey.substring(0, 10)}...`);
+    // Ищем следующий доступный ключ
+    let attempts = 0;
+    do {
+      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+      attempts++;
+      
+      if (attempts >= this.apiKeys.length) {
+        logger.error('All API keys are exhausted, resetting to first key');
+        this.currentKeyIndex = 0;
+        break;
+      }
+    } while (this.isKeyQuotaExceeded(this.getCurrentApiKey()));
+    
+    const newKey = this.getCurrentApiKey();
+    logger.warn(`Switching YouTube API key from ${oldKey.substring(0, 10)}... to ${newKey.substring(0, 10)}... (index ${oldIndex} -> ${this.currentKeyIndex})`);
     return newKey;
+  }
+
+  // Check if key has quota exceeded
+  isKeyQuotaExceeded(key) {
+    const stats = this.keyUsageStats.get(key);
+    return stats && stats.quotaExceeded;
   }
 
   // Mark current key as quota exceeded
@@ -82,6 +158,13 @@ class YouTubePersistentManager extends EventEmitter {
     this.apiCallCount++;
     this.lastApiCallTime = Date.now();
     
+    // Track per-key usage
+    const currentKey = this.getCurrentApiKey();
+    const keyStats = this.keyUsageStats.get(currentKey) || { calls: 0, lastUsed: 0, quotaExceeded: false };
+    keyStats.calls++;
+    keyStats.lastUsed = Date.now();
+    this.keyUsageStats.set(currentKey, keyStats);
+    
     // Log every 10 calls
     if (this.apiCallCount % 10 === 0) {
       const timeElapsed = (Date.now() - this.apiCallStartTime) / 1000 / 60; // minutes
@@ -94,8 +177,32 @@ class YouTubePersistentManager extends EventEmitter {
         callsPerMinute: Math.round(callsPerMinute),
         estimatedDailyCalls: Math.round(estimatedDailyCalls),
         quotaLimit: 10000,
-        quotaUsedPercent: Math.round((estimatedDailyCalls / 10000) * 100)
+        quotaUsedPercent: Math.round((estimatedDailyCalls / 10000) * 100),
+        currentKey: currentKey.substring(0, 10) + '...',
+        keyCalls: keyStats.calls,
+        availableKeys: this.apiKeys.length - Array.from(this.keyUsageStats.values()).filter(s => s.quotaExceeded).length
       });
+    }
+  }
+
+  // Reset quota for all keys (call this periodically)
+  resetQuotaStatus() {
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+    let resetCount = 0;
+    
+    for (const [key, stats] of this.keyUsageStats.entries()) {
+      // Сбрасываем статус квоты если прошло больше часа
+      if (stats.quotaExceeded && (now - stats.lastUsed) > oneHour) {
+        stats.quotaExceeded = false;
+        stats.calls = 0;
+        resetCount++;
+        logger.info(`Reset quota status for API key ${key.substring(0, 10)}...`);
+      }
+    }
+    
+    if (resetCount > 0) {
+      logger.info(`Reset quota status for ${resetCount} API keys`);
     }
   }
 
@@ -266,27 +373,47 @@ class YouTubePersistentManager extends EventEmitter {
   startPolling(videoId) {
     const connection = this.connections.get(videoId);
     if (!connection) return;
+    
+    // Очищаем существующий таймер если есть
+    const existingTimer = this.pollingTimers.get(videoId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+    
     const poll = async () => {
       try {
         await this.pollMessages(videoId);
         connection.retries = 0;
-        const timer = setTimeout(poll, connection.pollingInterval);
+        
+        // Используем динамический интервал polling
+        const nextPollDelay = connection.pollingInterval || this.POLL_INTERVAL;
+        const timer = setTimeout(poll, nextPollDelay);
         this.pollingTimers.set(videoId, timer);
+        
         await this.saveConnectionState(videoId, connection);
+        
       } catch (error) {
         logger.error(`Polling error for ${videoId}:`, error);
-        connection.retries++;
+        connection.retries = (connection.retries || 0) + 1;
+        
         if (connection.retries >= this.MAX_RETRIES) {
           logger.error(`Max retries reached for ${videoId}, disconnecting`);
           await this.disconnect(videoId, 'max_retries');
           return;
         }
-        const retryDelay = this.RETRY_INTERVAL * Math.pow(2, connection.retries - 1);
-        logger.info(`Retrying ${videoId} in ${retryDelay}ms (attempt ${connection.retries})`);
+        
+        // Exponential backoff с jitter для избежания thundering herd
+        const baseDelay = this.RETRY_INTERVAL * Math.pow(2, connection.retries - 1);
+        const jitter = Math.random() * 1000; // до 1 секунды jitter
+        const retryDelay = Math.min(baseDelay + jitter, 60000); // max 60 секунд
+        
+        logger.info(`Retrying ${videoId} in ${Math.round(retryDelay)}ms (attempt ${connection.retries})`);
         const timer = setTimeout(poll, retryDelay);
         this.pollingTimers.set(videoId, timer);
       }
     };
+    
+    // Запускаем polling немедленно
     poll();
   }
 
@@ -296,11 +423,15 @@ class YouTubePersistentManager extends EventEmitter {
     
     try {
       this.trackApiCall();
-      const response = await this.youtube.liveChatMessages.list({
-        key: this.getCurrentApiKey(),
-        liveChatId: connection.liveChatId,
-        part: 'snippet,authorDetails',
-        pageToken: connection.nextPageToken
+      
+      // Добавляем timeout и retry логику для API вызовов
+      const response = await this.makeApiCallWithRetry(async () => {
+        return await this.youtube.liveChatMessages.list({
+          key: this.getCurrentApiKey(),
+          liveChatId: connection.liveChatId,
+          part: 'snippet,authorDetails',
+          pageToken: connection.nextPageToken
+        });
       });
     connection.nextPageToken = response.data.nextPageToken;
     // Use API-provided interval, but enforce minimum to avoid quota issues
@@ -332,14 +463,31 @@ class YouTubePersistentManager extends EventEmitter {
     if (items.length > 0) {
       connection.lastMessageId = items[items.length - 1].id;
     }
+    
+    // Сбрасываем счетчик ошибок при успешном polling
+    if (connection) {
+      connection.errorCount = 0;
+      connection.lastPollAt = Date.now();
+    }
     } catch (error) {
-      if (error.message && error.message.includes('quota')) {
-        this.markKeyQuotaExceeded();
-        logger.warn(`YouTube API quota exceeded for polling ${videoId}, will retry with next key`);
-        // Don't throw error, just log and continue with next polling cycle
-      } else {
-        logger.error(`Error polling messages for ${videoId}:`, error);
+      logger.error(`Error polling messages for ${videoId}:`, error);
+      
+      // Увеличиваем счетчик ошибок для соединения
+      if (connection) {
+        connection.errorCount = (connection.errorCount || 0) + 1;
+        connection.lastError = error.message;
+        connection.lastErrorAt = Date.now();
       }
+      
+      // Если слишком много ошибок подряд, отключаем соединение
+      if (connection && connection.errorCount > 5) {
+        logger.error(`Too many errors for ${videoId}, disconnecting`);
+        await this.disconnect(videoId, 'too_many_errors');
+        return;
+      }
+      
+      // Не выбрасываем ошибку, чтобы polling продолжился
+      logger.warn(`Continuing polling for ${videoId} despite error`);
     }
   }
 
@@ -373,15 +521,55 @@ class YouTubePersistentManager extends EventEmitter {
   async healthCheck() {
     const connections = Array.from(this.connections.values());
     const issues = [];
+    
     for (const conn of connections) {
-      const timeSinceLastPoll = Date.now() - (conn.lastPollAt || conn.connectedAt);
-      if (timeSinceLastPoll > (conn.pollingInterval || this.POLL_INTERVAL) * 3) {
-        issues.push({ videoId: conn.videoId, issue: 'stalled_polling', timeSinceLastPoll });
-        logger.warn(`Restarting stalled polling for ${conn.videoId}`);
+      const now = Date.now();
+      const timeSinceLastPoll = now - (conn.lastPollAt || conn.connectedAt);
+      const expectedInterval = (conn.pollingInterval || this.POLL_INTERVAL) * 2; // 2x интервал для tolerance
+      
+      // Проверяем stalled polling
+      if (timeSinceLastPoll > expectedInterval) {
+        issues.push({ 
+          videoId: conn.videoId, 
+          issue: 'stalled_polling', 
+          timeSinceLastPoll: Math.round(timeSinceLastPoll / 1000) + 's',
+          expectedInterval: Math.round(expectedInterval / 1000) + 's'
+        });
+        logger.warn(`Restarting stalled polling for ${conn.videoId} (${Math.round(timeSinceLastPoll / 1000)}s since last poll)`);
         this.startPolling(conn.videoId);
       }
+      
+      // Проверяем слишком много ошибок
+      if (conn.errorCount > 3) {
+        issues.push({ 
+          videoId: conn.videoId, 
+          issue: 'high_error_count', 
+          errorCount: conn.errorCount,
+          lastError: conn.lastError
+        });
+      }
+      
+      // Проверяем старые соединения без активности
+      const timeSinceConnected = now - conn.connectedAt;
+      if (timeSinceConnected > 24 * 60 * 60 * 1000 && conn.messageCount === 0) { // 24 часа без сообщений
+        issues.push({ 
+          videoId: conn.videoId, 
+          issue: 'inactive_connection', 
+          timeSinceConnected: Math.round(timeSinceConnected / (60 * 60 * 1000)) + 'h'
+        });
+      }
     }
-    return { healthy: issues.length === 0, connections: connections.length, issues };
+    
+    return { 
+      healthy: issues.length === 0, 
+      connections: connections.length, 
+      issues,
+      stats: {
+        totalConnections: connections.length,
+        activeConnections: connections.filter(c => c.errorCount < 3).length,
+        errorConnections: connections.filter(c => c.errorCount >= 3).length
+      }
+    };
   }
 }
 

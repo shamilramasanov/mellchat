@@ -91,6 +91,39 @@ router.delete('/:connectionId', async (req, res) => {
   res.json({ success: true, message: 'Disconnected from YouTube Live chat' });
 });
 
+// Get YouTube connections status and health
+router.get('/status', async (req, res) => {
+  try {
+    const health = await youtubeManager.healthCheck();
+    const usageStats = youtubeManager.getApiUsageStats();
+    const connections = youtubeManager.getAllConnections();
+    
+    res.json({
+      success: true,
+      health,
+      usage: usageStats,
+      connections: connections.map(conn => ({
+        videoId: conn.videoId,
+        title: conn.title,
+        channelName: conn.channelName,
+        connectedAt: conn.connectedAt,
+        messageCount: conn.messageCount || 0,
+        errorCount: conn.errorCount || 0,
+        lastPollAt: conn.lastPollAt,
+        pollingInterval: conn.pollingInterval,
+        status: conn.errorCount > 3 ? 'error' : 'healthy'
+      }))
+    });
+  } catch (error) {
+    logger.error('Error getting YouTube status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get YouTube status',
+      error: error.message
+    });
+  }
+});
+
 // Get messages for a specific connection
 router.get('/messages/:connectionId', async (req, res) => {
   try {

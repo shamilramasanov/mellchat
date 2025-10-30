@@ -1,0 +1,166 @@
+/* Bottom Navigation Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--glass-border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-bottom: calc(var(--spacing-sm) + var(--safe-area-bottom, 0));
+  padding-left: calc(var(--spacing-md) + var(--safe-area-left, 0));
+  padding-right: calc(var(--spacing-md) + var(--safe-area-right, 0));
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  min-width: 44px;
+  min-height: 44px;
+  position: relative;
+}
+
+.bottom-nav__item:hover {
+  background: var(--glass-white);
+}
+
+.bottom-nav__item:active {
+  transform: scale(0.95);
+}
+
+.bottom-nav__item--active {
+  background: var(--glass-white-hover);
+}
+
+.bottom-nav__item--active .bottom-nav__icon {
+  transform: scale(1.1);
+}
+
+.bottom-nav__item--active .bottom-nav__label {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.bottom-nav__icon {
+  position: relative;
+  font-size: 1.25rem;
+  transition: transform var(--transition-fast);
+}
+
+.bottom-nav__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--color-error);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-bold);
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bottom-nav__label {
+  font-size: 0.625rem;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-regular);
+  text-align: center;
+  line-height: 1.2;
+  transition: all var(--transition-fast);
+}
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+  .bottom-nav {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    padding-bottom: calc(var(--spacing-xs) + var(--safe-area-bottom, 0));
+    padding-left: calc(var(--spacing-sm) + var(--safe-area-left, 0));
+    padding-right: calc(var(--spacing-sm) + var(--safe-area-right, 0));
+  }
+  
+  .bottom-nav__item {
+    min-width: 48px;
+    min-height: 48px;
+    padding: var(--spacing-xs);
+  }
+  
+  .bottom-nav__icon {
+    font-size: 1.5rem;
+  }
+  
+  .bottom-nav__label {
+    font-size: 0.5rem;
+  }
+}
+
+/* Orientation-specific adjustments */
+@media (orientation: landscape) and (max-width: 1024px) {
+  .bottom-nav {
+    /* В ландшафте делаем навигацию более компактной */
+    padding: var(--spacing-xs) var(--spacing-sm);
+    padding-bottom: calc(var(--spacing-xs) + var(--safe-area-bottom, 0));
+  }
+  
+  .bottom-nav__item {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  
+  .bottom-nav__icon {
+    font-size: 1rem;
+  }
+  
+  .bottom-nav__label {
+    font-size: 0.5rem;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 768px) {
+  .bottom-nav {
+    /* В портрете увеличиваем touch targets */
+    padding: var(--spacing-sm) var(--spacing-md);
+    padding-bottom: calc(var(--spacing-sm) + var(--safe-area-bottom, 0));
+  }
+  
+  .bottom-nav__item {
+    min-width: 52px;
+    min-height: 52px;
+  }
+  
+  .bottom-nav__icon {
+    font-size: 1.75rem;
+  }
+  
+  .bottom-nav__label {
+    font-size: 0.625rem;
+  }
+}
+
+/* iOS PWA specific */
+@supports (-webkit-touch-callout: none) {
+  .bottom-nav {
+    /* Убираем bounce эффект на iOS */
+    overscroll-behavior: contain;
+  }
+}

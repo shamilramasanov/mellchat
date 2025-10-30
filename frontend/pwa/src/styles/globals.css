@@ -78,13 +78,13 @@
                  'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
                  'Helvetica Neue', sans-serif;
   
-  --font-size-xs: 0.75rem;    /* 12px */
-  --font-size-sm: 0.875rem;   /* 14px */
-  --font-size-base: 1rem;     /* 16px */
-  --font-size-lg: 1.125rem;   /* 18px */
-  --font-size-xl: 1.25rem;    /* 20px */
-  --font-size-2xl: 1.5rem;    /* 24px */
-  --font-size-3xl: 2rem;      /* 32px */
+  --font-size-xs: calc(0.75rem * var(--font-scale));    /* 12px * scale */
+  --font-size-sm: calc(0.875rem * var(--font-scale));   /* 14px * scale */
+  --font-size-base: calc(1rem * var(--font-scale));     /* 16px * scale */
+  --font-size-lg: calc(1.125rem * var(--font-scale));   /* 18px * scale */
+  --font-size-xl: calc(1.25rem * var(--font-scale));    /* 20px * scale */
+  --font-size-2xl: calc(1.5rem * var(--font-scale));    /* 24px * scale */
+  --font-size-3xl: calc(2rem * var(--font-scale));      /* 32px * scale */
   
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -100,6 +100,25 @@
   --z-modal: 2000;
   --z-toast: 3000;
   --z-tooltip: 4000;
+  
+  /* ===== Responsive Breakpoints ===== */
+  --breakpoint-xs: 320px;   /* Small phones */
+  --breakpoint-sm: 480px;   /* Large phones */
+  --breakpoint-md: 768px;   /* Tablets */
+  --breakpoint-lg: 1024px;  /* Small laptops */
+  --breakpoint-xl: 1280px;  /* Large laptops */
+  --breakpoint-2xl: 1536px; /* Large desktops */
+  
+  /* Device type detection */
+  --is-mobile: 0;
+  --is-tablet: 0;
+  --is-desktop: 1;
+  --is-touch: 0;
+  --is-portrait: 1;
+  
+  /* Font scaling */
+  --font-scale: 1;
+  --font-scale-factor: 1;
   
   /* ===== Layout ===== */
   --header-height: 48px; /* Уменьшаем высоту шапки */
@@ -124,15 +143,16 @@ body {
   /* Убираем background-attachment: fixed */
   transition: background 0.3s ease, color 0.3s ease;
   
-  /* iOS PWA - Prevent bounce/overscroll */
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  /* Разрешаем скролл во всех направлениях для мобильных */
-  touch-action: pan-y pan-x;
+  /* iOS PWA - Fix scroll issues */
+  overscroll-behavior: auto;
+  /* Убираем устаревший -webkit-overflow-scrolling */
+  /* Разрешаем только вертикальный скролл для лучшей совместимости */
+  touch-action: pan-y;
   
   /* Safe area для мобильных устройств */
   padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
   min-height: 100vh;
+  min-height: 100dvh; /* Используем динамический viewport height */
   min-height: -webkit-fill-available;
 }
 
@@ -141,8 +161,14 @@ body {
   body {
     /* iOS Safari viewport height fix */
     min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
     padding-left: max(var(--safe-area-left), 0);
     padding-right: max(var(--safe-area-right), 0);
+  }
+  
+  /* Fix for iOS PWA fullscreen mode */
+  .app {
+    height: -webkit-fill-available;
   }
 }
 
@@ -223,6 +249,74 @@ a:focus-visible {
   will-change: transform;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+}
+
+/* ===== Responsive Media Queries ===== */
+/* Mobile First Approach */
+@media (max-width: 480px) {
+  :root {
+    --is-mobile: 1;
+    --is-tablet: 0;
+    --is-desktop: 0;
+    --is-touch: 1;
+    --header-height: 44px;
+    --stream-cards-height: 80px;
+    --content-padding: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --is-mobile: 1;
+    --is-tablet: 0;
+    --is-desktop: 0;
+    --is-touch: 1;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --is-mobile: 0;
+    --is-tablet: 1;
+    --is-desktop: 0;
+    --is-touch: 1;
+  }
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --is-mobile: 0;
+    --is-tablet: 0;
+    --is-desktop: 1;
+    --is-touch: 0;
+  }
+}
+
+/* Orientation */
+@media (orientation: portrait) {
+  :root {
+    --is-portrait: 1;
+  }
+}
+
+@media (orientation: landscape) {
+  :root {
+    --is-portrait: 0;
+  }
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --is-touch: 1;
+  }
+}
+
+/* Hover devices */
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --is-touch: 0;
+  }
 }
 
 /* ===== Print Styles ===== */

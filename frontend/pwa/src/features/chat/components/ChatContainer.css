@@ -55,10 +55,12 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   
-  /* iOS smooth scrolling */
-  -webkit-overflow-scrolling: touch;
+  /* iOS smooth scrolling - используем auto для PWA совместимости */
+  -webkit-overflow-scrolling: auto;
   /* Разрешаем скролл пальцами */
   touch-action: pan-y;
+  /* iOS PWA scroll fix */
+  overscroll-behavior: auto;
   /* Отключаем bounce только для этого контейнера, но разрешаем скролл */
   overscroll-behavior-y: contain;
 }

@@ -4,7 +4,7 @@ import { useChatStore } from '../store/chatStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import VirtualizedMessageList from '@shared/components/VirtualizedMessageList';
 import SearchBar from './SearchBar';
-import { useWebSocketContext } from '@shared/components/WebSocketProvider';
+import { useWebSocketContext, PullToRefresh } from '@shared/components';
 // import DatabaseStatus from './DatabaseStatus'; // Убрали для продакшена
 import { useAdaptiveUpdates, usePerformanceMonitor } from '@shared/hooks/useOptimization';
 import deviceDetection from '@shared/utils/deviceDetection';
@@ -47,6 +47,7 @@ const ChatContainer = ({ onAddStream }) => {
   
   // Новые методы для работы с датами
   const loadOlderMessages = useChatStore((s) => s.loadOlderMessages);
+  const refreshMessages = useChatStore((s) => s.refreshMessages);
   const getOldestMessageId = useChatStore((s) => s.getOldestMessageId);
 
   // === Refs ===
@@ -125,6 +126,18 @@ const ChatContainer = ({ onAddStream }) => {
     setIsAtBottom(true);
     wasAtBottomRef.current = true;
   }, [activeStreamId, streamMessages, hasMessages, markMessagesAsRead, adaptiveSettings.animations.reducedMotion]);
+
+  // Функция обновления сообщений для pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    if (!activeStreamId) return;
+    
+    try {
+      await refreshMessages(activeStreamId);
+    } catch (error) {
+      console.error('Failed to refresh messages:', error);
+      throw error;
+    }
+  }, [activeStreamId, refreshMessages]);
 
   // Скролл к первому непрочитанному сообщению
   const scrollToFirstUnreadMessage = useCallback((streamId, behavior = 'smooth') => {
@@ -791,24 +804,26 @@ const ChatContainer = ({ onAddStream }) => {
         </div>
       )}
 
-      {/* Виртуализированные сообщения */}
+      {/* Виртуализированные сообщения с Pull-to-Refresh */}
       <div className="chat-container__messages">
-        {hasMessages ? (
-          <VirtualizedMessageList
-            messages={streamMessages}
-            onScroll={handleScroll}
-            scrollToBottom={scrollToBottom}
-            isAtBottom={isAtBottom}
-            showNewMessagesButton={false}
-            onNewMessagesClick={() => scrollToBottom('smooth')}
-            containerRef={containerRef}
-          />
-        ) : (
-          <div className="chat-container__empty">
-            <span className="chat-container__empty-icon">💬</span>
-            <p>{hasStreams ? t('chat.noMessages') : t('chat.connectStream')}</p>
-          </div>
-        )}
+        <PullToRefresh onRefresh={handleRefresh} disabled={!activeStreamId}>
+          {hasMessages ? (
+            <VirtualizedMessageList
+              messages={streamMessages}
+              onScroll={handleScroll}
+              scrollToBottom={scrollToBottom}
+              isAtBottom={isAtBottom}
+              showNewMessagesButton={false}
+              onNewMessagesClick={() => scrollToBottom('smooth')}
+              containerRef={containerRef}
+            />
+          ) : (
+            <div className="chat-container__empty">
+              <span className="chat-container__empty-icon">💬</span>
+              <p>{hasStreams ? t('chat.noMessages') : t('chat.connectStream')}</p>
+            </div>
+          )}
+        </PullToRefresh>
       </div>
 
 

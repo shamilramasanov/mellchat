@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuthStore } from '@features/auth/store/authStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
-import { AnimatedBackground, ServerErrorBanner, ApiErrorToast } from '@shared/components';
+import { AnimatedBackground, ServerErrorBanner, ApiErrorToast, BottomNav, FontScaleProvider, ThemeProvider } from '@shared/components';
 // import PerformanceDashboard from '@shared/components/PerformanceDashboard';
 import AuthScreen from '@features/auth/components/AuthScreen';
 import RecentStreams from '@features/streams/components/RecentStreams';
@@ -177,25 +177,30 @@ function App() {
 
   // Always show main view with modal overlay
   return (
-    <Router>
-      <AnimatedBackground />
-      <ServerErrorBanner />
-      <ApiErrorToast />
-      <Routes>
-        {/* Admin Panel Route */}
-        <Route path="/admin/*" element={<AdminLayout />} />
-        
-        {/* Main App Routes */}
-        <Route path="/*" element={
-          <div className="app">
-            <StreamSubscriptionManager />
-            <Header />
-            <MainView />
-          </div>
-        } />
-      </Routes>
-      {/* <PerformanceDashboard /> */}
-    </Router>
+    <ThemeProvider>
+      <FontScaleProvider>
+        <Router>
+          <AnimatedBackground />
+          <ServerErrorBanner />
+          <ApiErrorToast />
+          <Routes>
+            {/* Admin Panel Route */}
+            <Route path="/admin/*" element={<AdminLayout />} />
+            
+            {/* Main App Routes */}
+            <Route path="/*" element={
+              <div className="app">
+                <StreamSubscriptionManager />
+                <Header />
+                <MainView />
+                <BottomNav />
+              </div>
+            } />
+          </Routes>
+          {/* <PerformanceDashboard /> */}
+        </Router>
+      </FontScaleProvider>
+    </ThemeProvider>
   );
 }
 

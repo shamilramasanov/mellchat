@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@features/auth/store/authStore';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
+import { useThemeContext } from '@shared/components';
 import SettingsPanel from '@features/settings/components/SettingsPanel';
 import MoodButton from '@features/chat/components/MoodButton';
 import MoodDropdown from '@features/chat/components/MoodDropdown';
@@ -13,6 +14,7 @@ const Header = () => {
   const user = useAuthStore((state) => state.user);
   const goToHome = useStreamsStore((state) => state.goToHome);
   const currentMood = useChatStore((state) => state.currentMood);
+  const { theme, toggleTheme, isDark } = useThemeContext();
   const [showSettings, setShowSettings] = useState(false);
   const [showMoodDropdown, setShowMoodDropdown] = useState(false);
 
@@ -60,6 +62,17 @@ const Header = () => {
                 onClose={() => setShowMoodDropdown(false)} 
               />
             </div>
+
+            <button
+              className="header__action"
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              <span style={{ position: 'relative', zIndex: 100 }}>
+                {isDark ? '☀️' : '🌙'}
+              </span>
+            </button>
 
             <button
               className="header__action"

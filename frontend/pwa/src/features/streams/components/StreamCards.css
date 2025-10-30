@@ -281,23 +281,84 @@
   z-index: 10;
 }
 
+/* Mobile - Компактные карточки с горизонтальным скроллом */
 @media (max-width: 767px) {
-  .stream-card {
-    min-width: 160px;
-    max-width: 200px;
+  .stream-cards {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: var(--spacing-sm);
     padding: var(--spacing-sm);
+    padding-left: calc(var(--spacing-sm) + var(--safe-area-left, 0));
+    padding-right: calc(var(--spacing-sm) + var(--safe-area-right, 0));
+    /* Убираем вертикальный скролл */
+    overflow-y: visible;
+    /* Улучшаем скролл на iOS */
+    -webkit-overflow-scrolling: auto;
+    overscroll-behavior: auto;
+  }
+  
+  .stream-card {
+    min-width: 180px;
+    width: 180px;
+    height: 80px; /* Компактная высота */
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: var(--spacing-xs);
+    /* Убираем hover эффекты на мобильных */
+    transition: none;
+  }
+  
+  .stream-card:hover {
+    transform: none;
+  }
+  
+  .stream-card__content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .stream-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
   
   .stream-card__logo {
-    height: 20px;
-  }
-  
-  .stream-card__author {
-    font-size: 0.75rem;
+    height: 16px;
   }
   
   .stream-card__title {
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
+    line-height: 1.2;
+    /* Ограничиваем до 2 строк */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .stream-card__author {
+    font-size: 0.625rem;
+    opacity: 0.8;
+  }
+  
+  .stream-card__stats {
+    gap: var(--spacing-xs);
+    margin-top: auto;
+  }
+  
+  .stream-card__stat {
+    font-size: 0.5rem;
+    padding: 2px 4px;
+  }
+  
+  .stream-card__stat--clickable {
+    min-width: 20px;
+    min-height: 20px;
+    font-size: 0.5rem;
   }
 }
 

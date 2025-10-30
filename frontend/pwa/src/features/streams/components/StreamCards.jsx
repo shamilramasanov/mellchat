@@ -1,6 +1,7 @@
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
 import { PLATFORM_COLORS, PLATFORM_LOGOS } from '@shared/utils/constants';
+import { HapticFeedback } from '@shared/utils/hapticFeedback';
 // import { GlassCard } from '@shared/components'; // Удален - используем обычные div с glass эффектами
 import './StreamCards.css';
 
@@ -25,6 +26,7 @@ const StreamCards = () => {
 
   const handleScrollToUnread = (e, streamId, isQuestion = false) => {
     e.stopPropagation(); // Предотвращаем переключение стрима
+    HapticFeedback.light();
     
     // Если стрим не активен, сначала делаем его активным
     if (activeStreamId !== streamId) {
@@ -47,6 +49,11 @@ const StreamCards = () => {
     }
   };
 
+  const handleStreamClick = (streamId) => {
+    HapticFeedback.selection();
+    setActiveStream(streamId);
+  };
+
   if (visibleStreams.length === 0) {
     return null;
   }
@@ -57,16 +64,17 @@ const StreamCards = () => {
         const streamStats = stats[stream.id] || { messageCount: 0, questionCount: 0, unreadCount: 0, unreadQuestionCount: 0 };
         
         return (
-          <div
-            key={stream.id}
-            className={`stream-card ${activeStreamId === stream.id ? 'stream-card--active' : ''}`}
-            onClick={() => setActiveStream(stream.id)}
-          >
+        <div
+          key={stream.id}
+          className={`stream-card ${activeStreamId === stream.id ? 'stream-card--active' : ''}`}
+          onClick={() => handleStreamClick(stream.id)}
+        >
             {/* Collapse button */}
             <button
               className="stream-card__collapse"
               onClick={(e) => {
                 e.stopPropagation();
+                HapticFeedback.light();
                 toggleStreamCard(stream.id);
               }}
               title="Collapse"
