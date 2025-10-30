@@ -3,11 +3,7 @@
   "version": "2.0.1",
   "private": true,
   "description": "MellChat - Multi-platform streaming chat aggregator",
-  "workspaces": [
-    "frontend/pwa"
-  ],
   "scripts": {
-    "build": "cd frontend/pwa && npm install && npm run build",
     "dev": "cd frontend/pwa && npm run dev"
   },
   "engines": {
