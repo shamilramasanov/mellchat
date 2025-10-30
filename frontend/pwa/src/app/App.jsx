@@ -188,14 +188,13 @@ function App() {
             <Route path="/admin/*" element={<AdminLayout />} />
             
             {/* Main App Routes */}
-            <Route path="/*" element={
-              <div className="app">
-                <StreamSubscriptionManager />
-                <Header />
-                <MainView />
-                <BottomNav />
-              </div>
-            } />
+              <Route path="/*" element={
+                <div className="app">
+                  <StreamSubscriptionManager />
+                  <Header />
+                  <MainView />
+                </div>
+              } />
           </Routes>
           {/* <PerformanceDashboard /> */}
         </Router>

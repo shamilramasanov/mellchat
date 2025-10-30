@@ -1,12 +1,12 @@
 .header {
-  height: var(--header-height);
+  height: calc(var(--header-height) + var(--safe-area-top, 0));
   flex-shrink: 0;
   position: relative;
   z-index: var(--z-header);
   background: var(--bg-primary);
   border-bottom: 1px solid var(--glass-border);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg); /* Закругляем нижние углы */
-  padding: 0 var(--spacing-lg);
+  padding: var(--safe-area-top, 0) var(--spacing-lg) 0 var(--spacing-lg);
   padding-left: calc(var(--spacing-lg) + var(--safe-area-left, 0));
   padding-right: calc(var(--spacing-lg) + var(--safe-area-right, 0));
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
