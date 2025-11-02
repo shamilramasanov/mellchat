@@ -218,13 +218,18 @@ async function runMigrations() {
   }
 }
 
-// Main execution
-if (!process.env.DATABASE_URL) {
-  console.error('❌ DATABASE_URL environment variable is not set');
-  process.exit(1);
-}
+// Export for use as module
+module.exports = runMigrations;
 
-runMigrations().catch(error => {
-  console.error('❌ Migration execution failed:', error);
-  process.exit(1);
-});
+// If run directly (not imported)
+if (require.main === module) {
+  if (!process.env.DATABASE_URL) {
+    console.error('❌ DATABASE_URL environment variable is not set');
+    process.exit(1);
+  }
+
+  runMigrations().catch(error => {
+    console.error('❌ Migration execution failed:', error);
+    process.exit(1);
+  });
+}
