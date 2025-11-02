@@ -219,18 +219,12 @@ async function runMigrations() {
 }
 
 // Main execution
-(async () => {
-  // Check if DATABASE_URL is set
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL environment variable is not set');
-    process.exit(1);
-  }
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
-  try {
-    await runMigrations();
-    // Миграции завершены, теперь следующая команда в цепочке (node src/index.js) запустится
-  } catch (error) {
-    console.error('❌ Migration execution failed:', error);
-    process.exit(1);
-  }
-})();
+runMigrations().catch(error => {
+  console.error('❌ Migration execution failed:', error);
+  process.exit(1);
+});
