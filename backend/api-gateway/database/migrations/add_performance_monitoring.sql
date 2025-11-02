@@ -4,7 +4,8 @@
 
 -- 1. Включаем расширение pg_stat_statements для мониторинга запросов
 -- =====================================================
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+-- Требует настройки shared_preload_libraries в PostgreSQL
+-- CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
 -- 2. Создаем таблицу для хранения метрик производительности
 -- =====================================================
@@ -366,7 +367,8 @@ BEGIN
     PERFORM collect_basic_metrics();
     PERFORM collect_table_metrics();
     PERFORM collect_index_metrics();
-    PERFORM collect_slow_queries();
+    -- Требует pg_stat_statements
+    -- PERFORM collect_slow_queries();
 END;
 $$ LANGUAGE plpgsql;
 
@@ -454,7 +456,7 @@ ALTER TABLE index_usage_stats SET (fillfactor = 95);
 -- =====================================================
 
 -- Создаем начальные метрики
-SELECT collect_all_metrics();
+-- SELECT collect_all_metrics();
 
 -- Выводим информацию о созданных объектах мониторинга
 SELECT 
