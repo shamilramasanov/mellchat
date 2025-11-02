@@ -157,6 +157,12 @@ app.use(cors({
         return callback(null, true);
       }
       
+      // Разрешаем mellchat.live домены
+      if (origin && origin.includes('mellchat.live')) {
+        logger.info('CORS allowed (mellchat.live):', { origin });
+        return callback(null, true);
+      }
+      
       logger.warn('CORS blocked in production:', { origin });
       return callback(new Error('Not allowed by CORS in production'));
     }
@@ -199,7 +205,12 @@ app.options('*', cors({
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      if (origin && origin.includes('.vercel.app')) {
+      // Разрешаем все Vercel URLs
+      if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
+        return callback(null, true);
+      }
+      // Разрешаем mellchat.live домены
+      if (origin && origin.includes('mellchat.live')) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS in production'));
