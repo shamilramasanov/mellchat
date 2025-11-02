@@ -1,9 +1,14 @@
 // Auth Service - сервис авторизации пользователей
 const logger = require('../utils/logger');
+
+logger.info('✅ AuthService loading');
+
 const databaseService = require('./databaseService');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+
+logger.info('✅ AuthService loaded');
 
 // In-memory хранилище для Google OAuth (можно перевести в БД позже)
 const googleUsers = new Map();
