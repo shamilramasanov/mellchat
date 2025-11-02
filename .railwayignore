@@ -1,0 +1,11 @@
+frontend/
+docs/
+*.md
+!DEPLOYMENT.md
+!README.md
+public/
+src/
+index.html
+vite.config.js
+jsconfig.json
+
