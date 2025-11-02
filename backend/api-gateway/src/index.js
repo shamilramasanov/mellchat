@@ -235,8 +235,19 @@ app.options('*', (req, res) => {
 });
 
 // Rate limiting middleware (применяем перед body parsing)
-app.use(rateLimitStats); // Логируем статистику устройств
-app.use('/api/v1', rateLimiters.general); // Общий лимит для API
+// НО: пропускаем OPTIONS запросы для CORS preflight
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next(); // Пропускаем OPTIONS без rate limiting
+  }
+  rateLimitStats(req, res, next);
+});
+app.use('/api/v1', (req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next(); // Пропускаем OPTIONS без rate limiting
+  }
+  rateLimiters.general(req, res, next);
+});
 
 // Metrics middleware
 app.use(metricsMiddleware);
