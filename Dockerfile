@@ -12,7 +12,6 @@ RUN npm ci --only=production
 COPY backend/api-gateway/src/ ./src/
 
 # Copy migration scripts and database folder
-COPY backend/api-gateway/apply-migrations.sh ./apply-migrations.sh
 COPY backend/api-gateway/apply-migrations.js ./apply-migrations.js
 COPY backend/api-gateway/database/ ./database/
 
@@ -26,7 +25,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 USER nodejs
 
-EXPOSE 3000
+EXPOSE 3001
 
 # Start command with migrations (use Node.js script directly)
 WORKDIR /app
