@@ -223,13 +223,17 @@ module.exports = runMigrations;
 
 // If run directly (not imported)
 if (require.main === module) {
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL environment variable is not set');
-    process.exit(1);
-  }
+  (async () => {
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL environment variable is not set');
+      process.exit(1);
+    }
 
-  runMigrations().catch(error => {
-    console.error('❌ Migration execution failed:', error);
-    process.exit(1);
-  });
+    try {
+      await runMigrations();
+    } catch (error) {
+      console.error('❌ Migration execution failed:', error);
+      process.exit(1);
+    }
+  })();
 }
