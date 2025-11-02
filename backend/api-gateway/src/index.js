@@ -7,12 +7,20 @@ require('dotenv').config();
 // Initialize global connection maps
 global.activeKickConnections = global.activeKickConnections || new Map();
 
+console.log('🔍 index.js: loading modules...');
 const logger = require('./utils/logger');
+console.log('🔍 index.js: logger loaded');
 const errorHandler = require('./middleware/errorHandler');
+console.log('🔍 index.js: errorHandler loaded');
 const { rateLimiters, rateLimitStats } = require('./middleware/rateLimiter');
+console.log('🔍 index.js: rateLimiter loaded');
 const { metricsMiddleware, register } = require('./utils/metrics');
+console.log('🔍 index.js: metrics loaded');
 const auth = require('./middleware/auth');
+console.log('🔍 index.js: auth loaded');
+console.log('🔍 index.js: loading passport...');
 const passport = require('./config/passport');
+console.log('🔍 index.js: passport loaded');
 
 // Routes
 logger.info('Loading routes...');
@@ -79,7 +87,7 @@ app.use(helmet());
 
 // CORS configuration
 const allowedOrigins = [
-  'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:5173', // Vite dev server
   'http://localhost:5174', // Vite dev server (alternate port)
   'http://192.168.19.76:5173', // Local network access (mobile testing)
@@ -142,7 +150,7 @@ app.options('*', cors({
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
-      'http://localhost:3000',
+      'http://localhost:3001',
       'http://localhost:5173',
       'http://localhost:5174',
       'http://192.168.19.76:5173',

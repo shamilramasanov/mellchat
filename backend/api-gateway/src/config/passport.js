@@ -1,7 +1,12 @@
+console.log('🔍 passport.js: loading modules...');
 const passport = require('passport');
+console.log('🔍 passport.js: passport loaded');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+console.log('🔍 passport.js: GoogleStrategy loaded');
 const authService = require('../services/authService');
+console.log('🔍 passport.js: authService loaded');
 const logger = require('../utils/logger');
+console.log('🔍 passport.js: logger loaded');
 
 logger.info('✅ Passport loading');
 

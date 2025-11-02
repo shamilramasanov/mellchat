@@ -1,14 +1,16 @@
+console.log('🔍 authService.js: loading modules...');
 // Auth Service - сервис авторизации пользователей
 const logger = require('../utils/logger');
-
-logger.info('✅ AuthService loading');
-
+console.log('🔍 authService: logger loaded');
 const databaseService = require('./databaseService');
+console.log('🔍 authService: databaseService loaded');
 const jwt = require('jsonwebtoken');
+console.log('🔍 authService: jwt loaded');
 const bcrypt = require('bcryptjs');
+console.log('🔍 authService: bcrypt loaded');
+console.log('🔍 authService: loading uuid...');
 const { v4: uuidv4 } = require('uuid');
-
-logger.info('✅ AuthService loaded');
+console.log('🔍 authService: uuid loaded');
 
 // In-memory хранилище для Google OAuth (можно перевести в БД позже)
 const googleUsers = new Map();
