@@ -11,6 +11,11 @@ RUN npm ci --only=production
 # Copy source code
 COPY src/ ./src/
 
+# Copy migration scripts
+COPY apply-migrations.sh ./
+COPY database/ ./database/
+RUN chmod +x ./apply-migrations.sh
+
 # Create logs directory
 RUN mkdir -p logs
 
@@ -25,4 +30,5 @@ USER nodejs
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Use start script with migrations
+CMD ["npm", "run", "start:with-migrations"]
