@@ -218,11 +218,11 @@ BEGIN
         queryid,
         query,
         calls,
-        total_time,
-        mean_time,
-        max_time,
-        min_time,
-        stddev_time,
+        total_exec_time as total_time,
+        mean_exec_time as mean_time,
+        max_exec_time as max_time,
+        min_exec_time as min_time,
+        stddev_exec_time as stddev_time,
         rows,
         shared_blks_hit,
         shared_blks_read,
@@ -237,8 +237,8 @@ BEGIN
         blk_read_time,
         blk_write_time
     FROM pg_stat_statements 
-    WHERE mean_time > 1000  -- Запросы дольше 1 секунды
-    ORDER BY mean_time DESC
+    WHERE mean_exec_time > 1000  -- Запросы дольше 1 секунды
+    ORDER BY mean_exec_time DESC
     LIMIT 50;
 END;
 $$ LANGUAGE plpgsql;
