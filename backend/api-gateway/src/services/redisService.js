@@ -100,6 +100,14 @@ const redisService = {
   async ping() {
     try { const c = await ensureClient(); return await c.ping(); }
     catch (e) { throw e; }
+  },
+  async getClient() {
+    try {
+      return await ensureClient();
+    } catch (e) {
+      logger.error('redis.getClient error', { error: e.message });
+      return null;
+    }
   }
 };
 

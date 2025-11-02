@@ -211,7 +211,7 @@ class AdminMetricsService {
 
       return status;
     } catch (error) {
-      logger.error('Error getting Redis status:', error.message);
+      logger.error('Error getting Redis status:', { error: error.message, stack: error.stack });
       return {
         memoryUsage: 0,
         keyCount: 0
