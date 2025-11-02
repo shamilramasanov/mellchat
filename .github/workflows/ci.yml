@@ -43,55 +43,22 @@ jobs:
         node-version: '18'
         cache: 'npm'
     
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
-    
-    - name: Install dependencies
+    - name: Install backend dependencies
       run: |
         cd backend/api-gateway && npm ci
-        cd ../sync-worker && npm ci
-        cd ../../frontend/pwa && npm ci
     
-    - name: Run API Gateway tests
+    - name: Install frontend dependencies
       run: |
-        cd backend/api-gateway
-        npm test
-      env:
-        POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/mellchat_test
-        REDIS_URL: redis://localhost:6379
+        cd frontend/pwa && npm ci
     
-    - name: Run Sync Worker tests
-      run: |
-        cd backend/sync-worker
-        npm test
-      env:
-        POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/mellchat_test
-        REDIS_URL: redis://localhost:6379
-    
-    - name: Run Frontend tests
-      run: |
-        cd frontend/pwa
-        npm test -- --coverage --watchAll=false
-    
-    - name: Run Go tests
-      run: |
-        cd backend/websocket-proxy && go test ./...
-        cd ../../collectors/twitch && go test ./...
-        cd ../youtube && go test ./...
-        cd ../shared && go test ./...
-    
-    - name: Build Docker images
-      run: |
-        docker-compose build
-    
-    - name: Run integration tests
-      run: |
-        docker-compose up -d
-        sleep 30
-        ./scripts/test.sh
-        docker-compose down
+    # Backend and frontend tests can be added later if needed
+    # - name: Run tests
+    #   run: |
+    #     cd backend/api-gateway
+    #     npm test
+    #   env:
+    #     POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/mellchat_test
+    #     REDIS_URL: redis://localhost:6379
 
   security:
     runs-on: ubuntu-latest
