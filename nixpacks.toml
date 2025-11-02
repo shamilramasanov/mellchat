@@ -1,0 +1,15 @@
+[providers]
+node = { version = "18" }
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = ["cd backend/api-gateway && npm ci"]
+
+[phases.build]
+cmds = ["echo 'Build completed'"]
+
+[start]
+cmd = "cd backend/api-gateway && npm run start:with-migrations"
+
