@@ -4,6 +4,18 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+// Обработка необработанных ошибок
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION:', error);
+  console.error('Stack:', error.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 // Initialize global connection maps
 global.activeKickConnections = global.activeKickConnections || new Map();
 
