@@ -1,6 +1,10 @@
+console.log('✅ logger.js: Starting to load...');
 const winston = require('winston');
+console.log('✅ logger.js: winston loaded');
 const DailyRotateFile = require('winston-daily-rotate-file');
+console.log('✅ logger.js: DailyRotateFile loaded');
 const path = require('path');
+console.log('✅ logger.js: path loaded');
 
 // Создаем директорию для логов
 const logDir = path.join(__dirname, '../../logs');
