@@ -29,11 +29,11 @@ function ensurePool() {
     max: 20, // максимум соединений
     min: 5,  // минимум активных соединений
     idleTimeoutMillis: 30000, // 30 сек бездействия
-    connectionTimeoutMillis: 2000, // 2 сек на подключение
-    statement_timeout: 5000, // 5 сек timeout для запросов
-    query_timeout: 10000, // 10 сек timeout для сложных запросов
+    connectionTimeoutMillis: 30000, // 30 сек на подключение (увеличено для Railway)
+    statement_timeout: 30000, // 30 сек timeout для запросов
+    query_timeout: 30000, // 30 сек timeout для сложных запросов
     keepAlive: true, // поддерживаем соединения живыми
-    keepAliveInitialDelayMillis: 0, // сразу начинаем keep-alive
+    keepAliveInitialDelayMillis: 10000, // начинаем keep-alive через 10 сек
   });
 
   pool.on('error', (err) => {

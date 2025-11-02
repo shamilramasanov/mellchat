@@ -1,0 +1,54 @@
+# Railway ignore - не копировать при деплое
+
+# Логи
+backend.log
+logs/
+
+# Ноды (устанавливаются на Railway)
+node_modules/
+
+# Локальные переменные окружения
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Тестовые файлы
+*.test.js
+__tests__/
+__mocks__/
+
+# Документация
+*.md
+docs/
+
+# CI/CD
+.github/
+
+# Временные файлы
+*.tmp
+*.temp
+*.log
+
+# Backup файлы
+*.bak
+*.backup
+
+# Coverage
+coverage/
+.nyc_output/
+

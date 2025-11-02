@@ -13,6 +13,7 @@ COPY src/ ./src/
 
 # Copy migration scripts
 COPY apply-migrations.sh ./
+COPY apply-migrations.js ./
 COPY database/ ./database/
 RUN chmod +x ./apply-migrations.sh
 
@@ -28,7 +29,7 @@ RUN chown -R nodejs:nodejs /app
 
 USER nodejs
 
-EXPOSE 3000
+EXPOSE 3001
 
 # Use start script with migrations
 CMD ["npm", "run", "start:with-migrations"]

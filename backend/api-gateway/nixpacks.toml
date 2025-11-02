@@ -5,7 +5,7 @@ node = { version = "18" }
 nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm ci --production"]
 
 [phases.build]
 cmds = ["echo 'Build completed'"]

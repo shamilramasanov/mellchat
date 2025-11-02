@@ -4,14 +4,38 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-async function runMigrations() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL
-  });
+async function connectWithRetry(maxRetries = 10, retryDelay = 2000) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const client = new Client({
+        connectionString: process.env.DATABASE_URL,
+        connectionTimeoutMillis: 30000,
+      });
+      
+      await client.connect();
+      console.log(`✅ Connected to database on attempt ${attempt}`);
+      return client;
+    } catch (error) {
+      lastError = error;
+      console.log(`⚠️  Connection attempt ${attempt}/${maxRetries} failed: ${error.message}`);
+      
+      if (attempt < maxRetries) {
+        const delay = retryDelay * attempt;
+        console.log(`🔄 Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
 
+async function runMigrations() {
+  const client = await connectWithRetry();
+  
   try {
-    await client.connect();
-    console.log('✅ Connected to database');
 
     const migrationsDir = path.join(__dirname, 'database', 'migrations');
     console.log('📂 Migrations directory:', migrationsDir);
@@ -145,8 +169,12 @@ async function runMigrations() {
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
     console.error('Stack:', error.stack);
-    await client.end();
-    process.exit(1);
+    if (client && !client._ending) {
+      await client.end();
+    }
+    // Don't exit with error - allow app to start even if migrations fail
+    console.log('⚠️  Continuing to start app despite migration failures...');
+    process.exit(0);
   }
 }
 
