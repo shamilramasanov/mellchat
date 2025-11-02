@@ -39,6 +39,7 @@ RUN ls -la /app/apply-migrations.sh || echo "Script missing!" && \
 
 EXPOSE 3000
 
-# Start command with migrations (use sh to run the script)
-CMD ["sh", "-c", "./apply-migrations.sh && node src/index.js"]
+# Start command with migrations (use absolute path to script)
+WORKDIR /app
+CMD ["sh", "-c", "pwd && ls -la apply-migrations.sh && chmod +x apply-migrations.sh && /app/apply-migrations.sh && node /app/src/index.js"]
 
