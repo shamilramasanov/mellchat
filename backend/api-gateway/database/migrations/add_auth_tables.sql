@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS email_verifications (
     expires_at TIMESTAMP NOT NULL,
     verified BOOLEAN DEFAULT false,
     
-    FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE,
+    -- FOREIGN KEY будет добавлен после создания app_users
+    -- FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE,
     CONSTRAINT chk_email_expires_future CHECK (expires_at > created_at)
 );
 
@@ -50,7 +51,8 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     expires_at TIMESTAMP NOT NULL,
     used BOOLEAN DEFAULT false,
     
-    FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE,
+    -- FOREIGN KEY будет добавлен после создания app_users
+    -- FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE,
     CONSTRAINT chk_reset_expires_future CHECK (expires_at > created_at)
 );
 

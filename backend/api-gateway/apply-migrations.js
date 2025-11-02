@@ -16,10 +16,27 @@ async function runMigrations() {
     const migrationsDir = path.join(__dirname, 'database', 'migrations');
     console.log('📂 Migrations directory:', migrationsDir);
 
-    // Get all SQL files sorted by name
+    // Get all SQL files sorted by name with priority:
+    // 1. Files starting with number prefix (01_, 02_, etc.)
+    // 2. Files starting with 'add_auth_users' (must come before 'add_auth_tables')
+    // 3. Other files alphabetically
     const files = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))
-      .sort();
+      .sort((a, b) => {
+        // Priority 1: Numbered migrations first
+        const aNum = parseInt(a.match(/^(\d+)_/)?.[1] || '999999');
+        const bNum = parseInt(b.match(/^(\d+)_/)?.[1] || '999999');
+        if (aNum !== 999999 || bNum !== 999999) {
+          return aNum - bNum;
+        }
+        
+        // Priority 2: add_auth_users before add_auth_tables
+        if (a === 'add_auth_users.sql' && b === 'add_auth_tables.sql') return -1;
+        if (a === 'add_auth_tables.sql' && b === 'add_auth_users.sql') return 1;
+        
+        // Priority 3: Alphabetical
+        return a.localeCompare(b);
+      });
 
     console.log(`📝 Found ${files.length} migration files`);
 
