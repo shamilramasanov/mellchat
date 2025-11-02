@@ -1,7 +1,8 @@
 // API Configuration  
 export const API_URL = import.meta.env.VITE_API_URL || 'https://mellchat-production.up.railway.app';
 // Native WebSocket URL (not Socket.io)
-const wsUrl = import.meta.env.VITE_WS_URL || 'https://mellchat-production.up.railway.app';
+const wsUrl = (import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'https://mellchat-production.up.railway.app')
+  .replace(/\/+$/, ''); // Убираем все trailing slashes
 export const WS_URL = wsUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'MellChat';
 export const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.0.0';
