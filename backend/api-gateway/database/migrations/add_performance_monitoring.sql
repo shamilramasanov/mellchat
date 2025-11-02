@@ -148,7 +148,7 @@ BEGIN
     FOR table_record IN 
         SELECT 
             schemaname,
-            tablename,
+            relname,
             n_tup_ins as inserts,
             n_tup_upd as updates,
             n_tup_del as deletes,
@@ -166,7 +166,7 @@ BEGIN
             table_record.live_tuples,
             'count',
             jsonb_build_object(
-                'table', table_record.schemaname || '.' || table_record.tablename,
+                'table', table_record.schemaname || '.' || table_record.relname,
                 'inserts', table_record.inserts,
                 'updates', table_record.updates,
                 'deletes', table_record.deletes,
@@ -346,19 +346,19 @@ FROM pg_stat_database WHERE datname = current_database();
 -- Представление для анализа таблиц
 CREATE OR REPLACE VIEW table_analysis AS
 SELECT 
-    schemaname||'.'||tablename as table_name,
+    schemaname||'.'||relname as table_name,
     n_live_tup as live_tuples,
     n_dead_tup as dead_tuples,
     round(100.0 * n_dead_tup / (n_live_tup + n_dead_tup), 2) as dead_tuple_ratio,
-    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as total_size,
-    pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) as table_size,
-    pg_size_pretty(pg_indexes_size(schemaname||'.'||tablename)) as index_size,
+    pg_size_pretty(pg_total_relation_size((schemaname||'.'||relname)::regclass)) as total_size,
+    pg_size_pretty(pg_relation_size((schemaname||'.'||relname)::regclass)) as table_size,
+    pg_size_pretty(pg_indexes_size((schemaname||'.'||relname)::regclass)) as index_size,
     last_vacuum,
     last_autovacuum,
     last_analyze,
     last_autoanalyze
 FROM pg_stat_user_tables
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+ORDER BY pg_total_relation_size((schemaname||'.'||relname)::regclass) DESC;
 
 -- 9. Создание функции для автоматического сбора метрик
 -- =====================================================
