@@ -10,6 +10,8 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "@fingerprintjs/fingerprintjs": "^5.0.1",
     "@headlessui/react": "^1.7.17",
     "@tanstack/react-virtual": "^3.13.12",
@@ -44,8 +46,8 @@
     "vite-plugin-pwa": "^0.17.4"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   },
   "resolutions": {
     "rollup": "^4.0.0"
