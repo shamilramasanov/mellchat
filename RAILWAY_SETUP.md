@@ -81,8 +81,8 @@ EMAIL_PROVIDER=mock  # Для старта используй mock
 ## Шаг 4: Настрой деплой
 
 1. В настройках проекта выбери **"Settings"**
-2. В **"Root Directory"** выбери: `backend/api-gateway`
-3. Railway найдёт `Dockerfile` в корне репозитория автоматически
+2. Оставь **"Root Directory"** пустым (Railway найдёт `Dockerfile` в корне автоматически)
+3. Railway обнаружит Dockerfile и начнёт деплой
 
 ## Шаг 5: Проверь деплой
 
