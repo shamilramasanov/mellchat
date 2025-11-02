@@ -126,9 +126,9 @@ BEGIN
     INSERT INTO performance_metrics (metric_name, metric_value, metric_unit) 
     VALUES ('cache_hit_ratio', cache_hit_ratio, 'percent');
     
-    -- TPS (транзакции в секунду)
+    -- TPS (транзакции в секунду) - базовая метрика
     SELECT 
-        round(sum(xact_commit + xact_rollback) / extract(epoch from (now() - stats_reset)), 2)
+        round((sum(xact_commit) + sum(xact_rollback))::DOUBLE PRECISION / GREATEST(extract(epoch from (now() - MAX(stats_reset))), 1), 2)
     INTO tps
     FROM pg_stat_database 
     WHERE datname = current_database();
@@ -339,7 +339,7 @@ FROM pg_stat_database WHERE datname = current_database()
 UNION ALL
 SELECT 
     'TPS',
-    round(sum(xact_commit + xact_rollback) / extract(epoch from (now() - stats_reset)), 2)::TEXT,
+    round((sum(xact_commit) + sum(xact_rollback))::DOUBLE PRECISION / GREATEST(extract(epoch from (now() - MAX(stats_reset))), 1), 2)::TEXT,
     'tps'
 FROM pg_stat_database WHERE datname = current_database();
 
