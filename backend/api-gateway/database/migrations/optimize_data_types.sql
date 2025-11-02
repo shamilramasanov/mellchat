@@ -47,7 +47,7 @@ END $$;
 ALTER TABLE messages ALTER COLUMN platform TYPE platform_enum USING platform::platform_enum;
 
 -- Оптимизируем поле text/content (TEXT остается, но добавляем ограничение)
-ALTER TABLE messages ADD CONSTRAINT chk_text_length CHECK (LENGTH(COALESCE(content, text)) <= 1000);
+-- ALTER TABLE messages ADD CONSTRAINT chk_text_length CHECK (LENGTH(COALESCE(content, text)) <= 1000);
 
 -- Оптимизируем поле sentiment (enum вместо VARCHAR)
 DO $$ 
@@ -76,10 +76,10 @@ ALTER TABLE messages ALTER COLUMN message_classification TYPE classification_enu
 ALTER TABLE messages ALTER COLUMN message_classification SET DEFAULT 'normal'::classification_enum;
 
 -- Оптимизируем поле message_score (SMALLINT вместо INTEGER)
-ALTER TABLE messages ALTER COLUMN message_score TYPE SMALLINT;
+-- ALTER TABLE messages ALTER COLUMN message_score TYPE SMALLINT;
 
 -- Добавляем ограничения для message_score
-ALTER TABLE messages ADD CONSTRAINT chk_message_score CHECK (message_score >= 0 AND message_score <= 100);
+-- ALTER TABLE messages ADD CONSTRAINT chk_message_score CHECK (message_score >= 0 AND message_score <= 100);
 
 -- 2. Оптимизация таблицы questions
 -- =====================================================
@@ -91,7 +91,7 @@ ALTER TABLE questions ALTER COLUMN username TYPE VARCHAR(100);
 ALTER TABLE questions ALTER COLUMN platform TYPE platform_enum USING platform::platform_enum;
 
 -- Оптимизируем поле text
-ALTER TABLE questions ADD CONSTRAINT chk_question_text_length CHECK (LENGTH(text) <= 1000);
+-- ALTER TABLE questions ADD CONSTRAINT chk_question_text_length CHECK (LENGTH(text) <= 1000);
 
 -- 3. Оптимизация таблицы users
 -- =====================================================
@@ -103,12 +103,12 @@ ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(100);
 ALTER TABLE users ALTER COLUMN platform TYPE platform_enum USING platform::platform_enum;
 
 -- Оптимизируем поля счетчиков (SMALLINT вместо INTEGER)
-ALTER TABLE users ALTER COLUMN message_count TYPE SMALLINT;
-ALTER TABLE users ALTER COLUMN question_count TYPE SMALLINT;
+-- ALTER TABLE users ALTER COLUMN message_count TYPE SMALLINT;
+-- ALTER TABLE users ALTER COLUMN question_count TYPE SMALLINT;
 
 -- Добавляем ограничения для счетчиков
-ALTER TABLE users ADD CONSTRAINT chk_message_count CHECK (message_count >= 0);
-ALTER TABLE users ADD CONSTRAINT chk_question_count CHECK (question_count >= 0);
+-- ALTER TABLE users ADD CONSTRAINT chk_message_count CHECK (message_count >= 0);
+-- ALTER TABLE users ADD CONSTRAINT chk_question_count CHECK (question_count >= 0);
 
 -- 4. Оптимизация таблицы streams
 -- =====================================================
@@ -157,51 +157,51 @@ ALTER TABLE user_sessions ALTER COLUMN session_type DROP DEFAULT;
 ALTER TABLE user_sessions ALTER COLUMN session_type TYPE session_type_enum USING session_type::session_type_enum;
 ALTER TABLE user_sessions ALTER COLUMN session_type SET DEFAULT 'normal'::session_type_enum;
 
--- 6. Добавление ограничений для целостности данных
+-- 6. Добавление ограничений для целостности данных (комментируем для избежания таймаутов)
 -- =====================================================
 
 -- Ограничения для messages
-ALTER TABLE messages ADD CONSTRAINT chk_created_at_not_future CHECK (created_at <= NOW());
-ALTER TABLE messages ADD CONSTRAINT chk_message_score_range CHECK (message_score >= 0 AND message_score <= 100);
+-- ALTER TABLE messages ADD CONSTRAINT chk_created_at_not_future CHECK (created_at <= NOW());
+-- ALTER TABLE messages ADD CONSTRAINT chk_message_score_range CHECK (message_score >= 0 AND message_score <= 100);
 
 -- Ограничения для questions
-ALTER TABLE questions ADD CONSTRAINT chk_question_created_at_not_future CHECK (created_at <= NOW());
+-- ALTER TABLE questions ADD CONSTRAINT chk_question_created_at_not_future CHECK (created_at <= NOW());
 
 -- Ограничения для users
-ALTER TABLE users ADD CONSTRAINT chk_first_seen_not_future CHECK (first_seen <= NOW());
-ALTER TABLE users ADD CONSTRAINT chk_last_seen_not_future CHECK (last_seen <= NOW());
-ALTER TABLE users ADD CONSTRAINT chk_last_seen_after_first CHECK (last_seen >= first_seen);
+-- ALTER TABLE users ADD CONSTRAINT chk_first_seen_not_future CHECK (first_seen <= NOW());
+-- ALTER TABLE users ADD CONSTRAINT chk_last_seen_not_future CHECK (last_seen <= NOW());
+-- ALTER TABLE users ADD CONSTRAINT chk_last_seen_after_first CHECK (last_seen >= first_seen);
 
 -- Ограничения для streams
-ALTER TABLE streams ADD CONSTRAINT chk_stream_created_at_not_future CHECK (created_at <= NOW());
-ALTER TABLE streams ADD CONSTRAINT chk_stream_updated_at_not_future CHECK (updated_at <= NOW());
-ALTER TABLE streams ADD CONSTRAINT chk_updated_after_created CHECK (updated_at >= created_at);
+-- ALTER TABLE streams ADD CONSTRAINT chk_stream_created_at_not_future CHECK (created_at <= NOW());
+-- ALTER TABLE streams ADD CONSTRAINT chk_stream_updated_at_not_future CHECK (updated_at <= NOW());
+-- ALTER TABLE streams ADD CONSTRAINT chk_updated_after_created CHECK (updated_at >= created_at);
 
 -- Ограничения для user_sessions
-ALTER TABLE user_sessions ADD CONSTRAINT chk_session_created_at_not_future CHECK (created_at <= NOW());
-ALTER TABLE user_sessions ADD CONSTRAINT chk_session_updated_at_not_future CHECK (updated_at <= NOW());
-ALTER TABLE user_sessions ADD CONSTRAINT chk_session_updated_after_created CHECK (updated_at >= created_at);
-ALTER TABLE user_sessions ADD CONSTRAINT chk_last_seen_not_future CHECK (last_seen_at <= NOW());
+-- ALTER TABLE user_sessions ADD CONSTRAINT chk_session_created_at_not_future CHECK (created_at <= NOW());
+-- ALTER TABLE user_sessions ADD CONSTRAINT chk_session_updated_at_not_future CHECK (updated_at <= NOW());
+-- ALTER TABLE user_sessions ADD CONSTRAINT chk_session_updated_after_created CHECK (updated_at >= created_at);
+-- ALTER TABLE user_sessions ADD CONSTRAINT chk_last_seen_not_future CHECK (last_seen_at <= NOW());
 
--- 7. Создание индексов для новых ограничений
+-- 7. Создание индексов для новых ограничений (комментируем для избежания таймаутов)
 -- =====================================================
 
 -- Индекс для проверки целостности временных данных
-CREATE INDEX IF NOT EXISTS idx_messages_created_at_check ON messages(created_at) WHERE created_at > NOW();
+-- CREATE INDEX IF NOT EXISTS idx_messages_created_at_check ON messages(created_at) WHERE created_at > NOW();
 
 -- Индекс для проверки целостности пользователей
-CREATE INDEX IF NOT EXISTS idx_users_last_seen_check ON users(last_seen) WHERE last_seen > NOW();
+-- CREATE INDEX IF NOT EXISTS idx_users_last_seen_check ON users(last_seen) WHERE last_seen > NOW();
 
--- 8. Оптимизация размеров полей для экономии места
+-- 8. Оптимизация размеров полей для экономии места (комментируем для избежания таймаутов)
 -- =====================================================
 
 -- Сжимаем большие текстовые поля
-ALTER TABLE messages SET (toast_tuple_target = 128);
-ALTER TABLE questions SET (toast_tuple_target = 128);
+-- ALTER TABLE messages SET (toast_tuple_target = 128);
+-- ALTER TABLE questions SET (toast_tuple_target = 128);
 
 -- Настраиваем fillfactor для часто обновляемых таблиц
-ALTER TABLE messages SET (fillfactor = 90);
-ALTER TABLE user_sessions SET (fillfactor = 85);
+-- ALTER TABLE messages SET (fillfactor = 90);
+-- ALTER TABLE user_sessions SET (fillfactor = 85);
 
 -- 9. Создание статистики для оптимизатора
 -- =====================================================
