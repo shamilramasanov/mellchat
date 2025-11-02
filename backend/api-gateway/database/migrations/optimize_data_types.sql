@@ -2,6 +2,15 @@
 -- ОПТИМИЗАЦИЯ ТИПОВ ДАННЫХ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
 -- =====================================================
 
+-- 0. Удаляем MATERIALIZED VIEW, которые зависят от колонок, которые будем менять
+-- =====================================================
+
+DROP MATERIALIZED VIEW IF EXISTS mv_stream_stats CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_user_stats CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_platform_stats CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_hourly_stats CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_top_users CASCADE;
+
 -- 1. Оптимизация таблицы messages
 -- =====================================================
 
@@ -196,14 +205,14 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT 
-        schemaname||'.'||tablename as table_name,
+        schemaname||'.'||relname as table_name,
         n_tup_ins - n_tup_del as row_count,
-        pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as total_size,
-        pg_size_pretty(pg_indexes_size(schemaname||'.'||tablename)) as index_size,
-        pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) as table_size
+        pg_size_pretty(pg_total_relation_size((schemaname||'.'||relname)::regclass)) as total_size,
+        pg_size_pretty(pg_indexes_size((schemaname||'.'||relname)::regclass)) as index_size,
+        pg_size_pretty(pg_relation_size((schemaname||'.'||relname)::regclass)) as table_size
     FROM pg_stat_user_tables 
     WHERE schemaname = 'public'
-    ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+    ORDER BY pg_total_relation_size((schemaname||'.'||relname)::regclass) DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -214,28 +223,29 @@ SELECT * FROM analyze_table_sizes();
 -- =====================================================
 
 -- Функция для анализа медленных запросов
-CREATE OR REPLACE FUNCTION analyze_slow_queries()
-RETURNS TABLE(
-    query TEXT,
-    calls BIGINT,
-    total_time DOUBLE PRECISION,
-    mean_time DOUBLE PRECISION,
-    max_time DOUBLE PRECISION
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        query,
-        calls,
-        total_time,
-        mean_time,
-        max_time
-    FROM pg_stat_statements 
-    WHERE mean_time > 1000  -- Запросы дольше 1 секунды
-    ORDER BY mean_time DESC
-    LIMIT 20;
-END;
-$$ LANGUAGE plpgsql;
+-- Требует pg_stat_statements
+-- CREATE OR REPLACE FUNCTION analyze_slow_queries()
+-- RETURNS TABLE(
+--     query TEXT,
+--     calls BIGINT,
+--     total_time DOUBLE PRECISION,
+--     mean_time DOUBLE PRECISION,
+--     max_time DOUBLE PRECISION
+-- ) AS $$
+-- BEGIN
+--     RETURN QUERY
+--     SELECT 
+--         query,
+--         calls,
+--         total_time,
+--         mean_time,
+--         max_time
+--     FROM pg_stat_statements 
+--     WHERE mean_time > 1000  -- Запросы дольше 1 секунды
+--     ORDER BY mean_time DESC
+--     LIMIT 20;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 -- =====================================================
 -- ФИНАЛЬНАЯ ПРОВЕРКА
