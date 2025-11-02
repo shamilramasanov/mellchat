@@ -44,8 +44,6 @@ CREATE TABLE IF NOT EXISTS slow_queries (
     local_blks_written BIGINT,
     temp_blks_read BIGINT,
     temp_blks_written BIGINT,
-    blk_read_time DOUBLE PRECISION,
-    blk_write_time DOUBLE PRECISION,
     timestamp TIMESTAMP DEFAULT NOW()
 );
 
@@ -212,7 +210,7 @@ BEGIN
         query_hash, query_text, calls, total_time, mean_time, max_time, min_time,
         stddev_time, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied,
         shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied,
-        local_blks_written, temp_blks_read, temp_blks_written, blk_read_time, blk_write_time
+        local_blks_written, temp_blks_read, temp_blks_written
     )
     SELECT 
         queryid,
@@ -233,9 +231,7 @@ BEGIN
         local_blks_dirtied,
         local_blks_written,
         temp_blks_read,
-        temp_blks_written,
-        blk_read_time,
-        blk_write_time
+        temp_blks_written
     FROM pg_stat_statements 
     WHERE mean_exec_time > 1000  -- Запросы дольше 1 секунды
     ORDER BY mean_exec_time DESC
