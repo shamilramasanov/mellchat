@@ -5,6 +5,7 @@ public/
 src/
 index.html
 vite.config.js
-package.json
-package-lock.json
-jsconfig.json
+backend/api-gateway/node_modules/
+frontend/pwa/
+.git/
+.github/

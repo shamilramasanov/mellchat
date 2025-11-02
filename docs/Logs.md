@@ -1,61 +1,47 @@
-[plugin:vite:react-babel] /Users/apple/Desktop/MellChat/frontend/pwa/src/features/newui/components/admin/DashboardContent.jsx: Adjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>? (166:12)
-  169 |       </div>
-/Users/apple/Desktop/MellChat/frontend/pwa/src/features/newui/components/admin/DashboardContent.jsx:166:12
-164|                )}
-165|              </div>
-166|              </div>
-   |              ^
-167|            );
-168|          })}
-    at constructor (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:367:19)
-    at JSXParserMixin.raise (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:6630:19)
-    at JSXParserMixin.jsxParseElementAt (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:4775:18)
-    at JSXParserMixin.jsxParseElement (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:4782:17)
-    at JSXParserMixin.parseExprAtom (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:4792:19)
-    at JSXParserMixin.parseExprSubscripts (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11085:23)
-    at JSXParserMixin.parseUpdate (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11070:21)
-    at JSXParserMixin.parseMaybeUnary (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11050:23)
-    at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10903:61)
-    at JSXParserMixin.parseExprOps (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10908:23)
-    at JSXParserMixin.parseMaybeConditional (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10885:23)
-    at JSXParserMixin.parseMaybeAssign (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10835:21)
-    at /Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10804:39
-    at JSXParserMixin.allowInAnd (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12436:12)
-    at JSXParserMixin.parseMaybeAssignAllowIn (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10804:17)
-    at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12503:17)
-    at JSXParserMixin.parseParenAndDistinguishExpression (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11683:28)
-    at JSXParserMixin.parseExprAtom (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11335:23)
-    at JSXParserMixin.parseExprAtom (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:4797:20)
-    at JSXParserMixin.parseExprSubscripts (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11085:23)
-    at JSXParserMixin.parseUpdate (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11070:21)
-    at JSXParserMixin.parseMaybeUnary (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11050:23)
-    at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10903:61)
-    at JSXParserMixin.parseExprOps (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10908:23)
-    at JSXParserMixin.parseMaybeConditional (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10885:23)
-    at JSXParserMixin.parseMaybeAssign (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10835:21)
-    at JSXParserMixin.parseExpressionBase (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10788:23)
-    at /Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10784:39
-    at JSXParserMixin.allowInAnd (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12431:16)
-    at JSXParserMixin.parseExpression (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10784:17)
-    at JSXParserMixin.parseReturnStatement (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:13151:28)
-    at JSXParserMixin.parseStatementContent (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12807:21)
-    at JSXParserMixin.parseStatementLike (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12776:17)
-    at JSXParserMixin.parseStatementListItem (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12756:17)
-    at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:13325:61)
-    at JSXParserMixin.parseBlockBody (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:13318:10)
-    at JSXParserMixin.parseBlock (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:13306:10)
-    at JSXParserMixin.parseFunctionBody (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12110:24)
-    at JSXParserMixin.parseArrowExpression (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:12085:10)
-    at JSXParserMixin.parseParenAndDistinguishExpression (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11695:12)
-    at JSXParserMixin.parseExprAtom (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11335:23)
-    at JSXParserMixin.parseExprAtom (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:4797:20)
-    at JSXParserMixin.parseExprSubscripts (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11085:23)
-    at JSXParserMixin.parseUpdate (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11070:21)
-    at JSXParserMixin.parseMaybeUnary (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:11050:23)
-    at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10903:61)
-    at JSXParserMixin.parseExprOps (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10908:23)
-    at JSXParserMixin.parseMaybeConditional (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10885:23)
-    at JSXParserMixin.parseMaybeAssign (/Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10835:21)
-    at /Users/apple/Desktop/MellChat/frontend/pwa/node_modules/@babel/parser/lib/index.js:10804:39
-Click outside, press Esc key, or fix the code to dismiss.
-You can also disable this overlay by setting server.hmr.overlay to false in vite.config.js.
+2025-11-02T01:34:32.445648586Z [inf]  
+2025-11-02T01:34:35.160731861Z [inf]  [35m[Region: europe-west4][0m
+2025-11-02T01:34:35.172599846Z [inf]  
+2025-11-02T01:34:35.172630066Z [inf]  [38;2;125;86;243m╭────────────────╮[0m
+2025-11-02T01:34:35.172638042Z [inf]  [38;2;125;86;243m│[0m Railpack 0.9.2 [38;2;125;86;243m│[0m
+2025-11-02T01:34:35.172641877Z [inf]  [38;2;125;86;243m╰────────────────╯[0m
+2025-11-02T01:34:35.172646143Z [inf]  
+2025-11-02T01:34:35.172649715Z [inf]  [33m⚠ Script start.sh not found[0m
+2025-11-02T01:34:35.172653698Z [inf]  [1;31m✖ Railpack could not determine how to build the app.[0m
+2025-11-02T01:34:35.172657669Z [inf]  
+2025-11-02T01:34:35.172660971Z [inf]  The following languages are supported:
+2025-11-02T01:34:35.172664357Z [inf]  Php
+2025-11-02T01:34:35.172667254Z [inf]  Golang
+2025-11-02T01:34:35.172670130Z [inf]  Java
+2025-11-02T01:34:35.172673454Z [inf]  Rust
+2025-11-02T01:34:35.172676756Z [inf]  Ruby
+2025-11-02T01:34:35.172679660Z [inf]  Elixir
+2025-11-02T01:34:35.172682855Z [inf]  Python
+2025-11-02T01:34:35.172685721Z [inf]  Deno
+2025-11-02T01:34:35.172688683Z [inf]  Node
+2025-11-02T01:34:35.172691663Z [inf]  Staticfile
+2025-11-02T01:34:35.172694409Z [inf]  Shell
+2025-11-02T01:34:35.172697191Z [inf]  
+2025-11-02T01:34:35.172699923Z [inf]  The app contents that Railpack analyzed contains:
+2025-11-02T01:34:35.172702641Z [inf]  
+2025-11-02T01:34:35.172705553Z [inf]  ./
+2025-11-02T01:34:35.172708291Z [inf]  ├── .cursor/
+2025-11-02T01:34:35.172711139Z [inf]  ├── .github/
+2025-11-02T01:34:35.172713851Z [inf]  ├── backend/
+2025-11-02T01:34:35.172716680Z [inf]  ├── docs/
+2025-11-02T01:34:35.172719281Z [inf]  ├── frontend/
+2025-11-02T01:34:35.172723581Z [inf]  ├── .cursorignor
+2025-11-02T01:34:35.172726661Z [inf]  ├── .cursorrules
+2025-11-02T01:34:35.172729579Z [inf]  ├── .gitignore
+2025-11-02T01:34:35.172732904Z [inf]  ├── .nixpacksignore
+2025-11-02T01:34:35.172736752Z [inf]  ├── .vercel-trigger
+2025-11-02T01:34:35.172740664Z [inf]  ├── .vercelignore
+2025-11-02T01:34:35.172744147Z [inf]  ├── DEPLOYMENT.md
+2025-11-02T01:34:35.172747677Z [inf]  ├── QUICK_DEPLOY.md
+2025-11-02T01:34:35.172751127Z [inf]  ├── README.md
+2025-11-02T01:34:35.172756170Z [inf]  ├── backup.sh
+2025-11-02T01:34:35.172759570Z [inf]  └── test_auth.sh
+2025-11-02T01:34:35.172762933Z [inf]  
+2025-11-02T01:34:35.172766476Z [inf]  Check out the docs for more information: https://railpack.com
+2025-11-02T01:34:35.172769733Z [inf]  
+2025-11-02T01:34:35.172773064Z [inf]  
+2025-11-02T01:34:35.172776099Z [inf]  
