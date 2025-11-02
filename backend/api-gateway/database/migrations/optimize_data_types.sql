@@ -2,14 +2,25 @@
 -- ОПТИМИЗАЦИЯ ТИПОВ ДАННЫХ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
 -- =====================================================
 
--- 0. Удаляем MATERIALIZED VIEW, которые зависят от колонок, которые будем менять
+-- 0. Удаляем зависимые объекты перед изменением типов колонок
 -- =====================================================
 
+-- Удаляем MATERIALIZED VIEW
 DROP MATERIALIZED VIEW IF EXISTS mv_stream_stats CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_user_stats CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_platform_stats CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_hourly_stats CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_top_users CASCADE;
+
+-- Удаляем обычные VIEW
+DROP VIEW IF EXISTS message_stats CASCADE;
+DROP VIEW IF EXISTS current_db_status CASCADE;
+DROP VIEW IF EXISTS table_analysis CASCADE;
+
+-- Удаляем триггеры, которые могут зависеть от колонок
+DROP TRIGGER IF EXISTS trigger_messages_metrics ON messages CASCADE;
+DROP TRIGGER IF EXISTS trigger_messages_stats ON messages CASCADE;
+DROP TRIGGER IF EXISTS update_messages_updated_at ON messages CASCADE;
 
 -- 1. Оптимизация таблицы messages
 -- =====================================================
