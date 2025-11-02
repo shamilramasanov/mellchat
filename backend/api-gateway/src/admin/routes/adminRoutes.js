@@ -11,11 +11,48 @@ const logger = require('../../utils/logger');
 
 // Handle CORS preflight requests for admin routes
 router.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.status(200).end();
+  const origin = req.headers.origin;
+  
+  const allowedOrigins = [
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://192.168.19.76:5173',
+    'https://mellchat.vercel.app',
+    'https://mellchat-v5y7.vercel.app',
+    'https://mellchat.live',
+    'https://www.mellchat.live',
+    process.env.CORS_ORIGIN,
+    process.env.FRONTEND_URL
+  ].filter(Boolean);
+  
+  let allowOrigin = null;
+  
+  if (!origin) {
+    allowOrigin = '*';
+  } else if (process.env.NODE_ENV === 'production') {
+    if (allowedOrigins.includes(origin)) {
+      allowOrigin = origin;
+    } else if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
+      allowOrigin = origin;
+    } else if (origin && origin.includes('mellchat.live')) {
+      allowOrigin = origin;
+    }
+  } else {
+    // Development: allow all
+    allowOrigin = origin || '*';
+  }
+  
+  if (allowOrigin) {
+    res.header('Access-Control-Allow-Origin', allowOrigin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, x-session-id');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    return res.status(204).end();
+  }
+  
+  res.status(403).end();
 });
 
 // Admin user configuration
@@ -49,10 +86,45 @@ const auditService = require('../../services/auditService');
 
 // Middleware для добавления CORS заголовков
 const addCorsHeaders = (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id');
-  res.header('Access-Control-Allow-Credentials', 'true');
+  const origin = req.headers.origin;
+  
+  const allowedOrigins = [
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://192.168.19.76:5173',
+    'https://mellchat.vercel.app',
+    'https://mellchat-v5y7.vercel.app',
+    'https://mellchat.live',
+    'https://www.mellchat.live',
+    process.env.CORS_ORIGIN,
+    process.env.FRONTEND_URL
+  ].filter(Boolean);
+  
+  let allowOrigin = null;
+  
+  if (!origin) {
+    allowOrigin = '*';
+  } else if (process.env.NODE_ENV === 'production') {
+    if (allowedOrigins.includes(origin)) {
+      allowOrigin = origin;
+    } else if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
+      allowOrigin = origin;
+    } else if (origin && origin.includes('mellchat.live')) {
+      allowOrigin = origin;
+    }
+  } else {
+    // Development: allow all
+    allowOrigin = origin || '*';
+  }
+  
+  if (allowOrigin) {
+    res.header('Access-Control-Allow-Origin', allowOrigin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, x-session-id');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
   next();
 };
 
