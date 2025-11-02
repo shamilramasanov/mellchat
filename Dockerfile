@@ -24,5 +24,5 @@ USER nodejs
 EXPOSE 3001
 
 # Запускаем миграции, затем сервер
-CMD ["sh", "-c", "node apply-migrations.js && node src/index.js"]
+CMD ["sh", "-c", "node apply-migrations.js && exec node src/index.js"]
 
