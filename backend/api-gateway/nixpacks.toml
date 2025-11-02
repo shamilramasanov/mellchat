@@ -1,0 +1,15 @@
+[providers]
+node = { version = "18" }
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["echo 'Build completed'"]
+
+[start]
+cmd = "npm run start:with-migrations"
+

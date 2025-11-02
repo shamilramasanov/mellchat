@@ -76,11 +76,12 @@ CORS_ORIGIN=https://<ваш_vercel_domain>
 
 ### Шаг 4: Настройка деплоя
 
-1. Railway автоматически обнаружит `package.json` в `backend/api-gateway`
-2. Убедитесь, что в настройках Build:
-   - **Root Directory**: `backend/api-gateway`
-   - **Build Command**: `npm install && npm run migrate`
-   - **Start Command**: `npm start`
+1. В настройках проекта Railway перейдите в **Settings → Source**
+2. Установите **Root Directory**: `backend/api-gateway`
+3. Railway автоматически обнаружит `package.json` и `nixpacks.toml`
+4. Убедитесь, что в настройках Deploy:
+   - **Start Command**: `npm run start:with-migrations` (применяет миграции автоматически)
+   - **Build Command**: оставьте пустым или `npm ci` (Railway определит автоматически)
 
 ### Шаг 5: Применение миграций
 
