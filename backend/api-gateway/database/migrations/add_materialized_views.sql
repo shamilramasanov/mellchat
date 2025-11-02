@@ -205,11 +205,22 @@ CREATE INDEX IF NOT EXISTS idx_mv_top_users_quality ON mv_top_users(avg_message_
 CREATE OR REPLACE FUNCTION refresh_all_materialized_views()
 RETURNS void AS $$
 BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_stream_stats;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_user_stats;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_platform_stats;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_hourly_stats;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_users;
+    -- Проверяем существование представлений перед обновлением
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_stream_stats') THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_stream_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_user_stats') THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_user_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_platform_stats') THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_platform_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_hourly_stats') THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_hourly_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_top_users') THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_users;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -217,7 +228,10 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION refresh_stream_stats(p_stream_id TEXT)
 RETURNS void AS $$
 BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_stream_stats;
+    -- Проверяем существование представления перед обновлением
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_stream_stats') THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_stream_stats;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -246,23 +260,49 @@ CREATE TRIGGER trigger_messages_stats
 -- НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ
 -- =====================================================
 
--- Настройки для материализованных представлений
-ALTER MATERIALIZED VIEW mv_stream_stats SET (fillfactor = 90);
-ALTER MATERIALIZED VIEW mv_user_stats SET (fillfactor = 90);
-ALTER MATERIALIZED VIEW mv_platform_stats SET (fillfactor = 90);
-ALTER MATERIALIZED VIEW mv_hourly_stats SET (fillfactor = 90);
-ALTER MATERIALIZED VIEW mv_top_users SET (fillfactor = 90);
+-- Настройки для материализованных представлений (с проверкой существования)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_stream_stats') THEN
+        ALTER MATERIALIZED VIEW mv_stream_stats SET (fillfactor = 90);
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_user_stats') THEN
+        ALTER MATERIALIZED VIEW mv_user_stats SET (fillfactor = 90);
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_platform_stats') THEN
+        ALTER MATERIALIZED VIEW mv_platform_stats SET (fillfactor = 90);
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_hourly_stats') THEN
+        ALTER MATERIALIZED VIEW mv_hourly_stats SET (fillfactor = 90);
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_top_users') THEN
+        ALTER MATERIALIZED VIEW mv_top_users SET (fillfactor = 90);
+    END IF;
+END $$;
 
 -- =====================================================
 -- СТАТИСТИКА ПОСЛЕ СОЗДАНИЯ ПРЕДСТАВЛЕНИЙ
 -- =====================================================
 
--- Обновляем статистику
-ANALYZE mv_stream_stats;
-ANALYZE mv_user_stats;
-ANALYZE mv_platform_stats;
-ANALYZE mv_hourly_stats;
-ANALYZE mv_top_users;
+-- Обновляем статистику (с проверкой существования)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_stream_stats') THEN
+        ANALYZE mv_stream_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_user_stats') THEN
+        ANALYZE mv_user_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_platform_stats') THEN
+        ANALYZE mv_platform_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_hourly_stats') THEN
+        ANALYZE mv_hourly_stats;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_top_users') THEN
+        ANALYZE mv_top_users;
+    END IF;
+END $$;
 
 -- Выводим информацию о созданных представлениях
 SELECT 
