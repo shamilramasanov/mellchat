@@ -186,8 +186,8 @@ BEGIN
     FOR index_record IN 
         SELECT 
             schemaname,
-            tablename,
-            indexname,
+            relname,
+            indexrelname,
             idx_tup_read,
             idx_tup_fetch
         FROM pg_stat_user_indexes
@@ -195,8 +195,8 @@ BEGIN
         INSERT INTO index_usage_stats (schemaname, tablename, indexname, idx_tup_read, idx_tup_fetch)
         VALUES (
             index_record.schemaname,
-            index_record.tablename,
-            index_record.indexname,
+            index_record.relname,
+            index_record.indexrelname,
             index_record.idx_tup_read,
             index_record.idx_tup_fetch
         );
