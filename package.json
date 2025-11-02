@@ -1,15 +1,10 @@
 {
   "name": "mellchat-root",
   "version": "1.0.0",
-  "description": "MellChat - Root package for Railway deployment",
+  "description": "MellChat - Root package (Railway will use Dockerfile)",
   "private": true,
   "scripts": {
-    "start": "cd backend/api-gateway && npm run start:with-migrations",
-    "install": "cd backend/api-gateway && npm install",
-    "build": "echo 'Build handled by Railway Dockerfile'"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "start": "cd backend/api-gateway && npm run start:with-migrations"
   }
 }
 
