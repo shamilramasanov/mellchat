@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       disable: process.env.NODE_ENV === 'development', // Отключаем в dev режиме
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // Используем prompt для лучшего контроля
       includeAssets: ['icons/*.svg', 'icons/*.png', 'favicon.ico'],
       manifest: {
         name: 'MellChat - Multi-platform Chat Aggregator',
