@@ -20,6 +20,7 @@ logs/
 .env.development.local
 .env.test.local
 .env.production.local
+docs/api_must_have.md
 
 # IDE
 .vscode/
