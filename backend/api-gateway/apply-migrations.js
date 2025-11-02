@@ -54,9 +54,13 @@ async function runMigrations() {
         // Check if migration contains CONCURRENTLY commands
         const hasConcurrently = migrationSQL.includes('CONCURRENTLY');
         
-        if (hasConcurrently) {
+        // Check if this is materialized views migration - it needs special handling
+        const isMaterializedViews = file.includes('materialized_views');
+        
+        if (hasConcurrently && !isMaterializedViews) {
           // Split SQL by semicolon and execute commands separately
           // CONCURRENTLY commands must run outside transaction
+          // BUT: Skip this for materialized_views as it has complex multi-line statements
           const commands = migrationSQL
             .split(';')
             .map(cmd => cmd.trim())
@@ -85,8 +89,33 @@ async function runMigrations() {
             }
           }
         } else {
-          // Regular migration - execute as single query (may be wrapped in transaction)
-          await client.query(migrationSQL);
+          // Regular migration or materialized views - execute as single query
+          // Materialized views migration contains CONCURRENTLY but needs full SQL execution
+          try {
+            await client.query(migrationSQL);
+          } catch (error) {
+            // For materialized views, check if tables exist first
+            if (isMaterializedViews && error.message.includes('does not exist')) {
+              // Check if required tables exist
+              const tablesCheck = await client.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                  AND table_name IN ('streams', 'messages', 'users')
+              `);
+              
+              const existingTables = tablesCheck.rows.map(r => r.table_name);
+              const requiredTables = ['streams', 'messages', 'users'];
+              const missingTables = requiredTables.filter(t => !existingTables.includes(t));
+              
+              if (missingTables.length > 0) {
+                console.log(`  ⚠️  Missing required tables: ${missingTables.join(', ')}`);
+                console.log(`  ⚠️  Skipping materialized views migration - tables must be created first`);
+                continue;
+              }
+            }
+            throw error;
+          }
         }
         
         console.log(`✅ Migration ${file} applied successfully!`);
