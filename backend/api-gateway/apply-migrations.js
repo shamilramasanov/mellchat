@@ -46,7 +46,7 @@ async function runMigrations() {
         if (a === 'add_moderation_fields.sql' && b === 'add_materialized_views.sql') return -1;
         if (a === 'add_materialized_views.sql' && b === 'add_moderation_fields.sql') return 1;
         
-        // Priority 4: Alphabetical
+        // Priority 6: Alphabetical
         return a.localeCompare(b);
       });
 
