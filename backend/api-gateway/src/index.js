@@ -184,47 +184,55 @@ app.use(cors({
 logger.info('✅ CORS middleware configured');
 
 // Handle preflight requests with same CORS configuration
-app.options('*', cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3001',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://192.168.19.76:5173',
-      'https://mellchat.vercel.app',
-      'https://mellchat-v5y7.vercel.app',
-      'https://mellchat.live',
-      'https://www.mellchat.live',
-      process.env.CORS_ORIGIN,
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-    
-    if (process.env.NODE_ENV === 'production') {
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      // Разрешаем все Vercel URLs
-      if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
-        return callback(null, true);
-      }
-      // Разрешаем mellchat.live домены
-      if (origin && origin.includes('mellchat.live')) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS in production'));
-    }
-    
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  // Логируем preflight запросы
+  logger.info('Preflight OPTIONS request:', { origin, path: req.path });
+  
+  const allowedOrigins = [
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://192.168.19.76:5173',
+    'https://mellchat.vercel.app',
+    'https://mellchat-v5y7.vercel.app',
+    'https://mellchat.live',
+    'https://www.mellchat.live',
+    process.env.CORS_ORIGIN,
+    process.env.FRONTEND_URL
+  ].filter(Boolean);
+  
+  let allowOrigin = null;
+  
+  if (!origin) {
+    allowOrigin = '*';
+  } else if (process.env.NODE_ENV === 'production') {
     if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+      allowOrigin = origin;
+    } else if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
+      allowOrigin = origin;
+    } else if (origin && origin.includes('mellchat.live')) {
+      allowOrigin = origin;
     }
-    return callback(null, true); // Allow all in development
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id', 'x-session-id'],
-}));
+  } else {
+    // Development: allow all
+    allowOrigin = origin || '*';
+  }
+  
+  if (allowOrigin) {
+    res.header('Access-Control-Allow-Origin', allowOrigin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, x-session-id');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    logger.info('Preflight allowed:', { origin, allowOrigin });
+    return res.status(204).end();
+  }
+  
+  logger.warn('Preflight blocked:', { origin });
+  res.status(403).end();
+});
 
 // Rate limiting middleware (применяем перед body parsing)
 app.use(rateLimitStats); // Логируем статистику устройств
