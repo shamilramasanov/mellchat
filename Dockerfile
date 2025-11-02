@@ -24,5 +24,5 @@ USER nodejs
 EXPOSE 3001
 
 # Запускаем миграции, затем сервер
-CMD ["npm", "start:with-migrations"]
+CMD ["npm", "run", "start:with-migrations"]
 
