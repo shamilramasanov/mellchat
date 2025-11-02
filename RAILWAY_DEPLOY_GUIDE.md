@@ -20,12 +20,20 @@ Railway Dashboard → Service Settings → Root Directory → `backend/api-gatew
 1. В проекте нажмите **"+ New"**
 2. Выберите **Database** → **Add PostgreSQL**
 3. Railway автоматически создаст `DATABASE_URL`
-4. Подождите запуска БД (~1 минута)
+4. **ВАЖНО:** Убедитесь что БД и приложение в одном проекте!
+5. Подождите запуска БД (~1 минута)
+
+**Проверка:**
+Railway Dashboard → Variables → `DATABASE_URL` должен быть в списке
+Он будет вида: `postgresql://postgres:PASSWORD@postgres.railway.internal:5432/railway`
+
+**Если DATABASE_URL в формате `railway.internal` - это нормально!** Это внутренний URL для сервисов одного проекта.
 
 ### 4. Добавьте Redis (Опционально)
 
 1. **"+ New"** → **Database** → **Add Redis**
 2. Автоматически создастся `REDIS_URL`
+3. Тоже должен быть в одном проекте
 
 ### 5. Настройте Environment Variables
 
