@@ -29,7 +29,45 @@ async function runMigrations() {
       
       try {
         const migrationSQL = fs.readFileSync(filePath, 'utf8');
-        await client.query(migrationSQL);
+        
+        // Check if migration contains CONCURRENTLY commands
+        const hasConcurrently = migrationSQL.includes('CONCURRENTLY');
+        
+        if (hasConcurrently) {
+          // Split SQL by semicolon and execute commands separately
+          // CONCURRENTLY commands must run outside transaction
+          const commands = migrationSQL
+            .split(';')
+            .map(cmd => cmd.trim())
+            .filter(cmd => cmd.length > 0 && !cmd.startsWith('--'));
+          
+          for (const command of commands) {
+            if (command.trim().length === 0) continue;
+            
+            // Skip SELECT statements (they're for display only)
+            if (command.trim().toUpperCase().startsWith('SELECT')) {
+              console.log('  ⏭️  Skipping SELECT statement');
+              continue;
+            }
+            
+            // Execute without transaction wrapper for CONCURRENTLY
+            try {
+              await client.query(command);
+            } catch (cmdError) {
+              // Ignore "already exists" errors for idempotency
+              if (cmdError.message.includes('already exists') || 
+                  cmdError.message.includes('duplicate')) {
+                console.log(`  ⚠️  Index already exists, skipping`);
+                continue;
+              }
+              throw cmdError;
+            }
+          }
+        } else {
+          // Regular migration - execute as single query (may be wrapped in transaction)
+          await client.query(migrationSQL);
+        }
+        
         console.log(`✅ Migration ${file} applied successfully!`);
       } catch (error) {
         // If migration already applied, ignore error (for idempotency)
