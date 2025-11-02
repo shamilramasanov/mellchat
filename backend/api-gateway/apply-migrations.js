@@ -30,11 +30,15 @@ async function runMigrations() {
           return aNum - bNum;
         }
         
-        // Priority 2: add_auth_users before add_auth_tables
+        // Priority 2: add_guest_sessions before add_fingerprint_to_guest_sessions
+        if (a === 'add_guest_sessions.sql' && b === 'add_fingerprint_to_guest_sessions.sql') return -1;
+        if (a === 'add_fingerprint_to_guest_sessions.sql' && b === 'add_guest_sessions.sql') return 1;
+        
+        // Priority 3: add_auth_users before add_auth_tables
         if (a === 'add_auth_users.sql' && b === 'add_auth_tables.sql') return -1;
         if (a === 'add_auth_tables.sql' && b === 'add_auth_users.sql') return 1;
         
-        // Priority 3: Alphabetical
+        // Priority 4: Alphabetical
         return a.localeCompare(b);
       });
 
