@@ -203,7 +203,7 @@ async function runMigrations() {
     console.log(`   ⏭️  Skipped: ${skippedCount}`);
     
     await client.end();
-    process.exit(0);
+    // НЕ выходим - allow next command in chain to run
     
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
