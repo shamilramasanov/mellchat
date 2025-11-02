@@ -15,9 +15,10 @@ COPY backend/api-gateway/src/ ./src/
 COPY backend/api-gateway/apply-migrations.sh ./apply-migrations.sh
 COPY backend/api-gateway/database/ ./database/
 
-# Make script executable
+# Make script executable (before switching user)
 RUN chmod +x ./apply-migrations.sh && \
-    ls -la ./apply-migrations.sh || echo "Script not found in WORKDIR"
+    ls -la ./apply-migrations.sh && \
+    cat ./apply-migrations.sh | head -5
 
 # Create logs directory
 RUN mkdir -p logs
