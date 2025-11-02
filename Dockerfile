@@ -27,7 +27,7 @@ USER nodejs
 
 EXPOSE 3001
 
-# Start command with migrations (use Node.js script directly)
+# Start command
 WORKDIR /app
-CMD ["sh", "-c", "node /app/apply-migrations.js && node /app/src/index.js"]
+CMD ["node", "src/index.js"]
 
