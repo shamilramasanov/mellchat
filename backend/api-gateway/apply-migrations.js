@@ -141,7 +141,6 @@ async function runMigrations() {
 
     console.log('\n🎉 All migrations completed successfully!');
     await client.end();
-    process.exit(0);
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
     console.error('Stack:', error.stack);
@@ -156,5 +155,8 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-runMigrations();
+runMigrations().catch((error) => {
+  console.error('❌ Migrations failed:', error);
+  process.exit(1);
+});
 
