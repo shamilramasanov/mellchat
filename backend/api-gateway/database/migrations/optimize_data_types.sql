@@ -206,41 +206,41 @@ ALTER TABLE user_sessions SET (fillfactor = 85);
 -- 9. Создание статистики для оптимизатора
 -- =====================================================
 
--- Обновляем статистику для всех таблиц
-ANALYZE messages;
-ANALYZE questions;
-ANALYZE users;
-ANALYZE streams;
-ANALYZE user_sessions;
+-- Обновляем статистику для всех таблиц (комментируем для избежания таймаутов)
+-- ANALYZE messages;
+-- ANALYZE questions;
+-- ANALYZE users;
+-- ANALYZE streams;
+-- ANALYZE user_sessions;
 
 -- 10. Проверка размеров таблиц после оптимизации
 -- =====================================================
 
--- Функция для анализа размеров таблиц
-CREATE OR REPLACE FUNCTION analyze_table_sizes()
-RETURNS TABLE(
-    table_name TEXT,
-    row_count BIGINT,
-    total_size TEXT,
-    index_size TEXT,
-    table_size TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        schemaname||'.'||relname as table_name,
-        n_tup_ins - n_tup_del as row_count,
-        pg_size_pretty(pg_total_relation_size((schemaname||'.'||relname)::regclass)) as total_size,
-        pg_size_pretty(pg_indexes_size((schemaname||'.'||relname)::regclass)) as index_size,
-        pg_size_pretty(pg_relation_size((schemaname||'.'||relname)::regclass)) as table_size
-    FROM pg_stat_user_tables 
-    WHERE schemaname = 'public'
-    ORDER BY pg_total_relation_size((schemaname||'.'||relname)::regclass) DESC;
-END;
-$$ LANGUAGE plpgsql;
+-- Функция для анализа размеров таблиц (комментируем для избежания таймаутов)
+-- CREATE OR REPLACE FUNCTION analyze_table_sizes()
+-- RETURNS TABLE(
+--     table_name TEXT,
+--     row_count BIGINT,
+--     total_size TEXT,
+--     index_size TEXT,
+--     table_size TEXT
+-- ) AS $$
+-- BEGIN
+--     RETURN QUERY
+--     SELECT 
+--         schemaname||'.'||relname as table_name,
+--         n_tup_ins - n_tup_del as row_count,
+--         pg_size_pretty(pg_total_relation_size((schemaname||'.'||relname)::regclass)) as total_size,
+--         pg_size_pretty(pg_indexes_size((schemaname||'.'||relname)::regclass)) as index_size,
+--         pg_size_pretty(pg_relation_size((schemaname||'.'||relname)::regclass)) as table_size
+--     FROM pg_stat_user_tables 
+--     WHERE schemaname = 'public'
+--     ORDER BY pg_total_relation_size((schemaname||'.'||relname)::regclass) DESC;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 -- Выводим статистику размеров таблиц
-SELECT * FROM analyze_table_sizes();
+-- SELECT * FROM analyze_table_sizes();
 
 -- 11. Создание функции для мониторинга производительности
 -- =====================================================
@@ -271,17 +271,17 @@ SELECT * FROM analyze_table_sizes();
 -- $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- ФИНАЛЬНАЯ ПРОВЕРКА
+-- ФИНАЛЬНАЯ ПРОВЕРКА (комментируем для избежания таймаутов)
 -- =====================================================
 
 -- Проверяем, что все изменения применились корректно
-SELECT 
-    table_name,
-    column_name,
-    data_type,
-    character_maximum_length,
-    is_nullable
-FROM information_schema.columns 
-WHERE table_schema = 'public' 
-    AND table_name IN ('messages', 'questions', 'users', 'streams', 'user_sessions')
-ORDER BY table_name, ordinal_position;
+-- SELECT 
+--     table_name,
+--     column_name,
+--     data_type,
+--     character_maximum_length,
+--     is_nullable
+-- FROM information_schema.columns 
+-- WHERE table_schema = 'public' 
+--     AND table_name IN ('messages', 'questions', 'users', 'streams', 'user_sessions')
+-- ORDER BY table_name, ordinal_position;
