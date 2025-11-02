@@ -43,7 +43,7 @@ BEGIN
     END IF;
 END $$;
 
--- Изменяем тип поля platform на enum
+-- Изменяем тип поля platform на enum (без DEFAULT, безопасное преобразование)
 ALTER TABLE messages ALTER COLUMN platform TYPE platform_enum USING platform::platform_enum;
 
 -- Оптимизируем поле text/content (TEXT остается, но добавляем ограничение)
@@ -57,7 +57,10 @@ BEGIN
     END IF;
 END $$;
 
+-- Сначала удаляем DEFAULT, потом меняем тип, потом восстанавливаем
+ALTER TABLE messages ALTER COLUMN sentiment DROP DEFAULT;
 ALTER TABLE messages ALTER COLUMN sentiment TYPE sentiment_enum USING sentiment::sentiment_enum;
+ALTER TABLE messages ALTER COLUMN sentiment SET DEFAULT 'neutral'::sentiment_enum;
 
 -- Оптимизируем поле message_classification (enum вместо VARCHAR)
 DO $$ 
@@ -67,7 +70,10 @@ BEGIN
     END IF;
 END $$;
 
+-- Сначала удаляем DEFAULT, потом меняем тип, потом восстанавливаем
+ALTER TABLE messages ALTER COLUMN message_classification DROP DEFAULT;
 ALTER TABLE messages ALTER COLUMN message_classification TYPE classification_enum USING message_classification::classification_enum;
+ALTER TABLE messages ALTER COLUMN message_classification SET DEFAULT 'normal'::classification_enum;
 
 -- Оптимизируем поле message_score (SMALLINT вместо INTEGER)
 ALTER TABLE messages ALTER COLUMN message_score TYPE SMALLINT;
@@ -124,7 +130,10 @@ BEGIN
     END IF;
 END $$;
 
+-- Сначала удаляем DEFAULT, потом меняем тип, потом восстанавливаем
+ALTER TABLE streams ALTER COLUMN status DROP DEFAULT;
 ALTER TABLE streams ALTER COLUMN status TYPE stream_status_enum USING status::stream_status_enum;
+ALTER TABLE streams ALTER COLUMN status SET DEFAULT 'active'::stream_status_enum;
 
 -- 5. Оптимизация таблицы user_sessions
 -- =====================================================
@@ -139,11 +148,14 @@ ALTER TABLE user_sessions ALTER COLUMN stream_id TYPE VARCHAR(50);
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_type_enum') THEN
-        CREATE TYPE session_type_enum AS ENUM ('active', 'inactive', 'disconnected');
+        CREATE TYPE session_type_enum AS ENUM ('normal', 'clean_start', 'archive');
     END IF;
 END $$;
 
+-- Сначала удаляем DEFAULT, потом меняем тип, потом восстанавливаем
+ALTER TABLE user_sessions ALTER COLUMN session_type DROP DEFAULT;
 ALTER TABLE user_sessions ALTER COLUMN session_type TYPE session_type_enum USING session_type::session_type_enum;
+ALTER TABLE user_sessions ALTER COLUMN session_type SET DEFAULT 'normal'::session_type_enum;
 
 -- 6. Добавление ограничений для целостности данных
 -- =====================================================
