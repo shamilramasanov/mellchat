@@ -525,6 +525,10 @@ app.use('*', (req, res) => {
   if (req.path === '/google' || req.path.startsWith('/static/')) {
     return res.status(204).end();
   }
+  // Ignore WebSocket upgrade requests - они обрабатываются отдельно
+  if (req.path === '/ws' || req.headers.upgrade === 'websocket') {
+    return res.status(204).end();
+  }
   res.status(404).json({
     error: {
       code: 'NOT_FOUND',
