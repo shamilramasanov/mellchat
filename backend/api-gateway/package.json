@@ -9,7 +9,7 @@
     "dev": "NODE_ENV=development nodemon src/index.js",
     "install:prod": "npm install --omit=dev",
     "postinstall": "npm audit fix --force",
-    "migrate": "./apply-migrations.sh"
+    "migrate": "node apply-migrations.js"
   },
   "dependencies": {
     "@retconned/kick-js": "^0.5.4",

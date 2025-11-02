@@ -12,10 +12,8 @@ RUN npm ci --only=production
 COPY src/ ./src/
 
 # Copy migration scripts
-COPY apply-migrations.sh ./
 COPY apply-migrations.js ./
 COPY database/ ./database/
-RUN chmod +x ./apply-migrations.sh
 
 # Create logs directory
 RUN mkdir -p logs

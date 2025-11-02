@@ -3,6 +3,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 async function connectWithRetry(maxRetries = 10, retryDelay = 2000) {
   let lastError;
@@ -32,18 +33,62 @@ async function connectWithRetry(maxRetries = 10, retryDelay = 2000) {
   throw lastError;
 }
 
+async function ensureMigrationsTable(client) {
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id SERIAL PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL UNIQUE,
+      checksum VARCHAR(64) NOT NULL,
+      applied_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_schema_migrations_filename 
+      ON schema_migrations(filename);
+  `);
+  console.log('✅ Migrations tracking table ready');
+}
+
+function calculateChecksum(content) {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+async function isMigrationApplied(client, filename, checksum) {
+  const result = await client.query(
+    'SELECT checksum FROM schema_migrations WHERE filename = $1',
+    [filename]
+  );
+  
+  if (result.rows.length === 0) {
+    return false;
+  }
+  
+  if (result.rows[0].checksum !== checksum) {
+    console.warn(`⚠️  WARNING: Migration ${filename} has been modified after being applied!`);
+    console.warn(`   Previous checksum: ${result.rows[0].checksum}`);
+    console.warn(`   Current checksum:  ${checksum}`);
+    console.warn(`   Skipping re-application...`);
+  }
+  
+  return true;
+}
+
+async function recordMigration(client, filename, checksum) {
+  await client.query(
+    'INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2) ON CONFLICT (filename) DO NOTHING',
+    [filename, checksum]
+  );
+}
+
 async function runMigrations() {
   const client = await connectWithRetry();
   
   try {
+    // Ensure migrations tracking table exists
+    await ensureMigrationsTable(client);
 
     const migrationsDir = path.join(__dirname, 'database', 'migrations');
     console.log('📂 Migrations directory:', migrationsDir);
 
-    // Get all SQL files sorted by name with priority:
-    // 1. Files starting with number prefix (01_, 02_, etc.)
-    // 2. Files starting with 'add_auth_users' (must come before 'add_auth_tables')
-    // 3. Other files alphabetically
+    // Get all SQL files sorted by name
     const files = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))
       .sort((a, b) => {
@@ -54,45 +99,53 @@ async function runMigrations() {
           return aNum - bNum;
         }
         
-        // Priority 2: add_guest_sessions before add_fingerprint_to_guest_sessions
-        if (a === 'add_guest_sessions.sql' && b === 'add_fingerprint_to_guest_sessions.sql') return -1;
-        if (a === 'add_fingerprint_to_guest_sessions.sql' && b === 'add_guest_sessions.sql') return 1;
+        // Priority 2: Special ordering
+        const priority = {
+          'add_guest_sessions.sql': 1,
+          'add_fingerprint_to_guest_sessions.sql': 2,
+          'add_auth_users.sql': 3,
+          'add_auth_tables.sql': 4,
+          'add_message_scoring_fields.sql': 5,
+          'add_moderation_fields.sql': 6,
+          'add_materialized_views.sql': 7,
+        };
         
-        // Priority 3: add_auth_users before add_auth_tables
-        if (a === 'add_auth_users.sql' && b === 'add_auth_tables.sql') return -1;
-        if (a === 'add_auth_tables.sql' && b === 'add_auth_users.sql') return 1;
+        const aPriority = priority[a] || 999;
+        const bPriority = priority[b] || 999;
         
-        // Priority 4: add_message_scoring_fields before add_materialized_views
-        if (a === 'add_message_scoring_fields.sql' && b === 'add_materialized_views.sql') return -1;
-        if (a === 'add_materialized_views.sql' && b === 'add_message_scoring_fields.sql') return 1;
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
         
-        // Priority 5: add_moderation_fields before add_materialized_views (for sentiment, is_spam, etc.)
-        if (a === 'add_moderation_fields.sql' && b === 'add_materialized_views.sql') return -1;
-        if (a === 'add_materialized_views.sql' && b === 'add_moderation_fields.sql') return 1;
-        
-        // Priority 6: Alphabetical
+        // Default: Alphabetical
         return a.localeCompare(b);
       });
 
     console.log(`📝 Found ${files.length} migration files`);
+    
+    let appliedCount = 0;
+    let skippedCount = 0;
 
     for (const file of files) {
       const filePath = path.join(migrationsDir, file);
+      const migrationSQL = fs.readFileSync(filePath, 'utf8');
+      const checksum = calculateChecksum(migrationSQL);
+      
+      // Check if migration already applied
+      if (await isMigrationApplied(client, file, checksum)) {
+        console.log(`⏭️  Skipping ${file} (already applied)`);
+        skippedCount++;
+        continue;
+      }
+      
       console.log(`\n📄 Applying migration: ${file}`);
       
       try {
-        const migrationSQL = fs.readFileSync(filePath, 'utf8');
-        
-        // Check if migration contains CONCURRENTLY commands
         const hasConcurrently = migrationSQL.includes('CONCURRENTLY');
-        
-        // Check if this is materialized views migration - it needs special handling
         const isMaterializedViews = file.includes('materialized_views');
         
         if (hasConcurrently && !isMaterializedViews) {
-          // Split SQL by semicolon and execute commands separately
-          // CONCURRENTLY commands must run outside transaction
-          // BUT: Skip this for materialized_views as it has complex multi-line statements
+          // Execute CONCURRENTLY commands separately (outside transaction)
           const commands = migrationSQL
             .split(';')
             .map(cmd => cmd.trim())
@@ -100,81 +153,68 @@ async function runMigrations() {
           
           for (const command of commands) {
             if (command.trim().length === 0) continue;
+            if (command.trim().toUpperCase().startsWith('SELECT')) continue;
             
-            // Skip SELECT statements (they're for display only)
-            if (command.trim().toUpperCase().startsWith('SELECT')) {
-              console.log('  ⏭️  Skipping SELECT statement');
-              continue;
-            }
-            
-            // Execute without transaction wrapper for CONCURRENTLY
             try {
               await client.query(command);
             } catch (cmdError) {
-              // Ignore "already exists" errors for idempotency
               if (cmdError.message.includes('already exists') || 
                   cmdError.message.includes('duplicate')) {
-                console.log(`  ⚠️  Index already exists, skipping`);
+                console.log(`  ⚠️  Object already exists, continuing...`);
                 continue;
               }
               throw cmdError;
             }
           }
         } else {
-          // Regular migration or materialized views - execute as single query
-          // Materialized views migration contains CONCURRENTLY but needs full SQL execution
+          // Regular migration
           try {
             await client.query(migrationSQL);
           } catch (error) {
-            // For materialized views, check if tables exist first
+            // Check for materialized views special case
             if (isMaterializedViews && error.message.includes('does not exist')) {
-              // Check if required tables exist
-              const tablesCheck = await client.query(`
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                  AND table_name IN ('streams', 'messages', 'users')
-              `);
-              
-              const existingTables = tablesCheck.rows.map(r => r.table_name);
-              const requiredTables = ['streams', 'messages', 'users'];
-              const missingTables = requiredTables.filter(t => !existingTables.includes(t));
-              
-              if (missingTables.length > 0) {
-                console.log(`  ⚠️  Missing required tables: ${missingTables.join(', ')}`);
-                console.log(`  ⚠️  Skipping materialized views migration - tables must be created first`);
-                continue;
-              }
+              console.log(`  ⚠️  Required tables not yet created, skipping materialized views`);
+              continue;
             }
             throw error;
           }
         }
         
+        // Record successful migration
+        await recordMigration(client, file, checksum);
         console.log(`✅ Migration ${file} applied successfully!`);
+        appliedCount++;
+        
       } catch (error) {
-        // If migration already applied, ignore error (for idempotency)
+        // If migration already applied (based on error), record it
         if (error.message.includes('already exists') || 
-            error.message.includes('duplicate') ||
-            error.message.includes('IF NOT EXISTS')) {
-          console.log(`⚠️  Migration ${file} already applied, skipping`);
+            error.message.includes('duplicate')) {
+          console.log(`⚠️  Migration ${file} objects already exist, recording...`);
+          await recordMigration(client, file, checksum);
+          skippedCount++;
           continue;
         }
         throw error;
       }
     }
 
-    console.log('\n🎉 All migrations completed successfully!');
+    console.log(`\n🎉 Migrations completed!`);
+    console.log(`   ✅ Applied: ${appliedCount}`);
+    console.log(`   ⏭️  Skipped: ${skippedCount}`);
+    
     await client.end();
     process.exit(0);
+    
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
     console.error('Stack:', error.stack);
+    
     if (client && !client._ending) {
       await client.end();
     }
-    // Don't exit with error - allow app to start even if migrations fail
-    console.log('⚠️  Continuing to start app despite migration failures...');
-    process.exit(0);
+    
+    // Exit with error to prevent app from starting with broken schema
+    process.exit(1);
   }
 }
 
@@ -185,4 +225,3 @@ if (!process.env.DATABASE_URL) {
 }
 
 runMigrations();
-
