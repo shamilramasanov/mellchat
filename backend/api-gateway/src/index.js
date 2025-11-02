@@ -76,10 +76,25 @@ const aiFilterRoutes = require('./routes/aiFilter');
 logger.info('✅ aiFilterRoutes loaded');
 logger.info('✅ All routes loaded successfully');
 
+console.log('🔍 Creating Express app...');
 const app = express();
-const { createWsServer } = require('./ws/server');
+console.log('✅ Express app created');
+
+console.log('🔍 Loading WebSocket server...');
+let createWsServer;
+try {
+  const wsModule = require('./ws/server');
+  createWsServer = wsModule.createWsServer;
+  console.log('✅ WebSocket server module loaded');
+} catch (error) {
+  console.error('❌ Failed to load WebSocket server:', error);
+  throw error;
+}
+
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
+
+console.log('🔍 Server configuration:', { PORT, HOST, NODE_ENV: process.env.NODE_ENV });
 
 // Railway автоматически устанавливает PORT, проверяем это
 if (process.env.RAILWAY_ENVIRONMENT) {
