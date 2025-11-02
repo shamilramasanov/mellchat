@@ -145,9 +145,15 @@ app.use(cors({
         return callback(null, true);
       }
       
-      // Разрешаем Vercel preview URLs
+      // Разрешаем все Vercel URLs (preview и production)
       if (origin && origin.includes('.vercel.app')) {
-        logger.info('CORS allowed (Vercel preview):', { origin });
+        logger.info('CORS allowed (Vercel):', { origin });
+        return callback(null, true);
+      }
+      
+      // Разрешаем все поддомены Vercel
+      if (origin && (origin.includes('vercel.app') || origin.includes('vercel-dns.com'))) {
+        logger.info('CORS allowed (Vercel domain):', { origin });
         return callback(null, true);
       }
       
