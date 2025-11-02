@@ -252,10 +252,20 @@ app.use('/api/v1', (req, res, next) => {
 // Metrics middleware
 app.use(metricsMiddleware);
 
-// Body parsing middleware
+// Body parsing middleware (пропускаем OPTIONS чтобы не парсить body)
 logger.info('Setting up body parsing middleware...');
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next(); // Пропускаем OPTIONS без парсинга body
+  }
+  express.json({ limit: '10mb' })(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next(); // Пропускаем OPTIONS без парсинга body
+  }
+  express.urlencoded({ extended: true })(req, res, next);
+});
 app.use(cookieParser());
 logger.info('✅ Body parsing middleware configured');
 
