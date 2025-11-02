@@ -7,6 +7,8 @@ const register = new promClient.Registry();
 // Добавляем стандартные метрики Node.js
 promClient.collectDefaultMetrics({ register });
 
+logger.info('✅ Metrics initialized');
+
 // Метрики для обработки сообщений
 const messageProcessingDuration = new promClient.Histogram({
   name: 'message_processing_duration_seconds',
