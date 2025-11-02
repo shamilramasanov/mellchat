@@ -12,9 +12,12 @@ RUN npm ci --only=production
 COPY backend/api-gateway/src/ ./src/
 
 # Copy migration scripts and database folder
-COPY backend/api-gateway/apply-migrations.sh ./
+COPY backend/api-gateway/apply-migrations.sh ./apply-migrations.sh
 COPY backend/api-gateway/database/ ./database/
-RUN chmod +x ./apply-migrations.sh
+
+# Make script executable
+RUN chmod +x ./apply-migrations.sh && \
+    ls -la ./apply-migrations.sh || echo "Script not found in WORKDIR"
 
 # Create logs directory
 RUN mkdir -p logs
@@ -28,6 +31,6 @@ USER nodejs
 
 EXPOSE 3000
 
-# Start command with migrations
-CMD ["npm", "run", "start:with-migrations"]
+# Start command with migrations (use sh to run the script)
+CMD ["sh", "-c", "./apply-migrations.sh && node src/index.js"]
 
