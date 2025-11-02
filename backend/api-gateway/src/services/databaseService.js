@@ -1,6 +1,8 @@
 const { Pool } = require('pg');
 const logger = require('../utils/logger');
 
+logger.info('✅ DatabaseService loading');
+
 let pool;
 
 function ensurePool() {
