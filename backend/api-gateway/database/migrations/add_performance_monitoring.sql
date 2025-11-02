@@ -298,14 +298,14 @@ $$ LANGUAGE plpgsql;
 -- Функция для анализа метрик производительности
 CREATE OR REPLACE FUNCTION analyze_performance_metrics(metric_name_param TEXT)
 RETURNS TABLE(
-    timestamp TIMESTAMP,
+    collected_at TIMESTAMP,
     metric_value DOUBLE PRECISION,
     metric_unit VARCHAR(20)
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        pm.timestamp,
+        pm.timestamp as collected_at,
         pm.metric_value,
         pm.metric_unit
     FROM performance_metrics pm
