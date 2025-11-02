@@ -38,6 +38,14 @@ async function runMigrations() {
         if (a === 'add_auth_users.sql' && b === 'add_auth_tables.sql') return -1;
         if (a === 'add_auth_tables.sql' && b === 'add_auth_users.sql') return 1;
         
+        // Priority 4: add_message_scoring_fields before add_materialized_views
+        if (a === 'add_message_scoring_fields.sql' && b === 'add_materialized_views.sql') return -1;
+        if (a === 'add_materialized_views.sql' && b === 'add_message_scoring_fields.sql') return 1;
+        
+        // Priority 5: add_moderation_fields before add_materialized_views (for sentiment, is_spam, etc.)
+        if (a === 'add_moderation_fields.sql' && b === 'add_materialized_views.sql') return -1;
+        if (a === 'add_materialized_views.sql' && b === 'add_moderation_fields.sql') return 1;
+        
         // Priority 4: Alphabetical
         return a.localeCompare(b);
       });
