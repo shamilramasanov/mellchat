@@ -9,9 +9,23 @@ function ensurePool() {
   // Поддержка Railway и других облачных провайдеров
   const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || 'postgresql://mellchat:mellchat_password@localhost:5432/mellchat';
   
+  // Определяем SSL настройки
+  let sslConfig = false;
+  if (process.env.POSTGRES_SSL === 'true' || process.env.DATABASE_SSL === 'true') {
+    sslConfig = { rejectUnauthorized: false };
+  } else if (process.env.NODE_ENV === 'production' && connectionString.includes('amazonaws.com')) {
+    // Для AWS RDS используем SSL
+    sslConfig = { rejectUnauthorized: false };
+  } else if (connectionString.includes('ssl=true') || connectionString.includes('sslmode=require')) {
+    sslConfig = { rejectUnauthorized: false };
+  } else {
+    // По умолчанию для локального PostgreSQL SSL отключен
+    sslConfig = false;
+  }
+
   pool = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: sslConfig,
     max: 20, // максимум соединений
     min: 5,  // минимум активных соединений
     idleTimeoutMillis: 30000, // 30 сек бездействия
@@ -88,39 +102,147 @@ const databaseService = {
   async query(text, params) {
     try {
       const client = ensurePool();
+      logger.debug('🔍 Executing database query:', { 
+        query: text.substring(0, 200), 
+        params: params,
+        paramsCount: params?.length || 0
+      });
       const result = await client.query(text, params);
+      logger.debug('✅ Query executed successfully:', { 
+        rowCount: result.rows?.length || 0 
+      });
       return result;
     } catch (error) {
-      logger.error('Database query error:', { error: error.message, query: text });
+      logger.error('❌ Database query error:', { 
+        error: error.message,
+        errorCode: error.code,
+        errorDetail: error.detail,
+        errorHint: error.hint,
+        query: text.substring(0, 200),
+        params: params,
+        stack: error.stack
+      });
       throw error;
     }
   },
 
   async getMessages(streamId, limit = 100, offset = 0) {
     try {
+      if (!streamId) {
+        logger.warn('⚠️ getMessages: streamId is empty');
+        return [];
+      }
+      
+      logger.info('📥 getMessages called:', { 
+        streamId, 
+        limit, 
+        offset,
+        streamIdType: typeof streamId,
+        streamIdLength: streamId?.length
+      });
+      
+      // Проверяем подключение к БД
+      const pool = ensurePool();
+      logger.debug('🔌 Database pool status:', {
+        totalCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      });
+      
+      // Проверяем существование таблицы messages
+      const tableExists = await this.checkTableExists('messages');
+      logger.info('🔍 Table messages exists:', tableExists);
+      
+      if (!tableExists) {
+        logger.warn('⚠️ Table messages does not exist in database');
+        return [];
+      }
+      
+      // Получаем все колонки таблицы одной проверкой
+      const columns = await this.getTableColumns('messages');
+      const hasColumn = (colName) => columns.includes(colName);
+      
+      logger.debug('🔍 Available columns:', columns);
+      
+      // Формируем WHERE условие в зависимости от наличия колонки
+      const hasIsDeleted = hasColumn('is_deleted');
+      const whereClause = hasIsDeleted 
+        ? 'WHERE stream_id = $1 AND is_deleted = false'
+        : 'WHERE stream_id = $1';
+      
+      // Используем content если есть, иначе text (для обратной совместимости)
+      const hasTextColumn = hasColumn('text');
+      const hasContentColumn = hasColumn('content');
+      const textColumn = hasContentColumn ? 'content' : (hasTextColumn ? 'text' : 'content');
+      
+      // Формируем список колонок для SELECT
+      const selectColumns = [
+        'id',
+        'stream_id',
+        'username',
+        `${textColumn} as text`,
+        'platform',
+        'timestamp',
+        'created_at'
+      ];
+      
+      // Добавляем опциональные колонки, если они существуют
+      if (hasColumn('is_question')) {
+        selectColumns.push('is_question');
+      }
+      if (hasColumn('sentiment')) {
+        selectColumns.push('sentiment');
+      }
+      if (hasColumn('is_spam')) {
+        selectColumns.push('is_spam');
+      }
+      
       const query = `
         SELECT 
-          id,
-          stream_id,
-          username,
-          COALESCE(content, text) as text,
-          platform,
-          created_at,
-          is_question,
-          sentiment,
-          is_spam,
-          message_score,
-          message_classification
+          ${selectColumns.join(',\n          ')}
         FROM messages 
-        WHERE stream_id = $1 
+        ${whereClause}
         ORDER BY created_at DESC 
         LIMIT $2 OFFSET $3
       `;
       
+      logger.debug('📝 SQL query prepared:', {
+        queryLength: query.length,
+        param1: streamId,
+        param2: limit,
+        param3: offset
+      });
+      
       const result = await this.query(query, [streamId, limit, offset]);
-      return result.rows;
+      
+      logger.info('✅ getMessages result:', { 
+        streamId, 
+        foundCount: result.rows?.length || 0,
+        totalRows: result.rowCount || 0,
+        sampleMessage: result.rows?.[0] ? {
+          id: result.rows[0].id,
+          stream_id: result.rows[0].stream_id,
+          username: result.rows[0].username,
+          hasText: !!result.rows[0].text
+        } : null
+      });
+      
+      return result.rows || [];
     } catch (error) {
-      logger.error('Failed to get messages from database:', error);
+      logger.error('❌ Failed to get messages from database:', {
+        streamId,
+        streamIdType: typeof streamId,
+        limit,
+        offset,
+        error: error.message,
+        errorCode: error.code,
+        errorDetail: error.detail,
+        errorHint: error.hint,
+        errorTable: error.table,
+        errorColumn: error.column,
+        errorConstraint: error.constraint,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n')
+      });
       throw error;
     }
   },
@@ -140,14 +262,39 @@ const databaseService = {
         isQuestion: message.isQuestion
       });
       
+      // Проверяем лимит общего количества сообщений для стрима: максимум 10000
+      const streamCountQuery = `
+        SELECT COUNT(*) as count 
+        FROM messages 
+        WHERE stream_id = $1 AND (is_deleted = false OR is_deleted IS NULL)
+      `;
+      const streamCountResult = await this.query(streamCountQuery, [message.streamId]);
+      const streamMessageCount = parseInt(streamCountResult.rows[0]?.count || 0, 10);
+      
+      if (streamMessageCount >= 10000) {
+        // Удаляем самые старые сообщения, оставляя 10000
+        const deleteOldQuery = `
+          DELETE FROM messages 
+          WHERE id IN (
+            SELECT id FROM messages 
+            WHERE stream_id = $1 AND (is_deleted = false OR is_deleted IS NULL)
+            ORDER BY created_at ASC 
+            LIMIT $2
+          )
+        `;
+        const toDelete = streamMessageCount - 10000 + 1; // Удаляем на 1 больше, чтобы после вставки было 10000
+        await this.query(deleteOldQuery, [message.streamId, toDelete]);
+        logger.debug(`Removed ${toDelete} oldest messages from stream ${message.streamId} (had ${streamMessageCount} messages)`);
+      }
+      
       // Проверяем лимит: максимум 200 сообщений от одного автора
       const countQuery = `
         SELECT COUNT(*) as count 
         FROM messages 
-        WHERE username = $1 AND stream_id = $2
+        WHERE username = $1 AND stream_id = $2 AND (is_deleted = false OR is_deleted IS NULL)
       `;
       const countResult = await this.query(countQuery, [message.username, message.streamId]);
-      const messageCount = parseInt(countResult.rows[0].count, 10);
+      const messageCount = parseInt(countResult.rows[0]?.count || 0, 10);
       
       if (messageCount >= 200) {
         // Удаляем самое старое сообщение этого автора
@@ -155,7 +302,7 @@ const databaseService = {
           DELETE FROM messages 
           WHERE id = (
             SELECT id FROM messages 
-            WHERE username = $1 AND stream_id = $2 
+            WHERE username = $1 AND stream_id = $2 AND (is_deleted = false OR is_deleted IS NULL)
             ORDER BY created_at ASC 
             LIMIT 1
           )
@@ -239,6 +386,40 @@ const databaseService = {
     try {
       // Начинаем транзакцию
       await client.query('BEGIN');
+      
+      // Проверяем лимит общего количества сообщений для каждого уникального стрима
+      const streamIds = [...new Set(messages.map(m => m.streamId))];
+      for (const streamId of streamIds) {
+        const streamCountQuery = `
+          SELECT COUNT(*) as count 
+          FROM messages 
+          WHERE stream_id = $1 AND (is_deleted = false OR is_deleted IS NULL)
+        `;
+        const streamCountResult = await this.query(streamCountQuery, [streamId]);
+        const streamMessageCount = parseInt(streamCountResult.rows[0]?.count || 0, 10);
+        
+        if (streamMessageCount >= 10000) {
+          // Подсчитываем сколько сообщений будет добавлено для этого стрима
+          const newMessagesForStream = messages.filter(m => m.streamId === streamId).length;
+          const toDelete = streamMessageCount + newMessagesForStream - 10000;
+          
+          if (toDelete > 0) {
+            // Удаляем самые старые сообщения
+            const deleteOldQuery = `
+              DELETE FROM messages 
+              WHERE id IN (
+                SELECT id FROM messages 
+                WHERE stream_id = $1 AND (is_deleted = false OR is_deleted IS NULL)
+                ORDER BY created_at ASC 
+                LIMIT $2
+              )
+            `;
+            await this.query(deleteOldQuery, [streamId, toDelete]);
+            logger.debug(`Removed ${toDelete} oldest messages from stream ${streamId} (had ${streamMessageCount}, adding ${newMessagesForStream})`);
+          }
+        }
+      }
+      
       // Проверяем лимит для каждого уникального автора
       const authorCounts = {};
       for (const message of messages) {
@@ -247,10 +428,10 @@ const databaseService = {
           const countQuery = `
             SELECT COUNT(*) as count 
             FROM messages 
-            WHERE username = $1 AND stream_id = $2
+            WHERE username = $1 AND stream_id = $2 AND (is_deleted = false OR is_deleted IS NULL)
           `;
           const countResult = await this.query(countQuery, [message.username, message.streamId]);
-          authorCounts[key] = parseInt(countResult.rows[0].count, 10);
+          authorCounts[key] = parseInt(countResult.rows[0]?.count || 0, 10);
         }
       }
       
@@ -262,7 +443,7 @@ const databaseService = {
             DELETE FROM messages 
             WHERE id = (
               SELECT id FROM messages 
-              WHERE username = $1 AND stream_id = $2 
+              WHERE username = $1 AND stream_id = $2 AND (is_deleted = false OR is_deleted IS NULL)
               ORDER BY created_at ASC 
               LIMIT 1
             )
@@ -427,6 +608,63 @@ const databaseService = {
     } catch (error) {
       logger.error('Database connection test failed:', error);
       return { connected: false, error: error.message };
+    }
+  },
+
+  // Проверка существования таблицы messages
+  async checkTableExists(tableName = 'messages') {
+    try {
+      const query = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        ) as exists;
+      `;
+      const result = await this.query(query, [tableName]);
+      return result.rows[0]?.exists || false;
+    } catch (error) {
+      logger.error(`Failed to check if table ${tableName} exists:`, error);
+      return false;
+    }
+  },
+
+  // Проверка существования колонки в таблице
+  async checkColumnExists(tableName, columnName) {
+    try {
+      const query = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_schema = 'public' 
+          AND table_name = $1 
+          AND column_name = $2
+        ) as exists;
+      `;
+      const result = await this.query(query, [tableName, columnName]);
+      return result.rows[0]?.exists || false;
+    } catch (error) {
+      logger.error(`Failed to check if column ${columnName} exists in ${tableName}:`, error);
+      return false;
+    }
+  },
+
+  // Получить все колонки таблицы одной проверкой
+  async getTableColumns(tableName = 'messages') {
+    try {
+      const query = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+        ORDER BY ordinal_position;
+      `;
+      const result = await this.query(query, [tableName]);
+      const columns = result.rows.map(row => row.column_name);
+      logger.debug(`🔍 Table ${tableName} columns:`, columns);
+      return columns;
+    } catch (error) {
+      logger.error(`Failed to get columns for table ${tableName}:`, error);
+      return [];
     }
   },
 

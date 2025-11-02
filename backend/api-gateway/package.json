@@ -25,6 +25,7 @@
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.10",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.16.3",
@@ -32,6 +33,7 @@
     "rate-limit-redis": "^4.2.3",
     "redis": "^4.7.1",
     "tmi.js": "^1.8.5",
+    "uuid": "^13.0.0",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.14.2"

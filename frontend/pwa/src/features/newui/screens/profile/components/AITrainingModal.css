@@ -1,0 +1,210 @@
+.ai-training-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.ai-training-modal {
+  background: white;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.ai-training-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ai-training-modal-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ai-training-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.ai-training-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ai-training-modal-close:hover {
+  background: #f3f4f6;
+}
+
+.ai-training-modal-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ai-training-setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ai-training-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.ai-training-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ai-training-option {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  color: #374151;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-training-option:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.ai-training-option-active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.ai-training-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-training-mode {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ai-training-mode:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.ai-training-mode-active {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.ai-training-mode-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.ai-training-mode-description {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.ai-training-limit-info {
+  padding: 0.75rem 1rem;
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.ai-training-limit-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.ai-training-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ai-training-button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.ai-training-button-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.ai-training-button-secondary:hover {
+  background: #e5e7eb;
+}
+
+.ai-training-button-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.ai-training-button-primary:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .ai-training-modal {
+    max-width: 100%;
+  }
+
+  .ai-training-options {
+    flex-direction: column;
+  }
+
+  .ai-training-option {
+    width: 100%;
+    text-align: center;
+  }
+}
+

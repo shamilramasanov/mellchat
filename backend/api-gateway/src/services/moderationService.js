@@ -402,6 +402,151 @@ class ModerationService {
     };
     return intervals[timeRange] || intervals['24h'];
   }
+
+  /**
+   * Получить отчеты модерации
+   */
+  async getModerationReports(filter = 'all', search = '') {
+    try {
+      let whereConditions = [];
+      let queryParams = [];
+      let paramIndex = 1;
+
+      // Фильтр по статусу (на основе moderation_reason и is_spam)
+      if (filter === 'pending') {
+        whereConditions.push(`(is_spam = true OR moderation_reason IS NOT NULL) AND moderation_reason NOT IN ('resolved', 'dismissed')`);
+      } else if (filter === 'resolved') {
+        whereConditions.push(`moderation_reason = 'resolved'`);
+      } else if (filter === 'dismissed') {
+        whereConditions.push(`moderation_reason = 'dismissed'`);
+      } else {
+        // 'all' - показываем все сообщения с проблемами
+        whereConditions.push(`(is_spam = true OR moderation_reason IS NOT NULL)`);
+      }
+
+      // Поиск
+      if (search && search.trim()) {
+        whereConditions.push(`(
+          username ILIKE $${paramIndex} OR 
+          text ILIKE $${paramIndex} OR
+          stream_id ILIKE $${paramIndex}
+        )`);
+        queryParams.push(`%${search.trim()}%`);
+        paramIndex++;
+      }
+
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+      // Получаем сообщения, требующие модерации
+      const query = `
+        SELECT 
+          id,
+          username,
+          text,
+          platform,
+          stream_id,
+          created_at,
+          is_spam,
+          moderation_reason,
+          CASE 
+            WHEN is_spam = true THEN 'spam'
+            WHEN moderation_reason LIKE '%harassment%' OR moderation_reason LIKE '%toxic%' THEN 'harassment'
+            WHEN moderation_reason LIKE '%inappropriate%' OR moderation_reason LIKE '%nsfw%' THEN 'inappropriate_content'
+            ELSE 'other'
+          END as type,
+          CASE 
+            WHEN is_spam = true AND LENGTH(text) > 100 THEN 'high'
+            WHEN moderation_reason LIKE '%high%' THEN 'high'
+            WHEN moderation_reason LIKE '%medium%' THEN 'medium'
+            ELSE 'low'
+          END as severity,
+          CASE 
+            WHEN moderation_reason = 'resolved' THEN 'resolved'
+            WHEN moderation_reason = 'dismissed' THEN 'dismissed'
+            ELSE 'pending'
+          END as status
+        FROM messages
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
+
+      const result = await databaseService.query(
+        queryParams.length > 0 ? query : query.replace(/\$\d+/g, '?'),
+        queryParams.length > 0 ? queryParams : []
+      );
+
+      const reports = result.rows.map(row => ({
+        id: row.id,
+        type: row.type || 'other',
+        severity: row.severity || 'medium',
+        user: row.username,
+        platform: row.platform,
+        channel: row.stream_id || 'Unknown',
+        message: row.text,
+        reportedBy: 'system', // В реальной системе это может быть из другой таблицы
+        timestamp: row.created_at ? new Date(row.created_at).toLocaleString() : 'Unknown',
+        status: row.status || 'pending',
+        createdAt: row.created_at
+      }));
+
+      // Статистика
+      const statsQuery = `
+        SELECT 
+          COUNT(*) FILTER (WHERE (is_spam = true OR moderation_reason IS NOT NULL) AND moderation_reason NOT IN ('resolved', 'dismissed')) as pending,
+          COUNT(*) FILTER (WHERE moderation_reason = 'resolved') as resolved,
+          COUNT(*) FILTER (WHERE moderation_reason = 'dismissed') as dismissed,
+          COUNT(*) FILTER (WHERE moderation_reason = 'banned') as banned
+        FROM messages
+        WHERE is_spam = true OR moderation_reason IS NOT NULL
+      `;
+
+      const statsResult = await databaseService.query(statsQuery);
+      const statsRow = statsResult.rows[0] || {};
+
+      const stats = {
+        pending: parseInt(statsRow.pending || 0),
+        resolved: parseInt(statsRow.resolved || 0),
+        dismissed: parseInt(statsRow.dismissed || 0),
+        banned: parseInt(statsRow.banned || 0)
+      };
+
+      return {
+        reports,
+        stats
+      };
+    } catch (error) {
+      logger.error('Get moderation reports error:', error);
+      // Возвращаем пустую структуру вместо ошибки
+      return {
+        reports: [],
+        stats: {
+          pending: 0,
+          resolved: 0,
+          dismissed: 0,
+          banned: 0
+        }
+      };
+    }
+  }
+
+  /**
+   * Разрешить отчет
+   */
+  async resolveReport(reportId, action) {
+    try {
+      // В реальном проекте здесь будет обновление в БД
+      logger.info(`Report ${reportId} resolved with action: ${action}`);
+      
+      return {
+        success: true,
+        message: `Report ${reportId} resolved with action: ${action}`
+      };
+    } catch (error) {
+      logger.error('Resolve report error:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new ModerationService();

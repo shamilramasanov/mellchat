@@ -1,109 +1,98 @@
-# 📚 MellChat Documentation Index
+# 📑 MellChat - Индекс документации
 
-Добро пожаловать в документацию проекта MellChat! Здесь собраны все документы проекта.
-
----
-
-## 🎯 Основные документы
-
-### **Проект**
-- [README.md](./README.md) - Основная информация о проекте
-- [STRATEGY.md](./STRATEGY.md) - Стратегия развития проекта
-- [TASKS.md](./TASKS.md) - Текущие задачи и статус разработки
-
-### **API и техническая документация**
-- [api.md](./api.md) - API документация
-- [BACKEND_README.md](./BACKEND_README.md) - Документация backend
-- [FRONTEND_README.md](./FRONTEND_README.md) - Документация frontend
+**Обновлено:** 1 ноября 2025
 
 ---
 
-## 📊 Отчеты и аналитика
+## 🚀 Быстрый доступ
 
-### **Оптимизация**
-- [PHASE1_OPTIMIZATION_REPORT.md](./PHASE1_OPTIMIZATION_REPORT.md) - Отчет по оптимизации (Фаза 1)
-- [PHASE2_OPTIMIZATION_REPORT.md](./PHASE2_OPTIMIZATION_REPORT.md) - Отчет по оптимизации (Фаза 2)
-- [CLEANUP_REPORT.md](./CLEANUP_REPORT.md) - Отчет об очистке проекта
+### Начать работу
+- [📊 Статус проекта](./project/STATUS.md) — текущее состояние (85% готово)
+- [🔍 Аудит проекта](./reports/PROJECT_AUDIT_REPORT.md) — полная проверка кода и документации
+- [📋 План реализации](./project/PLAN.md) — что делать дальше
+- [🎯 Стратегия](./project/STRATEGY.md) — общее направление
 
-### **Функции**
-- [INTELLIGENT_FILTER_REPORT.md](./INTELLIGENT_FILTER_REPORT.md) - Отчет по умным фильтрам
-- [MOOD_BAR_FEATURE_REPORT.md](./MOOD_BAR_FEATURE_REPORT.md) - Отчет по Mood Bar
-- [ADMIN_PANEL_IMPLEMENTATION_PLAN.md](./ADMIN_PANEL_IMPLEMENTATION_PLAN.md) - План админ панели
+### Настройка
+- [⚙️ Google OAuth](./setup/GOOGLE_OAUTH.md) — настройка OAuth
+- [📧 SMTP](./setup/SMTP.md) — настройка email
+- [💾 Backup](./setup/BACKUP.md) — резервное копирование
 
----
-
-## 🛠️ Утилиты и инструменты
-
-### **Бекапы и восстановление**
-- [BACKUP_README.md](./BACKUP_README.md) - Документация по системе бекапов
-
-### **Рекомендации**
-- [Recomendations.md](./Recomendations.md) - Рекомендации по развитию
+### Функции
+- [🎭 MoodBar](./features/moodbar/MOODBAR.md) — анализ настроения чата
+- [🤖 AI Spam Filter](./features/ai-filter/AI_SPAM_FILTER.md) — AI фильтр спама
+- [❓ Фильтры вопросов](./features/filters/QUESTIONS_FILTER.md) — "Вопросы" и "Все Вопросы"
+- [👤 User Profile](./features/authentication/USER_PROFILE.md) — профиль пользователя
 
 ---
 
-## 🗄️ База данных
+## 📂 Полная структура
 
-### **Анализ и улучшения**
-- [database/](./database/) - Папка с документацией по БД
-  - [CRITICAL_DATABASE_ISSUES.md](./database/CRITICAL_DATABASE_ISSUES.md) - Критические проблемы БД
-  - [DATABASE_ANALYSIS_AND_IMPROVEMENT_PLAN.md](./database/DATABASE_ANALYSIS_AND_IMPROVEMENT_PLAN.md) - План улучшения БД
+### [📊 Проект](./project/)
+- [STATUS.md](./project/STATUS.md) — статус проекта
+- [PLAN.md](./project/PLAN.md) — план реализации
+- [STRATEGY.md](./project/STRATEGY.md) — стратегия
+- [TASKS.md](./project/TASKS.md) — задачи
+- [SCREENS.md](./project/SCREENS.md) — описание экранов
+
+### [✨ Функциональность](./features/)
+#### [Авторизация](./features/authentication/)
+- [AUTHENTICATION.md](./features/authentication/AUTHENTICATION.md) — логика авторизации
+- [USER_PROFILE.md](./features/authentication/USER_PROFILE.md) — профиль пользователя
+
+#### [MoodBar](./features/moodbar/)
+- [MOODBAR.md](./features/moodbar/MOODBAR.md) — полная документация
+- [FILTERING_LOGIC.md](./features/moodbar/FILTERING_LOGIC.md) — логика фильтрации
+
+#### [AI Filter](./features/ai-filter/)
+- [AI_SPAM_FILTER.md](./features/ai-filter/AI_SPAM_FILTER.md) — AI фильтр спама
+- [REALTIME_FILTER.md](./features/ai-filter/REALTIME_FILTER.md) — realtime фильтрация
+
+#### [Фильтры](./features/filters/)
+- [QUESTIONS_FILTER.md](./features/filters/QUESTIONS_FILTER.md) — фильтры вопросов
+
+#### [Чат](./features/chat/)
+- [CHAT_SCROLL.md](./features/chat/CHAT_SCROLL.md) — прокрутка и счетчики
+- [STREAM_LOGIC.md](./features/chat/STREAM_LOGIC.md) — логика стримов
+
+#### [Админ](./features/admin/)
+- [ADMIN_PANEL.md](./features/admin/ADMIN_PANEL.md) — админ панель
+
+### [🗄️ База данных](./database/)
+- [CRITICAL_ISSUES.md](./database/CRITICAL_DATABASE_ISSUES.md) — критические проблемы
+- [ANALYSIS_AND_IMPROVEMENT.md](./database/DATABASE_ANALYSIS_AND_IMPROVEMENT_PLAN.md) — анализ и улучшения
+- [MOODBAR_REVIEW.md](./database/MOODBAR_DATABASE_REVIEW.md) — обзор MoodBar
+
+### [⚙️ Настройка](./setup/)
+- [GOOGLE_OAUTH.md](./setup/GOOGLE_OAUTH.md) — Google OAuth
+- [SMTP.md](./setup/SMTP.md) — SMTP настройка
+- [EMAIL_AUTH.md](./setup/EMAIL_AUTH.md) — Email авторизация
+- [BACKUP.md](./setup/BACKUP.md) — резервное копирование
+
+### [🔌 API](./api/)
+- [API.md](./api/API.md) — API документация
+- [BACKEND_README.md](./api/BACKEND_README.md) — Backend
+- [FRONTEND_README.md](./api/FRONTEND_README.md) — Frontend
+
+### [📊 Отчеты](./reports/)
+- [PROJECT_AUDIT_REPORT.md](./reports/PROJECT_AUDIT_REPORT.md) — полный аудит проекта (новый)
+- [PHASE1_OPTIMIZATION.md](./reports/PHASE1_OPTIMIZATION.md) — фаза 1
+- [PHASE2_OPTIMIZATION.md](./reports/PHASE2_OPTIMIZATION.md) — фаза 2
+- [CLEANUP.md](./reports/CLEANUP.md) — очистка
+- [INTELLIGENT_FILTER.md](./reports/INTELLIGENT_FILTER.md) — интеллектуальная фильтрация
+
+### [💡 Предложения](./proposals/)
+- [AI_ASSISTANT.md](./proposals/AI_ASSISTANT.md) — AI Assistant
+
+### [🎨 UI/UX](./ui/)
+- [UI_UX.md](./ui/UI_UX.md) — описание UI/UX
+- [RECOMMENDATIONS.md](./ui/RECOMMENDATIONS.md) — рекомендации
 
 ---
 
-## 📝 Логи и отладка
+## 📝 Дополнительные документы
 
-- [myLogs.md](./myLogs.md) - Логи разработки
-
----
-
-## 🚀 Быстрый старт
-
-1. **Начало работы:** [README.md](./README.md)
-2. **Текущие задачи:** [TASKS.md](./TASKS.md)
-3. **API документация:** [api.md](./api.md)
-4. **Backend:** [BACKEND_README.md](./BACKEND_README.md)
-5. **Frontend:** [FRONTEND_README.md](./FRONTEND_README.md)
+- [README.md](./README.md) — главный индекс
 
 ---
 
-## 📋 Структура документации
-
-```
-docs/
-├── INDEX.md                           # Этот файл
-├── README.md                          # Основная информация
-├── STRATEGY.md                        # Стратегия развития
-├── TASKS.md                           # Задачи и статус
-├── api.md                             # API документация
-├── BACKEND_README.md                  # Backend документация
-├── FRONTEND_README.md                 # Frontend документация
-├── BACKUP_README.md                   # Система бекапов
-├── CLEANUP_REPORT.md                  # Отчет об очистке
-├── ADMIN_PANEL_IMPLEMENTATION_PLAN.md # План админ панели
-├── INTELLIGENT_FILTER_REPORT.md       # Умные фильтры
-├── MOOD_BAR_FEATURE_REPORT.md         # Mood Bar
-├── PHASE1_OPTIMIZATION_REPORT.md      # Оптимизация Фаза 1
-├── PHASE2_OPTIMIZATION_REPORT.md      # Оптимизация Фаза 2
-├── Recomendations.md                  # Рекомендации
-├── myLogs.md                          # Логи разработки
-└── database/                          # Документация БД
-    ├── CRITICAL_DATABASE_ISSUES.md
-    └── DATABASE_ANALYSIS_AND_IMPROVEMENT_PLAN.md
-```
-
----
-
-## 🔄 Обновления
-
-**Последнее обновление:** $(date)  
-**Версия документации:** 1.0.0
-
----
-
-## 📞 Поддержка
-
-При вопросах по документации обращайтесь к:
-- [TASKS.md](./TASKS.md) - для текущих задач
-- [STRATEGY.md](./STRATEGY.md) - для стратегических вопросов
-- [api.md](./api.md) - для API вопросов
+*Обновлено: 1 ноября 2025*

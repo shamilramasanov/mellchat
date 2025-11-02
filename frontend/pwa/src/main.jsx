@@ -4,8 +4,9 @@ import { I18nextProvider } from 'react-i18next';
 import { Toaster } from 'react-hot-toast';
 import App from './app/App';
 import i18n from './i18n';
-import { WebSocketProvider } from './shared/components/WebSocketProvider.jsx';
+// Removed WebSocketProvider: NewUI не использует глобальный WS провайдер
 import './styles/globals.css';
+import './styles/tailwind.css';
 import { TOAST_CONFIG } from './shared/utils/constants';
 
 // Register Service Worker (only in production)
@@ -29,9 +30,7 @@ window.addEventListener('orientationchange', setVH);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <I18nextProvider i18n={i18n}>
-    <WebSocketProvider>
       <App />
-    </WebSocketProvider>
     <Toaster {...TOAST_CONFIG} />
   </I18nextProvider>
 );

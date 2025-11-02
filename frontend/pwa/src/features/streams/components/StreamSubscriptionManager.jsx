@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useWebSocketContext } from '@shared/components/WebSocketProvider';
 import { useStreamsStore } from '../store/streamsStore';
 import { useChatStore } from '../../chat/store/chatStore';
+import { authAPI } from '@shared/services/api';
+import { STORAGE_KEYS } from '@shared/utils/constants';
 
 /**
  * StreamSubscriptionManager
@@ -30,58 +32,69 @@ const StreamSubscriptionManager = () => {
       return;
     }
 
-    // Получаем все connectionIds из activeStreams И recentStreams
+    // Получаем connectionIds ТОЛЬКО из activeStreams (не из recentStreams!)
     const activeConnectionIds = activeStreams
       .map(s => s.connectionId)
       .filter(Boolean);
 
-    const recentConnectionIds = recentStreams
-      .map(s => s.connectionId)
-      .filter(Boolean);
-
-    // Объединяем и убираем дубликаты
-    const allConnectionIds = [...new Set([...activeConnectionIds, ...recentConnectionIds])];
-
-    if (allConnectionIds.length > 0) {
-      console.log(`📡 StreamSubscriptionManager: Subscribing to ${allConnectionIds.length} connections:`, allConnectionIds);
+    if (activeConnectionIds.length > 0) {
+      console.log(`📡 StreamSubscriptionManager: Subscribing to ${activeConnectionIds.length} connections:`, activeConnectionIds);
     }
 
-    // Подписываемся на все стримы (из activeStreams и recentStreams)
-    // Используем небольшую задержку для первого подключения, чтобы дать время восстановлению
+    // Подписываемся только на активные стримы
     const subscribeTimeout = setTimeout(() => {
-      allConnectionIds.forEach(connectionId => {
+      activeConnectionIds.forEach(connectionId => {
         subscribe(connectionId);
       });
-    }, isConnected ? 500 : 2000); // Если уже подключен, ждем меньше
+    }, isConnected ? 500 : 2000);
 
+    // При размонтировании или изменении - отписываемся от старых подписок
     return () => {
       clearTimeout(subscribeTimeout);
+      // Отписываемся от всех connectionIds, которые больше не активны
+      activeConnectionIds.forEach(connectionId => {
+        unsubscribe(connectionId);
+      });
     };
-  }, [isConnected, activeStreams, recentStreams, subscribe]);
+  }, [isConnected, activeStreams, subscribe, unsubscribe]);
 
   useEffect(() => {
     // Listen for incoming messages
     const handleMessage = (data) => {
       // Data format: { connectionId, message }
-      // where message is the payload from backend
-      if (data && data.message && data.connectionId) {
+      if (!data || !data.message || !data.connectionId) {
+        console.warn('⚠️ StreamSubscriptionManager: Invalid message format:', data);
+        return;
+      }
+
         // Find stream by connectionId сначала в activeStreams, потом в recentStreams
         let stream = activeStreamsRef.current.find(s => s.connectionId === data.connectionId);
         if (!stream) {
           stream = recentStreamsRef.current.find(s => s.connectionId === data.connectionId);
         }
-        
-        if (!stream) {
-          // Silently ignore messages for removed streams
-          return;
-        }
-        
-        // Add streamId to message before storing (use stable stream.id)
+      if (!stream) return; // stream already removed
+
+      const raw = data.message;
+
+      // Normalize payload from backend to UI schema
+      const normalizedText = raw.text || raw.content || raw.message || '';
+      const normalizedId = raw.id || raw.messageId || raw._id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const normalizedUser = raw.username || raw.userName || raw.user?.displayName || raw.author || raw.sender || 'unknown';
+      const normalizedPlatform = raw.platform || stream.platform;
+      const ts = raw.timestamp || raw.createdAt || raw.time || raw.ts;
+      const normalizedTimestamp = ts ? new Date(Number(ts) || ts) : new Date();
+      const normalizedIsQuestion = raw.isQuestion ?? /\?/.test(normalizedText);
+
+      if (!normalizedText) return; // ignore empty
+
         const messageWithStreamId = {
-          ...data.message,
-          streamId: stream.id, // Use stable stream.id instead of connectionId
-          timestamp: new Date(data.message.timestamp), // Convert string to Date if needed
-          isQuestion: data.message.isQuestion || false, // Ensure isQuestion is preserved
+        id: normalizedId,
+        streamId: stream.id,
+        platform: normalizedPlatform,
+        username: normalizedUser,
+        text: normalizedText,
+        timestamp: normalizedTimestamp,
+        isQuestion: Boolean(normalizedIsQuestion),
         };
         
         console.log('📨 StreamSubscriptionManager: Adding message for stream:', stream.id, {
@@ -91,9 +104,21 @@ const StreamSubscriptionManager = () => {
         });
         
         addMessage(messageWithStreamId);
-      } else {
-        console.warn('⚠️ StreamSubscriptionManager: Invalid message format:', data);
-      }
+        
+        // Логируем активность просмотра сообщения
+        if (stream.connectionId) {
+          const sessionId = localStorage.getItem(STORAGE_KEYS.GUEST_SESSION_ID);
+          authAPI.logActivity({
+            streamId: stream.connectionId,
+            platform: normalizedPlatform,
+            channelName: stream.channelName || stream.name,
+            action: 'view_message',
+            metadata: {
+              messageId: normalizedId,
+              streamId: stream.id
+            }
+          }).catch(() => {}); // Игнорируем ошибки
+        }
     };
 
     on('message', handleMessage);

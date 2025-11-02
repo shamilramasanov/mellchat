@@ -11,6 +11,8 @@ class WsHub {
     this.subscribers = new Map(); // connectionId -> Set(ws)
     this.lastActivity = new Map(); // connectionId -> timestamp
     this.adminSubscribers = new Set(); // WebSocket connections for admin panel
+    this.moodBroadcastTimeout = null; // Для дебаунса настроения
+    this.moodBroadcastDelay = 2000; // 2 секунды задержка перед broadcast
 
     this.wss.on('connection', (ws) => {
       ws.isAlive = true;
@@ -243,6 +245,20 @@ class WsHub {
         if (result.sentiment) {
           payload.sentiment = result.sentiment;
           logger.info(`📤 WebSocket: sentiment=${payload.sentiment}, isSpam=${payload.isSpam} for ${payload.id}`);
+          
+          // Если настроение было обновлено (не спам), запускаем broadcast с дебаунсом
+          if (!result.isSpam && result.sentiment) {
+            // Отменяем предыдущий таймер
+            if (this.moodBroadcastTimeout) {
+              clearTimeout(this.moodBroadcastTimeout);
+            }
+            
+            // Запускаем новый таймер для broadcast настроения
+            this.moodBroadcastTimeout = setTimeout(() => {
+              this.broadcastMoodUpdates();
+              this.moodBroadcastTimeout = null;
+            }, this.moodBroadcastDelay);
+          }
         } else {
           payload.sentiment = 'neutral';
         }

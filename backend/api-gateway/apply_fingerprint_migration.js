@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const databaseService = require('./src/services/databaseService');
+
+async function applyMigration() {
+  try {
+    console.log('📊 Применение миграции fingerprint...');
+    
+    const migrationPath = path.join(__dirname, 'database', 'migrations', 'add_fingerprint_to_guest_sessions.sql');
+    const sql = fs.readFileSync(migrationPath, 'utf8');
+    
+    // Выполняем весь SQL как один запрос
+    try {
+      await databaseService.query(sql);
+      console.log('✅ Миграция применена');
+    } catch (error) {
+      // Игнорируем ошибки "already exists"
+      if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+        console.log('⚠️ Некоторые объекты уже существуют, проверяем...');
+        // Проверяем, существует ли колонка
+        const checkColumn = await databaseService.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'guest_sessions'
+            AND column_name = 'fingerprint'
+          );
+        `);
+        if (checkColumn.rows[0].exists) {
+          console.log('✅ Колонка уже существует, миграция не требуется');
+        } else {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+    
+    console.log('✅ Миграция fingerprint применена успешно!');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Ошибка при применении миграции:', error.message);
+    process.exit(1);
+  }
+}
+
+applyMigration();
+

@@ -9,7 +9,11 @@ router.get('/messages/:streamId', async (req, res) => {
     const { streamId } = req.params;
     const { limit = 100, offset = 0 } = req.query;
     
+    logger.info('📥 Loading messages from database:', { streamId, limit, offset });
+    
     const messages = await databaseService.getMessages(streamId, parseInt(limit), parseInt(offset));
+    
+    logger.info('✅ Messages loaded from database:', { streamId, count: messages.length });
     
     res.json({
       success: true,
@@ -18,11 +22,16 @@ router.get('/messages/:streamId', async (req, res) => {
       count: messages.length
     });
   } catch (error) {
-    logger.error('Failed to get messages from database:', error);
+    logger.error('❌ Failed to get messages from database:', {
+      streamId: req.params.streamId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to get messages from database',
-      error: error.message
+      error: error.message,
+      streamId: req.params.streamId
     });
   }
 });

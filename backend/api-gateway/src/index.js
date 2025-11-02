@@ -50,6 +50,10 @@ const aiRoutes = require('./routes/ai');
 logger.info('✅ aiRoutes loaded');
 const pollingRoutes = require('./routes/polling');
 logger.info('✅ pollingRoutes loaded');
+const userRoutes = require('./routes/user');
+logger.info('✅ userRoutes loaded');
+const aiFilterRoutes = require('./routes/aiFilter');
+logger.info('✅ aiFilterRoutes loaded');
 logger.info('✅ All routes loaded successfully');
 
 const app = express();
@@ -121,33 +125,14 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Allow any Vercel preview URL
-    if (origin && origin.includes('.vercel.app')) {
-      logger.info('CORS allowed (Vercel):', { origin });
-      return callback(null, true);
-    }
-    
-    // Allow any local network IP (192.168.x.x)
-    if (origin && origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/)) {
-      logger.info('CORS allowed (local network):', { origin });
-      return callback(null, true);
-    }
-    
-    // Allow browser extensions (Chrome, Firefox, Edge, etc.)
-    if (origin && (origin.startsWith('chrome-extension://') || 
-                   origin.startsWith('moz-extension://') || 
-                   origin.startsWith('safari-web-extension://'))) {
-      logger.info('CORS allowed (extension):', { origin });
-      return callback(null, true);
-    }
-    
-    logger.warn('CORS blocked:', { origin });
-    callback(new Error('Not allowed by CORS'));
+    // В development разрешаем все origins
+    logger.info('CORS allowed (development):', { origin });
+    return callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
 }));
 logger.info('✅ CORS middleware configured');
 
@@ -185,8 +170,8 @@ app.options('*', cors({
     return callback(null, true); // Allow all in development
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
 }));
 
 // Rate limiting middleware (применяем перед body parsing)
@@ -239,10 +224,79 @@ app.get('/metrics', async (req, res) => {
 });
 logger.info('✅ Metrics endpoint configured');
 
-// Auth routes (OAuth) - строгий лимит
+// Auth routes - применяем rate limiter только для критичных endpoints
+// Отдельные endpoints (verify, guest/register) используют свои лимиты
 logger.info('Setting up auth routes...');
-app.use('/api/v1/auth', rateLimiters.auth, authRoutes);
+app.use('/api/v1/auth', (req, res, next) => {
+  // Для критичных endpoints (login, register) используем строгий лимит
+  // Остальные используют свои лимиты в роутах
+  if (req.path === '/google' || req.path === '/google/callback' || 
+      req.path === '/email/send-code' || req.path === '/email/verify-code') {
+    return rateLimiters.auth(req, res, next);
+  }
+  next();
+}, authRoutes);
 logger.info('✅ Auth routes configured');
+
+// Activity logging route - доступен всем (использует optionalAuth)
+logger.info('Setting up activity logging route...');
+app.post('/api/v1/admin/users/activity/log', (req, res, next) => {
+  // Используем optionalAuth для получения userId или sessionId
+  const { optionalAuth } = require('./middleware/authMiddleware');
+  optionalAuth(req, res, async () => {
+    try {
+      const userActivityService = require('./services/userActivityService');
+      const { streamId, platform, channelName, action, metadata } = req.body;
+      
+      if (!streamId || !platform || !action) {
+        return res.status(400).json({ error: 'streamId, platform, and action are required' });
+      }
+      
+      const userId = req.user?.userId || null;
+      const sessionId = req.headers['x-session-id'] || null;
+      
+      if (!userId && !sessionId) {
+        return res.status(400).json({ error: 'Either userId or sessionId must be provided' });
+      }
+      
+      await userActivityService.logActivity({
+        userId,
+        sessionId,
+        streamId,
+        platform,
+        channelName,
+        action,
+        metadata: metadata || {}
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('Activity log error:', error);
+      res.status(500).json({ error: 'Failed to log activity', message: error.message });
+    }
+  });
+});
+logger.info('✅ Activity logging route configured');
+
+// User routes (settings) - требует авторизации
+logger.info('Setting up user routes...');
+try {
+  app.use('/api/v1/user', rateLimiters.general, userRoutes);
+  logger.info('✅ User routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up user routes:', error);
+  throw error;
+}
+
+// AI Filter routes - требует авторизации
+logger.info('Setting up AI filter routes...');
+try {
+  app.use('/api/v1/ai-filter', rateLimiters.general, aiFilterRoutes);
+  logger.info('✅ AI Filter routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up AI filter routes:', error);
+  throw error;
+}
 
 // Database routes - лимит для сообщений
 logger.info('Setting up database routes...');
@@ -407,9 +461,18 @@ logger.info('Setting up error handling middleware...');
 app.use(errorHandler);
 logger.info('✅ Error handling middleware configured');
 
+// Static resource handlers (to avoid 404 noise in logs)
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No Content
+});
+
 // 404 handler
 logger.info('Setting up 404 handler...');
 app.use('*', (req, res) => {
+  // Ignore common browser requests that cause 404 noise
+  if (req.path === '/google' || req.path.startsWith('/static/')) {
+    return res.status(204).end();
+  }
   res.status(404).json({
     error: {
       code: 'NOT_FOUND',

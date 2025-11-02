@@ -2,30 +2,44 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LIMITS } from '@shared/utils/constants';
 import { detectPlatform, extractStreamId } from '@shared/utils/helpers';
+import { useChatStore } from '@features/chat/store/chatStore';
+import { streamsAPI, databaseAPI } from '@shared/services/api';
 
 export const useStreamsStore = create(
   persist(
     (set, get) => ({
       // State
-      activeStreams: [], // Currently connected streams
+      activeStreams: [], // Currently connected streams (max 3)
       activeStreamId: null, // Currently viewing stream
-      recentStreams: [], // History of streams
+      recentStreams: [], // History of all streams (including closed)
       shouldAutoScroll: false, // Флаг для автоскролла при переходе со страницы последних стримов
-      collapsedStreamIds: [], // Streams that are collapsed from cards view
+      collapsedStreamIds: [], // Streams that are collapsed from cards view (but still connected)
+      closedStreamIds: [], // Streams that are closed (disconnected from platform)
       scrollToUnreadMessage: null, // Callback для скролла к непрочитанному сообщению
       scrollToUnreadQuestion: null, // Callback для скролла к непрочитанному вопросу
       
       // Actions
       addStream: (stream) => {
-        const { activeStreams } = get();
+        const { activeStreams, closedStreamIds, collapsedStreamIds } = get();
         
         // Check if stream already exists
         const exists = activeStreams.find(s => s.id === stream.id);
         if (exists) {
           // Just set it as active - НЕ перезаписываем стрим!
-          set({ activeStreamId: stream.id });
+          // Но убеждаемся, что он не в closedStreamIds или collapsedStreamIds
+          const updates = { activeStreamId: stream.id };
+          if (closedStreamIds.includes(stream.id)) {
+            updates.closedStreamIds = closedStreamIds.filter(id => id !== stream.id);
+          }
+          if (collapsedStreamIds.includes(stream.id)) {
+            updates.collapsedStreamIds = collapsedStreamIds.filter(id => id !== stream.id);
+          }
+          set(updates);
           console.log('✅ Stream already in activeStreams, just setting as active');
         } else {
+          // Если стрим был закрыт или свернут - убираем его из соответствующих списков
+          const newClosedStreamIds = closedStreamIds.filter(id => id !== stream.id);
+          const newCollapsedStreamIds = collapsedStreamIds.filter(id => id !== stream.id);
           // Проверяем лимит на 3 стрима
           if (activeStreams.length >= 3) {
             console.warn('⚠️ Maximum 3 streams allowed. Cannot add more streams.');
@@ -38,6 +52,8 @@ export const useStreamsStore = create(
           set({ 
             activeStreams: newActiveStreams,
             activeStreamId: stream.id,
+            closedStreamIds: newClosedStreamIds, // Убираем из закрытых
+            collapsedStreamIds: newCollapsedStreamIds, // Убираем из свернутых
             shouldAutoScroll: true, // Устанавливаем флаг автоскролла при добавлении стрима
           });
           console.log(`✅ Stream added to activeStreams (${newActiveStreams.length}/3)`);
@@ -98,9 +114,9 @@ export const useStreamsStore = create(
         });
       },
 
-      // Collapse/expand stream card
+      // Collapse/expand stream card (stream remains connected)
       toggleStreamCard: (streamId) => {
-        const { collapsedStreamIds, activeStreamId } = get();
+        const { collapsedStreamIds, activeStreamId, activeStreams } = get();
         
         if (collapsedStreamIds.includes(streamId)) {
           // Expand - разворачиваем карточку
@@ -112,31 +128,194 @@ export const useStreamsStore = create(
           set({ 
             collapsedStreamIds: [...collapsedStreamIds, streamId] 
           });
+
+          // Обновляем/добавляем запись в историю с актуальным lastViewed
+          const stream = activeStreams.find(s => s.id === streamId);
+          if (stream) {
+            get().addToRecent({ ...stream, lastViewed: new Date().toISOString() });
+          }
           
-          // Если скрыли активный стрим - открываем модалку RecentStreams
+          // Если скрыли активный стрим - переключаемся на другой доступный
           if (activeStreamId === streamId) {
-            set({ activeStreamId: null });
+            const availableStreams = activeStreams.filter(s => 
+              !collapsedStreamIds.includes(s.id) && !get().closedStreamIds.includes(s.id)
+            );
+            const newActiveId = availableStreams.length > 0 ? availableStreams[0].id : null;
+            set({ activeStreamId: newActiveId });
           }
         }
       },
 
-      // Close stream card - просто открываем модалку RecentStreams
-      closeStream: (streamId) => {
-        const { activeStreamId } = get();
+      // Close stream (disconnect from platform and move to closed)
+      closeStream: async (streamId) => {
+        const { activeStreamId, activeStreams, closedStreamIds } = get();
+        const streamToClose = activeStreams.find(s => s.id === streamId);
         
-        // Сохраняем последнее прочитанное сообщение
-        const chatStore = require('@features/chat/store/chatStore').useChatStore.getState();
-        const streamMessages = chatStore.getStreamMessages(streamId);
+        if (!streamToClose) return;
         
-        if (streamMessages.length > 0) {
-          const lastMessage = streamMessages[streamMessages.length - 1];
-          chatStore.markMessagesAsRead(streamId, lastMessage.id);
+        // Disconnect from platform
+        if (streamToClose.connectionId) {
+          try {
+            const response = await fetch('http://localhost:3001/api/v1/connect/disconnect', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                connectionId: streamToClose.connectionId
+              })
+            });
+            
+            if (response.ok) {
+              console.log('✅ Successfully disconnected from platform:', streamToClose.connectionId);
+            } else {
+              console.warn('⚠️ Failed to disconnect from platform:', streamToClose.connectionId);
+            }
+          } catch (error) {
+            console.error('❌ Error disconnecting from platform:', error);
+          }
         }
         
-        // Если закрываем активный стрим - открываем модалку
+        // Move to closed streams
+        const newClosedStreamIds = [...closedStreamIds, streamId];
+        const newActiveStreams = activeStreams.filter(s => s.id !== streamId);
+        
+        // Добавляем/обновляем стрим в историю с актуальным lastViewed
+        get().addToRecent({ ...streamToClose, lastViewed: new Date().toISOString() });
+        
+        // If closing active stream, switch to another available
+        let newActiveStreamId = activeStreamId;
         if (activeStreamId === streamId) {
-          set({ activeStreamId: null });
+          const availableStreams = newActiveStreams.filter(s => 
+            !get().collapsedStreamIds.includes(s.id) && !newClosedStreamIds.includes(s.id)
+          );
+          newActiveStreamId = availableStreams.length > 0 ? availableStreams[0].id : null;
         }
+        
+        set({ 
+          activeStreams: newActiveStreams,
+          activeStreamId: newActiveStreamId,
+          closedStreamIds: newClosedStreamIds
+        });
+        
+        console.log(`🔒 Stream ${streamId} closed and disconnected`);
+      },
+
+      // Reopen closed stream (reconnect to platform)
+      reopenStream: async (streamId) => {
+        const { activeStreams, closedStreamIds, recentStreams } = get();
+        
+        // Check if stream is closed
+        if (!closedStreamIds.includes(streamId)) {
+          console.warn('⚠️ Stream is not closed:', streamId);
+          return { success: false, error: 'Stream is not closed' };
+        }
+        
+        // Check limit
+        if (activeStreams.length >= 3) {
+          console.warn('⚠️ Maximum 3 streams allowed. Cannot reopen stream.');
+          return { success: false, error: 'Maximum 3 streams allowed' };
+        }
+        
+        // Find stream in recentStreams
+        const streamToReopen = recentStreams.find(s => s.id === streamId);
+        if (!streamToReopen) {
+          console.warn('⚠️ Stream not found in recentStreams:', streamId);
+          return { success: false, error: 'Stream not found' };
+        }
+        
+        // Reconnect to platform - проверяем онлайн-статус через подключение
+        if (streamToReopen.streamUrl) {
+          try {
+            console.log('🔄 Checking if stream is online:', streamToReopen.streamUrl);
+            const data = await streamsAPI.connect(streamToReopen.streamUrl); // expects {streamUrl}
+            const connectionId = data?.connection?.id;
+            
+            if (!connectionId) {
+              console.warn('⚠️ No connection id returned - stream might be offline');
+              return { success: false, error: 'Stream is offline or not available' };
+            }
+
+            // Stream is online - загружаем сохраненные сообщения из базы
+            console.log('📥 Loading saved messages from database for stream:', streamId);
+            try {
+              const savedMessages = await databaseAPI.getMessages(streamId, 100, 0);
+              
+              if (savedMessages?.messages && Array.isArray(savedMessages.messages)) {
+                const chatStore = useChatStore.getState();
+                
+                // Нормализуем и добавляем сообщения в chatStore
+                savedMessages.messages.forEach(msg => {
+                  // Обрабатываем timestamp - может быть Date, number (bigint), или строка
+                  let timestamp = msg.timestamp || msg.created_at;
+                  if (typeof timestamp === 'number') {
+                    timestamp = new Date(timestamp);
+                  } else if (typeof timestamp === 'string') {
+                    timestamp = new Date(timestamp);
+                  } else if (timestamp instanceof Date) {
+                    // Уже Date
+                  } else {
+                    timestamp = new Date();
+                  }
+                  
+                  const normalizedMessage = {
+                    id: msg.id || `${timestamp.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+                    streamId: streamId,
+                    platform: streamToReopen.platform || msg.platform || 'unknown',
+                    username: msg.username || msg.user_name || msg.author || 'unknown',
+                    text: msg.text || msg.message || msg.content || '',
+                    timestamp: timestamp,
+                    isQuestion: msg.is_question || msg.isQuestion || /\?/.test(msg.text || msg.message || msg.content || ''),
+                    sentiment: msg.sentiment || null,
+                    isSpam: msg.is_spam || msg.isSpam || false,
+                  };
+                  
+                  chatStore.addMessage(normalizedMessage);
+                });
+                
+                console.log(`✅ Loaded ${savedMessages.messages.length} saved messages from database`);
+              } else {
+                console.log('ℹ️ No saved messages found in database');
+              }
+            } catch (loadError) {
+              console.warn('⚠️ Failed to load saved messages from database:', loadError);
+              // Продолжаем даже если не удалось загрузить сообщения
+            }
+            
+                // Add back to active streams
+                const newActiveStreams = [...activeStreams, { ...streamToReopen, connectionId }];
+                const newClosedStreamIds = closedStreamIds.filter(id => id !== streamId);
+            
+            // Убираем из collapsedStreamIds при переоткрытии (чтобы чат сразу показывался)
+            const newCollapsedStreamIds = get().collapsedStreamIds.filter(id => id !== streamId);
+                
+                set({ 
+                  activeStreams: newActiveStreams,
+                  activeStreamId: streamId,
+                  closedStreamIds: newClosedStreamIds,
+              collapsedStreamIds: newCollapsedStreamIds,
+                  shouldAutoScroll: true
+                });
+                
+            console.log('✅ Stream reopened and connected:', streamId, 'connectionId:', connectionId);
+                return { success: true };
+          } catch (error) {
+            console.error('❌ Error reconnecting to platform:', error);
+            
+            // Проверяем, не связано ли это с тем, что стрим оффлайн
+            const errorMessage = error?.response?.data?.error?.message || error.message || 'Failed to reconnect';
+            const isOffline = errorMessage.toLowerCase().includes('not live') || 
+                             errorMessage.toLowerCase().includes('offline') ||
+                             errorMessage.toLowerCase().includes('not available');
+            
+            return { 
+              success: false, 
+              error: isOffline ? 'Stream is offline or not available' : errorMessage
+            };
+          }
+        }
+        
+        return { success: false, error: 'No stream URL available' };
       },
 
       // Switch stream without disconnect
@@ -145,7 +324,7 @@ export const useStreamsStore = create(
         
         // Помечаем сообщения как прочитанные для предыдущего активного стрима
         if (activeStreamId && activeStreamId !== streamId) {
-          const chatStore = require('@features/chat/store/chatStore').useChatStore.getState();
+          const chatStore = useChatStore.getState();
           const previousStreamMessages = chatStore.getStreamMessages(activeStreamId);
           
           if (previousStreamMessages.length > 0) {
@@ -373,6 +552,29 @@ export const useStreamsStore = create(
         return get().activeStreams.length > 0;
       },
       
+      // State checkers
+      isStreamCollapsed: (streamId) => {
+        const { collapsedStreamIds } = get();
+        return collapsedStreamIds.includes(streamId);
+      },
+      
+      isStreamClosed: (streamId) => {
+        const { closedStreamIds } = get();
+        return closedStreamIds.includes(streamId);
+      },
+      
+      isStreamActive: (streamId) => {
+        const { activeStreams } = get();
+        return activeStreams.some(s => s.id === streamId);
+      },
+      
+      getAvailableStreams: () => {
+        const { activeStreams, collapsedStreamIds, closedStreamIds } = get();
+        return activeStreams.filter(s => 
+          !collapsedStreamIds.includes(s.id) && !closedStreamIds.includes(s.id)
+        );
+      },
+      
       // Регистрация функций скролла из ChatContainer
       setScrollFunctions: (scrollToUnreadMessage, scrollToUnreadQuestion) => {
         set({ scrollToUnreadMessage, scrollToUnreadQuestion });
@@ -425,6 +627,8 @@ export const useStreamsStore = create(
           connectionId: s.connectionId, // Сохраняем connectionId для WebSocket подписки
           streamUrl: s.streamUrl // Сохраняем streamUrl
         })),
+        collapsedStreamIds: state.collapsedStreamIds,
+        closedStreamIds: state.closedStreamIds,
       }),
     }
   )

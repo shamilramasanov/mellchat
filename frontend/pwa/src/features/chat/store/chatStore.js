@@ -44,20 +44,15 @@ export const useChatStore = create(
           return;
         }
         
-        // Debug: проверяем sentiment и spam
-        if (!message.sentiment) {
-          console.warn('⚠️ Message without sentiment:', {
-            id: message.id,
-            text: message.text,
-            hasSpam: !!message.isSpam
-          });
-        } else {
-          console.log('✅ Message:', {
-            text: message.text,
-            sentiment: message.sentiment,
-            isSpam: !!message.isSpam
-          });
-        }
+        // Debug: проверяем sentiment (только если moodEnabled)
+        // Сообщения без sentiment - это нормально, если анализ настроения отключен
+        // if (!message.sentiment && moodEnabled) {
+        //   console.warn('⚠️ Message without sentiment:', {
+        //     id: message.id,
+        //     text: message.text,
+        //     hasSpam: !!message.isSpam
+        //   });
+        // }
 
         // Add to messages (limit to 200 for memory management, matching DB limit)
         const newMessages = [...messages, message].slice(-200);
@@ -615,23 +610,15 @@ export const useChatStore = create(
           lastReadMessageIds
         });
         
-        // Если нет lastReadId - считаем все прочитанными (кроме новых после последнего)
+        // Если нет lastReadId - считаем все непрочитанными (для показа кнопки)
         if (!lastReadId && streamMessages.length > 0) {
-          // Устанавливаем последнее сообщение как прочитанное
-          const lastMessage = streamMessages[streamMessages.length - 1];
-          set({ 
-            lastReadMessageIds: { 
-              ...lastReadMessageIds, 
-              [streamId]: lastMessage.id 
-            } 
-          });
-          console.log('✅ Auto-marking as read:', { streamId, lastMessageId: lastMessage.id });
+          console.log('⚠️ No lastReadId found, considering all messages as unread for button display');
           return {
             messageCount: streamMessages.length,
             questionCount: streamMessages.filter(m => m.isQuestion).length,
-            unreadCount: 0,
-            unreadQuestionCount: 0,
-            lastReadId: lastMessage.id,
+            unreadCount: streamMessages.length, // Все сообщения непрочитанные
+            unreadQuestionCount: streamMessages.filter(m => m.isQuestion).length,
+            lastReadId: null,
           };
         }
         
@@ -665,12 +652,20 @@ export const useChatStore = create(
       },
       
       markMessagesAsRead: (streamId, lastMessageId) => {
+        // Логируем стек вызовов для отладки
+        const stack = new Error().stack;
+        console.log('📌 markMessagesAsRead CALLED:', {
+          streamId,
+          lastMessageId,
+          stack: stack?.split('\n').slice(1, 5).join('\n') // Первые 4 строки стека
+        });
+        
         set(state => {
           const updatedIds = {
             ...state.lastReadMessageIds,
             [streamId]: lastMessageId,
           };
-          console.log('📌 markMessagesAsRead:', {
+          console.log('📌 markMessagesAsRead UPDATED:', {
             streamId,
             lastMessageId,
             updated: updatedIds
@@ -948,6 +943,83 @@ export const useChatStore = create(
         
         // Возвращаем ID первого непрочитанного сообщения
         return streamMessages[lastReadIndex + 1]?.id;
+      },
+
+      // Получить ID последнего (самого нового) непрочитанного сообщения
+      getLastUnreadMessageId: (streamId) => {
+        const { messages, lastReadMessageIds } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        const lastReadId = lastReadMessageIds[streamId];
+        
+        if (streamMessages.length === 0) {
+          return null;
+        }
+        
+        if (!lastReadId) {
+          // Если нет прочитанных сообщений, все непрочитанные - возвращаем последнее
+          return streamMessages[streamMessages.length - 1]?.id || null;
+        }
+        
+        // Находим индекс последнего прочитанного сообщения
+        const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+        
+        if (lastReadIndex === -1) {
+          // Последнее прочитанное сообщение не найдено - все сообщения непрочитанные
+          return streamMessages[streamMessages.length - 1]?.id || null;
+        }
+        
+        if (lastReadIndex === streamMessages.length - 1) {
+          // Последнее сообщение прочитано - непрочитанных нет
+          return null;
+        }
+        
+        // Есть непрочитанные сообщения после lastReadIndex
+        // Возвращаем самое новое непрочитанное (последнее в списке)
+        return streamMessages[streamMessages.length - 1]?.id || null;
+      },
+
+      // Получить следующее непрочитанное сообщение после указанного ID
+      getNextUnreadMessageId: (streamId, currentMessageId) => {
+        const { messages, lastReadMessageIds } = get();
+        const streamMessages = messages.filter(m => m.streamId === streamId);
+        const lastReadId = lastReadMessageIds[streamId];
+        
+        if (!lastReadId || streamMessages.length === 0) {
+          return null;
+        }
+        
+        const lastReadIndex = streamMessages.findIndex(m => m.id === lastReadId);
+        
+        // Если currentMessageId не указан, возвращаем первый непрочитанный
+        if (!currentMessageId) {
+          if (lastReadIndex === -1 || lastReadIndex === streamMessages.length - 1) {
+            return streamMessages[streamMessages.length - 1]?.id || null;
+          }
+          return streamMessages[lastReadIndex + 1]?.id || null;
+        }
+        
+        // Находим индекс текущего сообщения
+        const currentIndex = streamMessages.findIndex(m => m.id === currentMessageId);
+        
+        if (currentIndex === -1 || currentIndex <= lastReadIndex) {
+          // Текущее сообщение не найдено или оно прочитано, возвращаем первый непрочитанный
+          if (lastReadIndex === -1 || lastReadIndex === streamMessages.length - 1) {
+            return streamMessages[streamMessages.length - 1]?.id || null;
+          }
+          return streamMessages[lastReadIndex + 1]?.id || null;
+        }
+        
+        // Ищем следующее непрочитанное сообщение после currentIndex
+        if (currentIndex < streamMessages.length - 1) {
+          // Есть сообщения после текущего - возвращаем следующее
+          return streamMessages[currentIndex + 1]?.id || null;
+        }
+        
+        // Достигли конца списка - возвращаемся к первому непрочитанному (циклическая навигация)
+        if (lastReadIndex === -1 || lastReadIndex === streamMessages.length - 1) {
+          return streamMessages[streamMessages.length - 1]?.id || null;
+        }
+        return streamMessages[lastReadIndex + 1]?.id || null;
       },
 
       // Получить ID первого непрочитанного вопроса

@@ -102,8 +102,15 @@ const rateLimiters = {
   // Строгий лимит для аутентификации
   auth: createRateLimiter(
     15 * 60 * 1000, // 15 минут
-    5, // 5 попыток входа
+    process.env.NODE_ENV === 'development' ? 1000 : 100, // В development: 1000, в production: 100 (увеличено для verify)
     'Слишком много попыток входа. Попробуйте через 15 минут.'
+  ),
+  
+  // Мягкий лимит для проверки токенов
+  authVerify: createRateLimiter(
+    1 * 60 * 1000, // 1 минута
+    process.env.NODE_ENV === 'development' ? 1000 : 50, // 50 проверок в минуту
+    'Слишком много проверок токена. Подождите немного.'
   ),
   
   // Лимит для WebSocket подключений

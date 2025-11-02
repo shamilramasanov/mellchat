@@ -567,37 +567,128 @@ class AnalyticsService {
     }
   }
 
+  /**
+   * Получение статистики гостевых сессий
+   */
+  async getGuestsAnalytics(timeRange = '24h') {
+    try {
+      const interval = this._getInterval(timeRange);
+      const guestSessionService = require('./guestSessionService');
+      const stats = await guestSessionService.getGuestStats();
+      const activeSessions = await guestSessionService.getActiveSessions({ limit: 1000 });
+      
+      const query = `
+        SELECT 
+          COUNT(*) as total_sessions,
+          COUNT(*) FILTER (WHERE is_active = true) as active_sessions,
+          COUNT(DISTINCT ip_address) as unique_ips,
+          SUM(streams_count) as total_streams_opened,
+          SUM(messages_viewed) as total_messages_viewed,
+          AVG(streams_count) as avg_streams_per_session,
+          AVG(messages_viewed) as avg_messages_per_session
+        FROM guest_sessions
+        WHERE last_seen_at > NOW() - INTERVAL '${interval}'
+      `;
+      
+      const result = await databaseService.query(query).catch(() => ({ rows: [{}] }));
+      const row = result.rows[0] || {};
+      
+      return {
+        totalGuests: parseInt(row.total_sessions || stats.totalGuests || 0),
+        activeGuests: parseInt(row.active_sessions || stats.activeGuests || 0),
+        uniqueIPs: parseInt(row.unique_ips || stats.uniqueIPs || 0),
+        totalStreamsOpened: parseInt(row.total_streams_opened || stats.totalStreamsOpened || 0),
+        totalMessagesViewed: parseInt(row.total_messages_viewed || stats.totalMessagesViewed || 0),
+        avgStreamsPerSession: parseFloat(row.avg_streams_per_session || stats.avgStreamsPerSession || 0),
+        avgMessagesPerSession: parseFloat(row.avg_messages_per_session || stats.avgMessagesPerSession || 0),
+        timeRange
+      };
+    } catch (error) {
+      logger.error('Error getting guests analytics:', error);
+      return {
+        totalGuests: 0,
+        activeGuests: 0,
+        uniqueIPs: 0,
+        totalStreamsOpened: 0,
+        totalMessagesViewed: 0,
+        avgStreamsPerSession: 0,
+        avgMessagesPerSession: 0,
+        timeRange
+      };
+    }
+  }
+
   async getFullAnalytics(timeRange = '24h') {
     try {
+      // Выполняем запросы параллельно с обработкой ошибок для каждого
+      const results = await Promise.allSettled([
+        this.getPlatformAnalytics(timeRange).catch(err => {
+          logger.warn('Failed to get platform analytics:', err.message);
+          return { platforms: [], totalMessages: 0, totalUniqueUsers: 0, timeRange };
+        }),
+        this.getTimeAnalytics(timeRange).catch(err => {
+          logger.warn('Failed to get time analytics:', err.message);
+          return { hourly: [], peakHour: {}, timeRange };
+        }),
+        this.getStreamAnalytics(timeRange).catch(err => {
+          logger.warn('Failed to get stream analytics:', err.message);
+          return { streams: [], totalActiveStreams: 0 };
+        }),
+        this.getUserAnalytics(timeRange).catch(err => {
+          logger.warn('Failed to get user analytics:', err.message);
+          return { topUsers: [], totalUsers: 0 };
+        }),
+        this.getContentQualityAnalytics(timeRange).catch(err => {
+          logger.warn('Failed to get content quality analytics:', err.message);
+          return { totalMessages: 0, questionsCount: 0, spamCount: 0, avgLength: 0, qualityScore: 0 };
+        }),
+        this.getUserActivityAnalytics(timeRange.includes('d') ? timeRange : '7d').catch(err => {
+          logger.warn('Failed to get user activity analytics:', err.message);
+          return { daily: [], totalUniqueUsers: 0 };
+        }),
+        this.getGuestsAnalytics(timeRange).catch(err => {
+          logger.warn('Failed to get guests analytics:', err.message);
+          return { totalGuests: 0, activeGuests: 0, uniqueIPs: 0, totalStreamsOpened: 0, totalMessagesViewed: 0, timeRange };
+        })
+      ]);
+
+      // Извлекаем результаты, игнорируя rejected
       const [
         platformAnalytics,
         timeAnalytics,
         streamAnalytics,
         userAnalytics,
         contentQuality,
-        userActivity
-      ] = await Promise.all([
-        this.getPlatformAnalytics(timeRange),
-        this.getTimeAnalytics(timeRange),
-        this.getStreamAnalytics(timeRange),
-        this.getUserAnalytics(timeRange),
-        this.getContentQualityAnalytics(timeRange),
-        this.getUserActivityAnalytics(timeRange.includes('d') ? timeRange : '7d')
-      ]);
+        userActivity,
+        guestsAnalytics
+      ] = results.map(result => result.status === 'fulfilled' ? result.value : null);
 
       return {
-        platform: platformAnalytics,
-        time: timeAnalytics,
-        streams: streamAnalytics,
-        users: userAnalytics,
-        contentQuality,
-        userActivity,
+        platform: platformAnalytics || { platforms: [], totalMessages: 0, totalUniqueUsers: 0, timeRange },
+        time: timeAnalytics || { hourly: [], peakHour: {}, timeRange },
+        streams: streamAnalytics || { streams: [], totalActiveStreams: 0 },
+        users: userAnalytics || { topUsers: [], totalUsers: 0 },
+        contentQuality: contentQuality || { totalMessages: 0, questionsCount: 0, spamCount: 0, avgLength: 0, qualityScore: 0 },
+        userActivity: userActivity || { daily: [], totalUniqueUsers: 0 },
+        guests: guestsAnalytics || { totalGuests: 0, activeGuests: 0, uniqueIPs: 0, totalStreamsOpened: 0, totalMessagesViewed: 0, timeRange },
         generatedAt: new Date().toISOString(),
         timeRange
       };
     } catch (error) {
       logger.error('Error getting full analytics:', error);
-      throw error;
+      // Возвращаем минимальную структуру вместо ошибки
+      return {
+        platform: { platforms: [], totalMessages: 0, totalUniqueUsers: 0, timeRange },
+        time: { hourly: [], peakHour: {}, timeRange },
+        streams: { streams: [], totalActiveStreams: 0 },
+        users: { topUsers: [], totalUsers: 0 },
+        contentQuality: { totalMessages: 0, questionsCount: 0, spamCount: 0, avgLength: 0, qualityScore: 0 },
+        userActivity: { daily: [], totalUniqueUsers: 0 },
+        guests: { totalGuests: 0, activeGuests: 0, uniqueIPs: 0, totalStreamsOpened: 0, totalMessagesViewed: 0, timeRange },
+        generatedAt: new Date().toISOString(),
+        timeRange,
+        error: 'Partial data available due to database connection issues'
+      };
     }
   }
 

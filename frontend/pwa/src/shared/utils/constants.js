@@ -139,7 +139,11 @@ export const STORAGE_KEYS = {
   LANGUAGE: 'language',
   SETTINGS: 'settings',
   RECENT_STREAMS: 'recent_streams',
+  AI_CHAT_HISTORY: 'mellchat_ai_chat_history',
+  ADMIN_TOKEN: 'admin_token',
+  ADMIN_USER: 'admin_user',
   SKIP_AUTH: 'skip_auth',
+  GUEST_SESSION_ID: 'mellchat_guest_session_id',
 };
 
 // Limits
@@ -175,7 +179,13 @@ export const API_ENDPOINTS = {
   AUTH: {
     GOOGLE: '/auth/google',
     LOGOUT: '/auth/logout',
-    PROFILE: '/auth/profile',
+    PROFILE: '/auth/me',
+    EMAIL_SEND_CODE: '/auth/email/send-code',
+    EMAIL_VERIFY_CODE: '/auth/email/verify-code',
+    VERIFY: '/auth/verify',
+  },
+  USER: {
+    SETTINGS: '/user/settings',
   },
   STREAMS: {
     CONNECT: '/connect',
@@ -190,9 +200,9 @@ export const API_ENDPOINTS = {
 
 // Regex Patterns
 export const PATTERNS = {
-  YOUTUBE_URL: /(?:youtube\.com\/(?:live\/|watch\?v=)|youtu\.be\/)([a-zA-Z0-9_-]+)/,
-  TWITCH_URL: /twitch\.tv\/([a-zA-Z0-9_]+)/,
-  KICK_URL: /kick\.com\/([a-zA-Z0-9_-]+)/,
+  YOUTUBE_URL: /(?:youtube\.com\/(?:live\/|watch\?v=)|youtu\.be\/)([a-zA-Z0-9_-]+)/i,
+  TWITCH_URL: /(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([a-zA-Z0-9_]+)/i,
+  KICK_URL: /(?:https?:\/\/)?(?:www\.)?kick\.com\/([a-zA-Z0-9_-]+)/i,
   QUESTION: /\?/,
 };
 

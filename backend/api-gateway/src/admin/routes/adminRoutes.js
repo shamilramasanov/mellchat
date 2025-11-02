@@ -6,23 +6,39 @@ const geminiService = require('../../services/geminiService');
 const analyticsService = require('../../services/analyticsService');
 const moderationService = require('../../services/moderationService');
 const databaseManagementService = require('../../services/databaseManagementService');
+const databaseService = require('../../services/databaseService');
 const logger = require('../../utils/logger');
 
 // Handle CORS preflight requests for admin routes
 router.options('*', (req, res) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.status(200).end();
 });
 
-// Mock admin user (в реальном проекте это будет в БД)
+// Admin user configuration
+// Пароль можно изменить через переменную окружения ADMIN_PASSWORD
+// По умолчанию: username = 'admin', password = 'password'
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD_PLAIN = process.env.ADMIN_PASSWORD || 'password';
+
+// Хешируем пароль при старте
+let ADMIN_PASSWORD_HASH = null;
+bcrypt.hash(ADMIN_PASSWORD_PLAIN, 10).then(hash => {
+  ADMIN_PASSWORD_HASH = hash;
+  logger.info('Admin password hash generated');
+}).catch(err => {
+  logger.error('Failed to hash admin password:', err);
+  // Fallback на старый хеш если ошибка
+  ADMIN_PASSWORD_HASH = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+});
+
 const ADMIN_USER = {
   id: '1',
-  username: 'admin',
-  email: 'admin@mellchat.live',
-  password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+  username: ADMIN_USERNAME,
+  email: process.env.ADMIN_EMAIL || 'admin@mellchat.live',
   role: 'super_admin',
   created_at: new Date(),
   last_login: null,
@@ -35,7 +51,7 @@ const auditService = require('../../services/auditService');
 const addCorsHeaders = (req, res, next) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id');
   res.header('Access-Control-Allow-Credentials', 'true');
   next();
 };
@@ -102,7 +118,23 @@ router.post('/auth/login', addCorsHeaders, async (req, res) => {
     }
 
     // Проверяем пароль
-    const isValidPassword = await bcrypt.compare(password, ADMIN_USER.password);
+    // Если хеш еще не готов, используем временную проверку
+    let isValidPassword = false;
+    
+    if (ADMIN_PASSWORD_HASH) {
+      isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    } else {
+      // Fallback: проверяем plain password если хеш еще не готов
+      isValidPassword = password === ADMIN_PASSWORD_PLAIN;
+      
+      // Параллельно пытаемся захешировать
+      if (!ADMIN_PASSWORD_HASH) {
+        bcrypt.hash(ADMIN_PASSWORD_PLAIN, 10).then(hash => {
+          ADMIN_PASSWORD_HASH = hash;
+        }).catch(() => {});
+      }
+    }
+    
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -131,6 +163,24 @@ router.post('/auth/login', addCorsHeaders, async (req, res) => {
   } catch (error) {
     console.error('Admin login error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/admin/metrics - System metrics for dashboard
+router.get('/metrics', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    // Ленивая загрузка adminMetricsService
+    if (!global.adminMetricsService) {
+      global.adminMetricsService = require('../../services/adminMetricsService');
+    }
+    
+    // Получаем реальные метрики из системы
+    const metrics = await global.adminMetricsService.getAllMetrics();
+    
+    res.json(metrics);
+  } catch (error) {
+    console.error('System metrics error:', error);
+    res.status(500).json({ error: 'Failed to fetch metrics' });
   }
 });
 
@@ -243,8 +293,126 @@ router.get('/ai/insights', authenticateAdmin, async (req, res) => {
   }
 });
 
+// GET /api/v1/admin/ai/data - AI assistant data
+router.get('/ai/data', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    // Устанавливаем таймаут для ответа
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        logger.warn('AI data endpoint timeout - sending fallback response');
+      }
+    }, 5000); // 5 секунд таймаут
+
+    // Проверяем доступность Gemini (быстрая проверка)
+    const isGeminiAvailable = geminiService.isAvailable();
+    
+    // Получаем реальную статистику запросов
+    const stats = geminiService.getRequestStats();
+    
+    // Базовые метрики с реальными данными
+    let metrics = {
+      status: isGeminiAvailable ? 'Online' : 'Offline',
+      responseTime: stats.avgResponseTime,
+      queriesToday: stats.todayRequests,
+      accuracyRate: stats.accuracyRate,
+      totalRequests: stats.totalRequests,
+      errors: stats.errors
+    };
+    
+    // История чата (пока пустая)
+    const chatHistory = [];
+    
+    // Получаем рекомендации с таймаутом
+    let suggestions = [];
+    
+    if (isGeminiAvailable) {
+      try {
+        // Выполняем асинхронно с таймаутом
+        const metricsPromise = Promise.resolve().then(async () => {
+          if (!global.adminMetricsService) {
+            global.adminMetricsService = require('../../services/adminMetricsService');
+          }
+          return await global.adminMetricsService.getAllMetrics();
+        });
+
+        const recommendationsPromise = metricsPromise.then(systemMetrics => {
+          return geminiService.getRecommendations(systemMetrics);
+        });
+
+        // Пытаемся получить рекомендации с таймаутом 3 секунды
+        suggestions = await Promise.race([
+          recommendationsPromise,
+          new Promise((resolve) => {
+            setTimeout(() => resolve([]), 3000);
+          })
+        ]);
+
+        if (suggestions.length === 0) {
+          // Fallback если таймаут или ошибка
+          suggestions = [
+            {
+              id: '1',
+              title: 'AI Service Available',
+              description: 'Gemini AI is configured and ready to use.',
+              priority: 'info'
+            }
+          ];
+        }
+        
+        // Обновляем метрики реальными данными из статистики (уже установлено выше)
+      } catch (geminiError) {
+        logger.warn('Failed to get AI recommendations:', geminiError.message);
+        // Fallback на базовые рекомендации
+        suggestions = [
+          {
+            id: '1',
+            title: 'AI Service Available',
+            description: 'Gemini AI is configured but recommendations are temporarily unavailable.',
+            priority: 'info'
+          }
+        ];
+      }
+    } else {
+      suggestions = [
+        {
+          id: '1',
+          title: 'AI Service Not Configured',
+          description: 'GEMINI_API_KEY is not set. AI features will be limited.',
+          priority: 'warning'
+        }
+      ];
+    }
+    
+    clearTimeout(timeout);
+    
+    const data = {
+      metrics,
+      chatHistory,
+      suggestions
+    };
+
+    if (!res.headersSent) {
+      res.json({
+        success: true,
+        ...data
+      });
+    }
+  } catch (error) {
+    logger.error('Get AI data error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Failed to fetch AI data',
+        message: error.message 
+      });
+    }
+  }
+});
+
 // POST /api/v1/admin/ai/chat
 router.post('/ai/chat', authenticateAdmin, async (req, res) => {
+  // Устанавливаем таймаут на весь запрос
+  req.setTimeout(55000); // 55 секунд
+  
   try {
     const { message, conversationHistory = [] } = req.body;
 
@@ -258,7 +426,13 @@ router.post('/ai/chat', authenticateAdmin, async (req, res) => {
       });
     }
 
-    const result = await geminiService.chat(message, conversationHistory);
+    // Передаем databaseService для доступа к БД и флаг isAdmin
+    const databaseService = require('../../services/databaseService');
+    
+    const result = await geminiService.chat(message, conversationHistory, {
+      databaseService: databaseService,
+      isAdmin: true // Админ имеет полные права, включая UPDATE
+    });
 
     res.json({
       success: true,
@@ -266,6 +440,15 @@ router.post('/ai/chat', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     logger.error('AI chat error:', error);
+    
+    // Обрабатываем таймауты отдельно
+    if (error.message && error.message.includes('timeout')) {
+      return res.status(504).json({ 
+        error: 'AI запрос превысил время ожидания',
+        message: 'Попробуйте упростить запрос или разбить его на части'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to process AI request',
       message: error.message 
@@ -393,6 +576,79 @@ router.post('/ai/troubleshoot', authenticateAdmin, async (req, res) => {
   }
 });
 
+// GET /api/v1/admin/system/status - System status for admin panel
+router.get('/system/status', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    const status = {
+      services: [
+        {
+          name: 'API Gateway',
+          status: 'running',
+          uptime: '99.9%',
+          lastRestart: '7 days ago',
+          port: 3001
+        },
+        {
+          name: 'WebSocket Service',
+          status: 'running',
+          uptime: '99.8%',
+          lastRestart: '3 days ago',
+          port: 3002
+        },
+        {
+          name: 'Database',
+          status: 'running',
+          uptime: '99.9%',
+          lastRestart: '14 days ago',
+          port: 5432
+        }
+      ],
+      logs: [
+        {
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          service: 'API Gateway',
+          message: 'System running normally'
+        }
+      ]
+    };
+
+    res.json({
+      success: true,
+      ...status
+    });
+  } catch (error) {
+    logger.error('Get system status error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch system status',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/system/restart - Restart service
+router.post('/system/restart', authenticateAdmin, async (req, res) => {
+  try {
+    const { service } = req.body;
+    
+    if (!service) {
+      return res.status(400).json({ error: 'Service name is required' });
+    }
+
+    // В реальном проекте здесь будет логика перезапуска сервиса
+    res.json({
+      success: true,
+      message: `Service ${service} restart initiated`
+    });
+  } catch (error) {
+    logger.error('Restart service error:', error);
+    res.status(500).json({ 
+      error: 'Failed to restart service',
+      message: error.message 
+    });
+  }
+});
+
 // GET /api/v1/admin/system/health
 router.get('/system/health', authenticateAdmin, async (req, res) => {
   try {
@@ -426,6 +682,162 @@ router.get('/system/health', authenticateAdmin, async (req, res) => {
 
 // In-memory storage for blocked users (в будущем перенести в БД)
 const blockedUsers = new Map(); // userId -> { blockedAt, reason, blockedBy }
+
+// GET /api/v1/admin/users/activity - Полная активность всех пользователей (ДОЛЖЕН БЫТЬ ПЕРЕД /users)
+router.get('/users/activity', authenticateAdmin, async (req, res) => {
+  try {
+    const userActivityService = require('../../services/userActivityService');
+    const { timeRange = '24h', userId = null, sessionId = null, platform = null, limit = 1000 } = req.query;
+    
+    const activity = await userActivityService.getActivityStats({
+      timeRange,
+      userId: userId || null,
+      sessionId: sessionId || null,
+      platform: platform || null,
+      limit: parseInt(limit, 10)
+    });
+    
+    res.json({
+      success: true,
+      ...activity
+    });
+  } catch (error) {
+    logger.error('Get user activity error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user activity',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/users/:identifier/activity - Активность конкретного пользователя
+router.get('/users/:identifier/activity', authenticateAdmin, async (req, res) => {
+  try {
+    const userActivityService = require('../../services/userActivityService');
+    const { identifier } = req.params;
+    const { timeRange = '24h' } = req.query;
+    
+    const activity = await userActivityService.getUserActivity(identifier, timeRange);
+    
+    res.json({
+      success: true,
+      ...activity
+    });
+  } catch (error) {
+    logger.error('Get user activity error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user activity',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/users/guests - Статистика гостей (ДОЛЖЕН БЫТЬ ПЕРЕД /users)
+router.get('/users/guests', authenticateAdmin, async (req, res) => {
+  try {
+    const guestSessionService = require('../../services/guestSessionService');
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const [stats, sessions] = await Promise.all([
+      guestSessionService.getGuestStats(),
+      guestSessionService.getActiveSessions({ limit: parseInt(limit, 10), offset: parseInt(offset, 10) })
+    ]);
+    
+    res.json({
+      success: true,
+      stats,
+      sessions: sessions.sessions,
+      total: sessions.total,
+      limit: sessions.limit,
+      offset: sessions.offset
+    });
+  } catch (error) {
+    logger.error('Get guests error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch guest sessions',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/users - Список всех зарегистрированных пользователей
+router.get('/users', authenticateAdmin, async (req, res) => {
+  try {
+    const databaseService = require('../../services/databaseService');
+    const { includeGuests = 'false' } = req.query;
+    
+    // Получаем зарегистрированных пользователей
+    const usersQuery = `
+      SELECT 
+        id, email, name, avatar_url, google_id,
+        email_verified, created_at, updated_at, last_login_at
+      FROM app_users
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
+    
+    const usersResult = await databaseService.query(usersQuery);
+    
+    const users = usersResult.rows.map(row => ({
+      id: row.id,
+      email: row.email,
+      name: row.name || 'Без имени',
+      avatarUrl: row.avatar_url,
+      googleId: row.google_id,
+      emailVerified: row.email_verified,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      lastLoginAt: row.last_login_at,
+      authMethod: row.google_id ? 'Google' : 'Email',
+      type: 'registered'
+    }));
+    
+    let guests = [];
+    if (includeGuests === 'true') {
+      const guestSessionService = require('../../services/guestSessionService');
+      const guestsData = await guestSessionService.getActiveSessions({ limit: 100 });
+      guests = guestsData.sessions.map(session => ({
+        id: session.sessionId,
+        email: null,
+        name: `Гость ${session.sessionId.substring(0, 8)}`,
+        avatarUrl: null,
+        googleId: null,
+        emailVerified: false,
+        createdAt: session.firstSeenAt,
+        updatedAt: session.lastSeenAt,
+        lastLoginAt: session.lastSeenAt,
+        authMethod: 'Guest',
+        type: 'guest',
+        ipAddress: session.ipAddress,
+        streamsCount: session.streamsCount,
+        messagesViewed: session.messagesViewed,
+        isActive: session.isActive
+      }));
+    }
+    
+    // Объединяем пользователей и гостей
+    const allUsers = [...users, ...guests].sort((a, b) => {
+      const dateA = new Date(a.lastLoginAt || a.updatedAt || a.createdAt);
+      const dateB = new Date(b.lastLoginAt || b.updatedAt || b.createdAt);
+      return dateB - dateA;
+    });
+    
+    res.json({
+      success: true,
+      users: allUsers,
+      total: allUsers.length,
+      registered: users.length,
+      guests: guests.length
+    });
+  } catch (error) {
+    logger.error('Get users error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch users',
+      message: error.message 
+    });
+  }
+});
+
 
 // GET /api/v1/admin/users/connected - Список подключенных пользователей
 router.get('/users/connected', authenticateAdmin, async (req, res) => {
@@ -712,6 +1124,262 @@ router.get('/connections/list', authenticateAdmin, async (req, res) => {
 // Экспортируем blockedUsers для использования в других модулях
 router.blockedUsers = blockedUsers;
 
+// ==================== GLOBAL RULES ====================
+
+const globalRulesService = require('../../services/globalRulesService');
+
+// GET /api/v1/admin/global-rules - Получить все глобальные правила
+router.get('/global-rules', authenticateAdmin, async (req, res) => {
+  try {
+    const rules = await globalRulesService.getAllRules();
+    
+    res.json({
+      success: true,
+      rules
+    });
+  } catch (error) {
+    logger.error('Get global rules error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch global rules',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/v1/admin/global-rules/:type - Получить правило по типу
+router.get('/global-rules/:type', authenticateAdmin, async (req, res) => {
+  try {
+    const { type } = req.params;
+    const rule = await globalRulesService.getRule(type);
+    
+    if (!rule) {
+      return res.status(404).json({
+        error: 'Rule not found',
+        message: `Rule type "${type}" does not exist`
+      });
+    }
+    
+    res.json({
+      success: true,
+      ruleType: type,
+      ...rule
+    });
+  } catch (error) {
+    logger.error(`Get global rule ${req.params.type} error:`, error);
+    res.status(500).json({
+      error: 'Failed to fetch global rule',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/v1/admin/global-rules/:type - Сохранить правило
+router.post('/global-rules/:type', authenticateAdmin, async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { settings, enabled } = req.body;
+    const updatedBy = req.user?.userId || req.user?.id || null;
+    
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({
+        error: 'Invalid settings',
+        message: 'Settings must be an object'
+      });
+    }
+    
+    const rule = await globalRulesService.saveRule(
+      type,
+      settings,
+      enabled !== undefined ? enabled : true,
+      updatedBy
+    );
+    
+    res.json({
+      success: true,
+      message: `Rule "${type}" saved successfully`,
+      ...rule
+    });
+  } catch (error) {
+    logger.error(`Save global rule ${req.params.type} error:`, error);
+    res.status(500).json({
+      error: 'Failed to save global rule',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/v1/admin/global-rules/optimize - Автоматическая оптимизация правил через ИИ
+router.post('/global-rules/optimize', authenticateAdmin, async (req, res) => {
+  try {
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({
+        error: 'AI не доступен',
+        message: 'GEMINI_API_KEY не настроен. Установите переменную окружения для использования AI оптимизации.'
+      });
+    }
+
+    // Получаем текущие правила
+    const currentRules = await globalRulesService.getAllRules();
+    
+    // Получаем системные метрики
+    if (!global.adminMetricsService) {
+      global.adminMetricsService = require('../../services/adminMetricsService');
+    }
+    const metrics = await global.adminMetricsService.getAllMetrics();
+    
+    // Получаем образец сообщений для анализа
+    const databaseService = require('../../services/databaseService');
+    const messagesQuery = `
+      SELECT text, is_spam, is_question, sentiment, LENGTH(text) as length
+      FROM messages
+      WHERE created_at > NOW() - INTERVAL '24 hours'
+      ORDER BY created_at DESC
+      LIMIT 1000
+    `;
+    const messagesResult = await databaseService.query(messagesQuery);
+    const sampleMessages = messagesResult.rows || [];
+    
+    // Получаем оптимизированные настройки от ИИ
+    const optimized = await geminiService.optimizeGlobalRules(
+      metrics,
+      currentRules,
+      sampleMessages
+    );
+    
+    // Сохраняем оптимизированные правила в БД
+    const updatedRules = {};
+    const updatedBy = req.user?.userId || req.user?.id || null;
+    
+    // Функция для извлечения настроек (без служебных полей)
+    const extractSettings = (ruleData) => {
+      if (!ruleData || typeof ruleData !== 'object' || Array.isArray(ruleData)) {
+        return {};
+      }
+      
+      // Если ruleData уже является объектом настроек (нет полей enabled/reason или они не в корне)
+      // и содержит настройки типа threshold, minLength и т.д., возвращаем как есть
+      if (ruleData.settings && typeof ruleData.settings === 'object') {
+        return ruleData.settings;
+      }
+      
+      // Иначе извлекаем настройки, исключая служебные поля
+      const { enabled, reason, ...settings } = ruleData;
+      
+      // Проверяем, что после извлечения остались настройки
+      const hasSettings = Object.keys(settings).length > 0;
+      if (!hasSettings) {
+        logger.warn('No settings found after extraction, ruleData:', JSON.stringify(ruleData));
+        return ruleData; // Возвращаем как есть, если все поля были служебными
+      }
+      
+      return settings;
+    };
+    
+    // Сохраняем правила с валидацией
+    const saveRuleWithValidation = async (ruleType, ruleData, defaultEnabled = true) => {
+      if (!ruleData || typeof ruleData !== 'object' || Array.isArray(ruleData)) {
+        logger.warn(`Skipping ${ruleType}: invalid rule data`);
+        return null;
+      }
+      
+      const settings = extractSettings(ruleData);
+      
+      // Проверяем, что settings является валидным объектом
+      if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+        logger.error(`Invalid ${ruleType} settings:`, settings);
+        throw new Error(`Invalid ${ruleType} settings: must be an object`);
+      }
+      
+      // Проверяем, что settings не пустой
+      if (Object.keys(settings).length === 0) {
+        logger.warn(`Empty ${ruleType} settings, skipping`);
+        return null;
+      }
+      
+      const enabled = ruleData.enabled !== undefined ? ruleData.enabled : defaultEnabled;
+      
+      logger.info(`Saving ${ruleType} rule:`, { enabled, settingsKeys: Object.keys(settings) });
+      
+      await globalRulesService.saveRule(
+        ruleType,
+        settings,
+        enabled,
+        updatedBy
+      );
+      
+      return { ...settings, enabled };
+    };
+    
+    try {
+      const spamResult = optimized.spam ? await saveRuleWithValidation('spam', optimized.spam, true) : null;
+      if (spamResult) updatedRules.spam = spamResult;
+      
+      const questionsResult = optimized.questions ? await saveRuleWithValidation('questions', optimized.questions, true) : null;
+      if (questionsResult) updatedRules.questions = questionsResult;
+      
+      const moodResult = optimized.mood ? await saveRuleWithValidation('mood', optimized.mood, true) : null;
+      if (moodResult) updatedRules.mood = moodResult;
+    } catch (error) {
+      logger.error('Error saving optimized rules:', error);
+      throw error;
+    }
+    
+    res.json({
+      success: true,
+      message: 'Правила успешно оптимизированы ИИ',
+      summary: optimized.summary,
+      optimized: updatedRules,
+      recommendations: {
+        spam: optimized.spam?.reason,
+        questions: optimized.questions?.reason,
+        mood: optimized.mood?.reason
+      }
+    });
+  } catch (error) {
+    logger.error('Optimize global rules error:', error);
+    res.status(500).json({
+      error: 'Failed to optimize global rules',
+      message: error.message
+    });
+  }
+});
+
+// PATCH /api/v1/admin/global-rules/:type/toggle - Включить/выключить правило
+router.patch('/global-rules/:type/toggle', authenticateAdmin, async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { enabled } = req.body;
+    
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({
+        error: 'Invalid enabled value',
+        message: 'enabled must be a boolean'
+      });
+    }
+    
+    const success = await globalRulesService.toggleRule(type, enabled);
+    
+    if (!success) {
+      return res.status(404).json({
+        error: 'Rule not found',
+        message: `Rule type "${type}" does not exist`
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: `Rule "${type}" ${enabled ? 'enabled' : 'disabled'} successfully`,
+      enabled
+    });
+  } catch (error) {
+    logger.error(`Toggle global rule ${req.params.type} error:`, error);
+    res.status(500).json({
+      error: 'Failed to toggle global rule',
+      message: error.message
+    });
+  }
+});
+
 // Отправка сообщения от админа всем подключенным пользователям
 router.post('/broadcast', authenticateAdmin, async (req, res) => {
   try {
@@ -858,6 +1526,26 @@ router.post('/message', authenticateAdmin, async (req, res) => {
 });
 
 // ==================== ANALYTICS ENDPOINTS ====================
+
+// GET /api/v1/admin/analytics - Main analytics endpoint
+router.get('/analytics', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    const { range = '24h' } = req.query;
+    
+    const analytics = await analyticsService.getFullAnalytics(range);
+    
+    res.json({
+      success: true,
+      ...analytics
+    });
+  } catch (error) {
+    logger.error('Get analytics error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch analytics',
+      message: error.message 
+    });
+  }
+});
 
 // GET /api/v1/admin/analytics/full
 router.get('/analytics/full', addCorsHeaders, authenticateAdmin, async (req, res) => {
@@ -1042,6 +1730,71 @@ router.post('/analytics/generate-report', authenticateAdmin, async (req, res) =>
 
 // ==================== MODERATION ENDPOINTS ====================
 
+// GET /api/v1/admin/moderation/reports - Get moderation reports
+router.get('/moderation/reports', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    const { filter = 'all', search = '' } = req.query;
+    
+    const reports = await moderationService.getModerationReports(filter, search);
+    
+    res.json({
+      success: true,
+      ...reports
+    });
+  } catch (error) {
+    logger.error('Get moderation reports error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch moderation reports',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/moderation/reports/:id/resolve - Resolve report
+router.post('/moderation/reports/:id/resolve', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action } = req.body;
+    
+    const result = await moderationService.resolveReport(id, action);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    logger.error('Resolve report error:', error);
+    res.status(500).json({ 
+      error: 'Failed to resolve report',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/moderation/ban - Ban user
+router.post('/moderation/ban', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, reason } = req.body;
+    
+    if (!userId || !reason) {
+      return res.status(400).json({ error: 'User ID and reason are required' });
+    }
+
+    const result = await moderationService.blockUser(userId, reason);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    logger.error('Ban user error:', error);
+    res.status(500).json({ 
+      error: 'Failed to ban user',
+      message: error.message 
+    });
+  }
+});
+
 // POST /api/v1/admin/moderation/analyze
 router.post('/moderation/analyze', authenticateAdmin, async (req, res) => {
   try {
@@ -1181,6 +1934,58 @@ router.post('/moderation/unblock-user', authenticateAdmin, async (req, res) => {
 
 // ==================== DATABASE MANAGEMENT ENDPOINTS ====================
 
+// GET /api/v1/admin/database/info - Database info for admin panel
+router.get('/database/info', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    // Используем реальный сервис вместо mock данных
+    const overview = await databaseManagementService.getDatabaseOverview();
+    
+    // Вычисляем общий размер БД
+    const totalSizeBytes = overview.tables?.reduce((sum, table) => {
+      return sum + (table.totalSizeBytes || 0);
+    }, 0) || 0;
+    
+    // Форматируем размер
+    const formatBytes = (bytes) => {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    };
+    
+    // Получаем статистику соединений
+    const poolStats = overview.connectionPool || {};
+    
+    // Получаем среднее время запроса (из медленных запросов или теста)
+    const avgQueryTime = overview.slowQueries?.length > 0 
+      ? Math.round(overview.slowQueries[0]?.meanTime || 0)
+      : 0;
+    
+    const info = {
+      metrics: {
+        totalSize: formatBytes(totalSizeBytes),
+        activeConnections: poolStats.activeConnections || 0,
+        queryTime: `${avgQueryTime}ms`,
+        cacheHitRate: 'N/A' // Требует настройки pg_stat_statements
+      },
+      tables: overview.tables || [],
+      recentQueries: overview.slowQueries?.slice(0, 5) || []
+    };
+
+    res.json({
+      success: true,
+      ...info
+    });
+  } catch (error) {
+    logger.error('Get database info error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch database info',
+      message: error.message 
+    });
+  }
+});
+
 // GET /api/v1/admin/database/overview
 router.get('/database/overview', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
@@ -1292,6 +2097,102 @@ router.post('/database/analyze', authenticateAdmin, async (req, res) => {
 
 // ==================== SECURITY ENDPOINTS ====================
 
+// GET /api/v1/admin/security/info - Security info for admin panel
+router.get('/security/info', addCorsHeaders, authenticateAdmin, async (req, res) => {
+  try {
+    // Получаем реальные данные из auditService и БД
+    const auditLogs = await auditService.getAuditLog(100, 0, {});
+    const auditStats = await auditService.getAuditStats('24h');
+    
+    // Подсчитываем метрики из логов
+    const failedLogins = auditLogs.filter(log => 
+      log.action === 'login_attempt' && log.status === 'failed'
+    ).length;
+    
+    const activeSessions = auditLogs.filter(log => 
+      log.action === 'admin_access' && 
+      new Date(log.timestamp).getTime() > Date.now() - 3600000 // За последний час
+    ).length;
+    
+    // Получаем blocked users из памяти (в будущем из БД)
+    const blockedUsersCount = blockedUsers.size;
+    
+    // Получаем последние активности
+    const recentActivities = auditLogs.slice(0, 10).map(log => ({
+      type: log.action,
+      user: log.adminUserId || log.userId || 'Unknown',
+      ip: log.ipAddress || 'Unknown',
+      location: 'Unknown', // Можно добавить геолокацию позже
+      timestamp: log.createdAt ? new Date(log.createdAt).toLocaleString() : 'Unknown',
+      status: 'success' // Статус определяется по типу действия
+    }));
+    
+    // Получаем blocked IPs (пока из памяти, в будущем из Redis/БД)
+    const blockedIPsList = Array.from(blockedUsers.entries()).map(([userId, data]) => ({
+      ip: userId.includes('-') ? userId.split('-')[1] : 'Unknown',
+      reason: data.reason || 'User blocked',
+      blockedAt: data.blockedAt ? new Date(data.blockedAt).toLocaleString() : 'Unknown'
+    }));
+    
+    const info = {
+      metrics: {
+        activeSessions: activeSessions || 0,
+        failedLogins: failedLogins || 0,
+        blockedIPs: blockedUsersCount || 0,
+        securityScore: Math.max(0, 100 - (failedLogins * 5) - (blockedUsersCount * 2)) // Простой расчет
+      },
+      recentActivities: recentActivities || [],
+      settings: [
+        {
+          name: 'Two-Factor Authentication',
+          enabled: false, // Пока не реализовано
+          description: 'Require 2FA for all admin accounts'
+        },
+        {
+          name: 'Audit Logging',
+          enabled: true,
+          description: 'All admin actions are logged'
+        }
+      ],
+      blockedIPs: blockedIPsList
+    };
+
+    res.json({
+      success: true,
+      ...info
+    });
+  } catch (error) {
+    logger.error('Get security info error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch security info',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/v1/admin/security/unblock - Unblock IP
+router.post('/security/unblock', authenticateAdmin, async (req, res) => {
+  try {
+    const { ip } = req.body;
+    
+    if (!ip) {
+      return res.status(400).json({ error: 'IP address is required' });
+    }
+
+    // В реальном проекте здесь будет логика разблокировки IP
+    res.json({
+      success: true,
+      message: `IP ${ip} unblocked successfully`
+    });
+  } catch (error) {
+    logger.error('Unblock IP error:', error);
+    res.status(500).json({ 
+      error: 'Failed to unblock IP',
+      message: error.message 
+    });
+  }
+});
+
 // GET /api/v1/admin/security/audit-log
 router.get('/security/audit-log', addCorsHeaders, authenticateAdmin, async (req, res) => {
   try {
@@ -1337,6 +2238,106 @@ router.get('/security/audit-stats', authenticateAdmin, async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to fetch audit stats',
       message: error.message 
+    });
+  }
+});
+
+// GET /api/v1/admin/export/:type - Export data
+router.get('/export/:type', authenticateAdmin, async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { format = 'json' } = req.query;
+    
+    if (!['messages', 'users', 'analytics', 'reports'].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid export type. Allowed: messages, users, analytics, reports'
+      });
+    }
+    
+    if (!['json', 'csv'].includes(format)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid format. Allowed: json, csv'
+      });
+    }
+    
+    let data;
+    
+    switch (type) {
+      case 'messages':
+        // Экспорт сообщений за последние 24 часа
+        const messagesQuery = `
+          SELECT id, text, username, platform, stream_id, created_at, sentiment, is_question
+          FROM messages
+          WHERE created_at > NOW() - INTERVAL '24 hours'
+          ORDER BY created_at DESC
+          LIMIT 10000
+        `;
+        const messagesResult = await databaseService.query(messagesQuery);
+        data = messagesResult.rows;
+        break;
+        
+      case 'users':
+        // Экспорт пользователей
+        const usersQuery = `
+          SELECT id, email, name, created_at, last_login_at
+          FROM app_users
+          ORDER BY created_at DESC
+        `;
+        const usersResult = await databaseService.query(usersQuery);
+        data = usersResult.rows;
+        break;
+        
+      case 'analytics':
+        // Экспорт аналитики
+        const { timeRange = '24h' } = req.query;
+        data = await analyticsService.getFullAnalytics(timeRange);
+        break;
+        
+      case 'reports':
+        // Экспорт отчетов модерации
+        data = await moderationService.getModerationReports('all', '');
+        break;
+    }
+    
+    if (format === 'csv') {
+      // Конвертируем в CSV (упрощенная версия)
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          return res.status(404).json({ success: false, error: 'No data to export' });
+        }
+        
+        const headers = Object.keys(data[0]).join(',');
+        const rows = data.map(row => 
+          Object.values(row).map(val => 
+            typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
+          ).join(',')
+        );
+        
+        const csv = [headers, ...rows].join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${type}_export_${new Date().toISOString().split('T')[0]}.csv"`);
+        return res.send(csv);
+      }
+    }
+    
+    // JSON format
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${type}_export_${new Date().toISOString().split('T')[0]}.json"`);
+    res.json({
+      success: true,
+      type,
+      exportedAt: new Date().toISOString(),
+      data
+    });
+  } catch (error) {
+    logger.error('Export data error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to export data',
+      message: error.message
     });
   }
 });

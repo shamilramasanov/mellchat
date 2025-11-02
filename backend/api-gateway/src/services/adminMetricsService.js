@@ -249,6 +249,53 @@ class AdminMetricsService {
     }
   }
 
+  // Получение общего количества сообщений в БД
+  async getTotalMessagesCount() {
+    try {
+      const cacheKey = 'total_messages_count';
+      const cached = this.cache.get(cacheKey);
+      
+      if (cached && Date.now() - cached.timestamp < this.cacheTimeout * 2) { // Кэш на 60 секунд
+        return cached.value;
+      }
+
+      const query = `SELECT COUNT(*) as total FROM messages WHERE is_deleted = false`;
+      const result = await databaseService.query(query);
+      const total = parseInt(result.rows[0]?.total || 0);
+
+      this.cache.set(cacheKey, {
+        value: total,
+        timestamp: Date.now()
+      });
+
+      return total;
+    } catch (error) {
+      logger.error('Error getting total messages count:', error.message);
+      return 0;
+    }
+  }
+
+  // Получение статистики гостей
+  async getGuestsStats() {
+    try {
+      const guestSessionService = require('./guestSessionService');
+      const stats = await guestSessionService.getGuestStats();
+      return stats;
+    } catch (error) {
+      logger.error('Error getting guests stats:', error.message);
+      return {
+        activeGuests: 0,
+        inactiveGuests: 0,
+        totalGuests: 0,
+        uniqueIPs: 0,
+        totalStreamsOpened: 0,
+        totalMessagesViewed: 0,
+        avgStreamsPerSession: 0,
+        avgMessagesPerSession: 0
+      };
+    }
+  }
+
   // Получение всех метрик
   async getAllMetrics() {
     try {
@@ -259,7 +306,9 @@ class AdminMetricsService {
         platformStatus,
         dbPerformance,
         redisStatus,
-        aiStatus
+        aiStatus,
+        guestsStats,
+        totalMessagesCount
       ] = await Promise.all([
         this.getActiveConnections(),
         this.getMessagesPerSecond(),
@@ -267,7 +316,9 @@ class AdminMetricsService {
         this.getPlatformStatus(),
         this.getDatabasePerformance(),
         this.getRedisStatus(),
-        this.getAIStatus()
+        this.getAIStatus(),
+        this.getGuestsStats(),
+        this.getTotalMessagesCount()
       ]);
 
       return {
@@ -277,7 +328,9 @@ class AdminMetricsService {
         platformStatus,
         dbPerformance,
         redisStatus,
-        aiStatus
+        aiStatus,
+        guestsStats,
+        totalMessagesCount
       };
     } catch (error) {
       logger.error('Error getting all metrics:', error.message);
@@ -301,7 +354,18 @@ class AdminMetricsService {
         aiStatus: {
           available: false,
           lastUpdate: new Date().toISOString()
-        }
+        },
+        guestsStats: {
+          activeGuests: 0,
+          inactiveGuests: 0,
+          totalGuests: 0,
+          uniqueIPs: 0,
+          totalStreamsOpened: 0,
+          totalMessagesViewed: 0,
+          avgStreamsPerSession: 0,
+          avgMessagesPerSession: 0
+        },
+        totalMessagesCount: 0
       };
     }
   }

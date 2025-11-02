@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 const messageHandler = require('../handlers/messageHandler');
+const { optionalAuth } = require('../middleware/authMiddleware');
 
 // Global activeKickConnections to share between kick.js and connect.js
 global.activeKickConnections = global.activeKickConnections || new Map();
@@ -146,7 +147,7 @@ const startKickConnection = async (connectionId, channelName, wsHub) => {
  * POST /api/v1/connect
  * Connect to a streaming channel
  */
-router.post('/', async (req, res, next) => {
+router.post('/', optionalAuth, async (req, res, next) => {
   try {
     const { streamUrl, platform: providedPlatform, videoId: providedVideoId, channelName: providedChannelName } = req.body;
     
@@ -321,6 +322,42 @@ router.post('/', async (req, res, next) => {
     // Get final connection data
     const finalConnData = activeConnections.get(connectionId);
     
+    // Логируем активность пользователя и обновляем счетчики гостевой сессии
+    try {
+      const userActivityService = require('../services/userActivityService');
+      const userId = req.user?.userId || null;
+      const sessionId = req.headers['x-session-id'] || null;
+      
+      // Логируем открытие стрима
+      await userActivityService.logActivity({
+        userId,
+        sessionId,
+        streamId: connectionId,
+        platform,
+        channelName,
+        action: 'open',
+        metadata: {
+          streamUrl,
+          title: finalConnData?.title || `${platform}: ${channelName}`,
+          viewers: finalConnData?.viewers || 0
+        }
+      });
+      
+      // Обновляем счетчик открытых стримов для гостевой сессии
+      if (sessionId && !userId) {
+        const guestSessionService = require('../services/guestSessionService');
+        const session = await guestSessionService.getSession(sessionId);
+        if (session) {
+          await guestSessionService.updateSessionStats(sessionId, {
+            streamsCount: (session.streamsCount || 0) + 1
+          });
+        }
+      }
+    } catch (error) {
+      logger.warn('Failed to log user activity:', error.message);
+      // Не прерываем запрос, если логирование не удалось
+    }
+    
     res.status(200).json({
       success: true,
       connection: {
@@ -346,7 +383,7 @@ router.post('/', async (req, res, next) => {
  * POST /api/v1/disconnect
  * Disconnect from a channel
  */
-router.post('/disconnect', async (req, res, next) => {
+router.post('/disconnect', optionalAuth, async (req, res, next) => {
   try {
     const { connectionId } = req.body;
     
@@ -442,6 +479,30 @@ router.post('/disconnect', async (req, res, next) => {
       logger.error(`❌ Still in activeKickConnections: ${!!finalCheckKick}`);
     } else {
       logger.info(`✅ Connection successfully removed from all storages: ${connectionId}`);
+    }
+    
+    // Логируем активность пользователя при закрытии стрима
+    try {
+      const userActivityService = require('../services/userActivityService');
+      const userId = req.user?.userId || null;
+      const sessionId = req.headers['x-session-id'] || null;
+      const platform = connection.platform || 'kick';
+      const channelName = connection.channel || connection.channelName || '';
+      
+      await userActivityService.logActivity({
+        userId,
+        sessionId,
+        streamId: connectionId,
+        platform,
+        channelName,
+        action: 'close',
+        metadata: {
+          duration: connection.connectedAt ? (Date.now() - new Date(connection.connectedAt).getTime()) : 0
+        }
+      });
+    } catch (error) {
+      logger.warn('Failed to log disconnect activity:', error.message);
+      // Не прерываем запрос
     }
     
     res.json({

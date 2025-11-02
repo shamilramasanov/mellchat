@@ -1,0 +1,51 @@
+/* Map NewUI tokens to global theme variables to avoid duplication */
+.newui {
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --card: var(--bg-secondary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-secondary);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-primary);
+  --primary-foreground: var(--text-primary);
+  --secondary: var(--bg-tertiary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--glass-white);
+  --muted-foreground: var(--text-tertiary);
+  --accent: var(--glass-white-hover);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--text-primary);
+  --border: var(--glass-border);
+  --input: transparent;
+  --input-background: var(--bg-secondary);
+  --switch-background: var(--glass-white);
+  --ring: var(--accent-secondary);
+  --radius: var(--radius-md);
+}
+
+.newui.dark {
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --card: var(--bg-secondary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-secondary);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-primary);
+  --primary-foreground: var(--text-primary);
+  --secondary: var(--bg-tertiary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--glass-white);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--glass-white-hover);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--text-primary);
+  --border: var(--glass-border);
+  --input: var(--bg-tertiary);
+  --ring: var(--accent-secondary);
+}
+
+.newui * { border-color: var(--border); }
+.newui body, .newui .bg-background { background: var(--background); color: var(--foreground); }
+

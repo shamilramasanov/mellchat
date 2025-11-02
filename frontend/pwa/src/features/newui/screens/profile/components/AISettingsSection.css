@@ -1,0 +1,134 @@
+.ai-settings-section-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ai-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.ai-settings-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.ai-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ai-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
+.ai-training-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ai-progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ai-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  transition: width 0.3s ease;
+}
+
+.ai-progress-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.ai-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ai-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.ai-status-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ai-status-value {
+  color: #111827;
+}
+
+.ai-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.ai-action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.ai-action-button-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.ai-action-button-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.ai-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .ai-settings-section-card {
+    padding: 1rem;
+  }
+
+  .ai-actions {
+    flex-direction: column;
+  }
+
+  .ai-action-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
