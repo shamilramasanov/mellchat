@@ -11,10 +11,6 @@
       "destination": "/sw-v3.js"
     },
     {
-      "source": "/sw.js",
-      "destination": "/sw.js"
-    },
-    {
       "source": "/service-worker.js",
       "destination": "/service-worker.js"
     },
@@ -38,19 +34,6 @@
   "headers": [
     {
       "source": "/sw-v3.js",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/sw.js",
       "headers": [
         {
           "key": "Content-Type",
