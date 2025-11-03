@@ -18,7 +18,7 @@ import './newui.css';
 import { useStreamsStore } from '@features/streams/store/streamsStore';
 import { useChatStore } from '@features/chat/store/chatStore';
 import { useAuthStore } from '@features/auth/store/authStore';
-import { STORAGE_KEYS } from '@shared/utils/constants';
+import { STORAGE_KEYS, API_URL } from '@shared/utils/constants';
 import { normalizeStreamUrl } from './utils/platformHelpers.js';
 import StreamSubscriptionManager from '@features/streams/components/StreamSubscriptionManager';
 import { streamsAPI } from '@shared/services/api';
@@ -587,9 +587,13 @@ export default function AppNewUI() {
       // Получаем сообщения текущего стрима
       const streamMessages = allMessages.filter(m => m.streamId === activeStreamId);
       
-      const response = await fetch('/api/v1/ai/filter-messages', {
+      // Используем полный URL с API_URL
+      const response = await fetch(`${API_URL}/api/v1/ai/filter-messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({
           messages: streamMessages,
           query: query.trim(),
