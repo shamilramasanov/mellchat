@@ -149,49 +149,22 @@ body {
   /* Включаем smooth scrolling */
   scroll-behavior: smooth;
   
-  /* Safe area для мобильных устройств - padding уже применен в index.html */
-  /* Дополнительный padding только если не установлен в index.html */
   min-height: 100vh;
-  min-height: 100dvh; /* Используем динамический viewport height */
+  min-height: 100dvh;
   min-height: -webkit-fill-available;
 }
 
 /* iOS Safari viewport height fix */
 @supports (-webkit-touch-callout: none) {
   body {
-    /* iOS Safari viewport height fix */
     min-height: -webkit-fill-available;
     height: -webkit-fill-available;
-    /* Safe area padding уже в index.html, здесь только для совместимости */
-    padding-left: max(env(safe-area-inset-left, 0px), 0px);
-    padding-right: max(env(safe-area-inset-right, 0px), 0px);
+    /* Safe area padding уже применен в #root, здесь НЕ добавляем */
   }
   
   /* Fix for iOS PWA fullscreen mode */
   .app {
     height: -webkit-fill-available;
-  }
-  
-  /* Header с учетом safe area - используем top вместо padding-top для sticky */
-  .safe-area-header {
-    /* top уже установлен inline через style, здесь только дополнительный padding если нужно */
-    /* height учитывает safe area */
-    min-height: calc(env(safe-area-inset-top, 0px) + 48px);
-  }
-  
-  .safe-area-header > * {
-    /* Внутренний контент header */
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-  
-  /* Контент не должен перекрывать header */
-  .safe-area-content {
-    padding-top: calc(env(safe-area-inset-top, 0px) + var(--header-height, 48px));
-  }
-  
-  /* Header wrapper для совместимости */
-  .header-wrapper {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   }
 }
 
