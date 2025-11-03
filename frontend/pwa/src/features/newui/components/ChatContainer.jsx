@@ -640,6 +640,7 @@ function ChatContainerBase({ messages, searchQuery, newMessagesCount = 0, onScro
         }`}
         style={{
           paddingBottom: '8px',
+          WebkitOverflowScrolling: 'touch', // Плавный скролл на iOS
           ...(moodEnabled && moodColor === 'green' && {
             boxShadow: 'inset 0 0 20px rgba(34, 197, 94, 0.15), 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
           }),

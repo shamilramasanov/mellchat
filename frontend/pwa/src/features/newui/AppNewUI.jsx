@@ -684,29 +684,31 @@ export default function AppNewUI() {
               onQuestionsClick={handleQuestionsClick}
             />
             {isActiveVisible && (
-              <ChatContainer
-              messages={messagesForActive}
-              searchQuery={searchQuery}
-              newMessagesCount={streamsStats[activeStreamId]?.unreadCount || 0}
-              onScrollToBottom={(lastMessageId) => {
-                // При прокрутке вниз помечаем сообщения как прочитанные
-                if (activeStreamId && lastMessageId) {
-                  markMessagesAsRead(activeStreamId, lastMessageId);
-                }
-              }}
-              targetMessageId={targetMessageId}
-              activeFilter={activeFilter}
-              activeStreamId={activeStreamId}
-              activeStreams={streamsForUI}
-              aiFilterQuery={aiFilterQuery}
-              onClearFilter={() => {
-                if (activeFilter === 'ai') {
-                  handleClearAIFilter();
-                } else {
-                  setActiveFilter(null);
-                }
-              }}
-            />
+              <div className="flex-1 overflow-hidden min-h-0">
+                <ChatContainer
+                  messages={messagesForActive}
+                  searchQuery={searchQuery}
+                  newMessagesCount={streamsStats[activeStreamId]?.unreadCount || 0}
+                  onScrollToBottom={(lastMessageId) => {
+                    // При прокрутке вниз помечаем сообщения как прочитанные
+                    if (activeStreamId && lastMessageId) {
+                      markMessagesAsRead(activeStreamId, lastMessageId);
+                    }
+                  }}
+                  targetMessageId={targetMessageId}
+                  activeFilter={activeFilter}
+                  activeStreamId={activeStreamId}
+                  activeStreams={streamsForUI}
+                  aiFilterQuery={aiFilterQuery}
+                  onClearFilter={() => {
+                    if (activeFilter === 'ai') {
+                      handleClearAIFilter();
+                    } else {
+                      setActiveFilter(null);
+                    }
+                  }}
+                />
+              </div>
             )}
           </>
         )}
