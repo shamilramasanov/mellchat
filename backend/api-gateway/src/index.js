@@ -91,14 +91,26 @@ try {
   throw error;
 }
 
-const PORT = process.env.PORT || 3001;
+// Railway автоматически устанавливает PORT - используем его напрямую
+// PORT должен быть числом, не строкой
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
-console.log('🔍 Server configuration:', { PORT, HOST, NODE_ENV: process.env.NODE_ENV });
+console.log('🔍 Server configuration:', { 
+  PORT, 
+  HOST, 
+  NODE_ENV: process.env.NODE_ENV,
+  'process.env.PORT (raw)': process.env.PORT,
+  'PORT type': typeof PORT
+});
 
 // Railway автоматически устанавливает PORT, проверяем это
-if (process.env.RAILWAY_ENVIRONMENT) {
-  logger.info('Running on Railway, using Railway PORT:', process.env.PORT);
+if (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY) {
+  logger.info('Running on Railway, using Railway PORT:', { 
+    port: PORT, 
+    rawPort: process.env.PORT,
+    railwayEnv: process.env.RAILWAY_ENVIRONMENT 
+  });
 }
 
 logger.info(`Starting server with config:`, {
@@ -109,10 +121,10 @@ logger.info(`Starting server with config:`, {
   REDIS_URL: process.env.REDIS_URL ? 'SET' : 'NOT SET'
 });
 
-// Security middleware
-app.use(helmet());
+// CORS configuration - ДОЛЖНО БЫТЬ ПЕРЕД HELMET
+// Нормализуем переменные окружения (убираем кавычки и пробелы, если есть)
+const normalizeEnvVar = (val) => val ? val.trim().replace(/^["']|["']$/g, '') : null;
 
-// CORS configuration
 const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:5173', // Vite dev server
@@ -122,42 +134,77 @@ const allowedOrigins = [
   'https://mellchat-v5y7.vercel.app', // Old Vercel (legacy)
   'https://mellchat.live', // Custom domain
   'https://www.mellchat.live', // Custom domain with www
-  process.env.CORS_ORIGIN,
-  process.env.FRONTEND_URL
+  normalizeEnvVar(process.env.CORS_ORIGIN),
+  normalizeEnvVar(process.env.FRONTEND_URL)
 ].filter(Boolean);
 
-// Log allowed origins for debugging
-logger.info('CORS allowed origins:', { allowedOrigins });
+// Убираем дубликаты
+const uniqueOrigins = [...new Set(allowedOrigins)];
 
+// Log allowed origins for debugging
+logger.info('CORS allowed origins:', { allowedOrigins: uniqueOrigins });
+
+// Handle preflight requests FIRST (before CORS middleware)
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  logger.info('Preflight OPTIONS request:', { origin, path: req.path });
+  
+  let allowOrigin = null;
+  
+  if (!origin) {
+    allowOrigin = '*';
+  } else if (process.env.NODE_ENV === 'production') {
+    if (uniqueOrigins.includes(origin)) {
+      allowOrigin = origin;
+    } else if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
+      allowOrigin = origin;
+    } else if (origin && origin.includes('mellchat.live')) {
+      allowOrigin = origin;
+    }
+  } else {
+    allowOrigin = origin || '*';
+  }
+  
+  if (allowOrigin) {
+    res.header('Access-Control-Allow-Origin', allowOrigin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, x-session-id, X-Requested-With');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    logger.info('Preflight allowed:', { origin, allowOrigin });
+    return res.status(204).end();
+  }
+  
+  logger.warn('Preflight blocked:', { origin });
+  res.status(403).end();
+});
+
+// CORS middleware
 app.use(cors({
   origin: (origin, callback) => {
-    // Log CORS requests for debugging
-    logger.info('CORS request:', { origin, allowedOrigins });
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info('CORS request:', { origin, allowedOrigins: uniqueOrigins });
+    }
     
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // В production разрешаем только определенные домены
     if (process.env.NODE_ENV === 'production') {
-      // Проверяем, что origin входит в список разрешенных
-      if (allowedOrigins.includes(origin)) {
+      if (uniqueOrigins.includes(origin)) {
         logger.info('CORS allowed (production):', { origin });
         return callback(null, true);
       }
       
-      // Разрешаем все Vercel URLs (preview и production)
       if (origin && origin.includes('.vercel.app')) {
         logger.info('CORS allowed (Vercel):', { origin });
         return callback(null, true);
       }
       
-      // Разрешаем все поддомены Vercel
       if (origin && (origin.includes('vercel.app') || origin.includes('vercel-dns.com'))) {
         logger.info('CORS allowed (Vercel domain):', { origin });
         return callback(null, true);
       }
       
-      // Разрешаем mellchat.live домены
       if (origin && origin.includes('mellchat.live')) {
         logger.info('CORS allowed (mellchat.live):', { origin });
         return callback(null, true);
@@ -167,72 +214,26 @@ app.use(cors({
       return callback(new Error('Not allowed by CORS in production'));
     }
     
-    if (allowedOrigins.includes(origin)) {
+    if (uniqueOrigins.includes(origin)) {
       logger.info('CORS allowed:', { origin });
       return callback(null, true);
     }
     
-    // В development разрешаем все origins
     logger.info('CORS allowed (development):', { origin });
     return callback(null, true);
   },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id', 'x-session-id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id', 'x-session-id', 'X-Requested-With'],
   exposedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
 }));
 logger.info('✅ CORS middleware configured');
 
-// Handle preflight requests with same CORS configuration
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  
-  // Логируем preflight запросы
-  logger.info('Preflight OPTIONS request:', { origin, path: req.path });
-  
-  const allowedOrigins = [
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://192.168.19.76:5173',
-    'https://mellchat.vercel.app',
-    'https://mellchat-v5y7.vercel.app',
-    'https://mellchat.live',
-    'https://www.mellchat.live',
-    process.env.CORS_ORIGIN,
-    process.env.FRONTEND_URL
-  ].filter(Boolean);
-  
-  let allowOrigin = null;
-  
-  if (!origin) {
-    allowOrigin = '*';
-  } else if (process.env.NODE_ENV === 'production') {
-    if (allowedOrigins.includes(origin)) {
-      allowOrigin = origin;
-    } else if (origin && (origin.includes('.vercel.app') || origin.includes('vercel-dns.com'))) {
-      allowOrigin = origin;
-    } else if (origin && origin.includes('mellchat.live')) {
-      allowOrigin = origin;
-    }
-  } else {
-    // Development: allow all
-    allowOrigin = origin || '*';
-  }
-  
-  if (allowOrigin) {
-    res.header('Access-Control-Allow-Origin', allowOrigin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, x-session-id');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
-    logger.info('Preflight allowed:', { origin, allowOrigin });
-    return res.status(204).end();
-  }
-  
-  logger.warn('Preflight blocked:', { origin });
-  res.status(403).end();
-});
+// Security middleware - после CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false
+}));
 
 // Rate limiting middleware (применяем перед body parsing)
 // НО: пропускаем OPTIONS запросы для CORS preflight
@@ -286,6 +287,20 @@ app.use((req, res, next) => {
   next();
 });
 logger.info('✅ Request logging configured');
+
+// Root endpoint for Railway health checks
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'mellchat-api',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/v1/health',
+      metrics: '/metrics'
+    }
+  });
+});
 
 // Health check route (no auth required)
 logger.info('Setting up health routes...');
@@ -572,13 +587,27 @@ logger.info('Attempting to start HTTP server...');
 logger.info('App routes loaded:', app._router?.stack?.length || 'unknown');
 logger.info('About to call app.listen with:', { PORT, HOST });
 
+let httpServer;
 try {
-  const httpServer = app.listen(PORT, HOST, () => {
-    logger.info(`✅ API Gateway started successfully on ${HOST}:${PORT}`, {
+  httpServer = app.listen(PORT, HOST, () => {
+    const message = `✅ API Gateway started successfully on ${HOST}:${PORT}`;
+    console.log(message);
+    logger.info(message, {
       host: HOST,
       port: PORT,
+      portType: typeof PORT,
       environment: process.env.NODE_ENV,
+      railwayEnv: process.env.RAILWAY_ENVIRONMENT,
+      railway: process.env.RAILWAY,
+      rawPort: process.env.PORT
     });
+    
+    // Дополнительная проверка для Railway
+    if (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY) {
+      console.log('🚂 Railway environment detected');
+      console.log(`🌐 Server listening on http://${HOST}:${PORT}`);
+      console.log(`✅ Ready to accept connections`);
+    }
   });
 
   // Обработка ошибок сервера
@@ -622,6 +651,34 @@ try {
     });
   });
 
+  // Добавляем adminMetricsService в глобальную переменную (ленивая загрузка)
+  global.adminMetricsService = null;
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM received, shutting down gracefully');
+    if (httpServer) {
+      httpServer.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  });
+
+  process.on('SIGINT', () => {
+    logger.info('SIGINT received, shutting down gracefully');
+    if (httpServer) {
+      httpServer.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  });
+
 } catch (error) {
   logger.error('❌ Failed to start server:', error);
   logger.error('Error details:', {
@@ -631,36 +688,5 @@ try {
   });
   process.exit(1);
 }
-
-// Добавляем adminMetricsService в глобальную переменную (ленивая загрузка)
-global.adminMetricsService = null;
-
-// Обработка необработанных исключений
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  httpServer.close(() => {
-    logger.info('HTTP server closed');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  httpServer.close(() => {
-    logger.info('HTTP server closed');
-    process.exit(0);
-  });
-});
 
 module.exports = app;

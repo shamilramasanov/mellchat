@@ -4,9 +4,10 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "vite",
+  "cleanUrls": false,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!sw-v3\\.js|sw\\.js|service-worker\\.js|registerSW\\.js|workbox-.*\\.js|assets/|icons/|.*\\.(svg|png|jpg|jpeg|gif|ico|json|webmanifest|txt|js|css)).*)",
       "destination": "/index.html"
     }
   ],

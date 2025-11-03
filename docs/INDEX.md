@@ -13,6 +13,7 @@
 - [🎯 Стратегия](./project/STRATEGY.md) — общее направление
 
 ### Настройка
+- [🔗 Railway + Vercel](./setup/RAILWAY_VERCEL_SETUP.md) — настройка деплоя
 - [⚙️ Google OAuth](./setup/GOOGLE_OAUTH.md) — настройка OAuth
 - [📧 SMTP](./setup/SMTP.md) — настройка email
 - [💾 Backup](./setup/BACKUP.md) — резервное копирование

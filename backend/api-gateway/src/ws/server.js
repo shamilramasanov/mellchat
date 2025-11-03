@@ -7,7 +7,49 @@ const sentimentService = require('../services/sentimentService');
 // Simple WS hub with per-connectionId subscriptions
 class WsHub {
   constructor(server, options = {}) {
-    this.wss = new WebSocket.Server({ server, ...options });
+    this.wss = new WebSocket.Server({ 
+      server, 
+      ...options,
+      // Улучшенная обработка WebSocket upgrade запросов
+      verifyClient: (info) => {
+        const origin = info.origin;
+        
+        // Разрешаем соединения без origin (например, из Postman)
+        if (!origin) return true;
+        
+        // В production проверяем origin
+        if (process.env.NODE_ENV === 'production') {
+          // Нормализуем переменные окружения
+          const normalizeEnvVar = (val) => val ? val.trim().replace(/^["']|["']$/g, '') : null;
+          
+          const allowedOrigins = [
+            'https://www.mellchat.live',
+            'https://mellchat.live',
+            'https://mellchat.vercel.app',
+            'https://mellchat-v5y7.vercel.app',
+            normalizeEnvVar(process.env.CORS_ORIGIN),
+            normalizeEnvVar(process.env.FRONTEND_URL)
+          ].filter(Boolean);
+          
+          if (allowedOrigins.some(allowed => origin.includes(allowed.replace(/^https?:\/\//, '')))) {
+            logger.info('WebSocket connection allowed:', { origin });
+            return true;
+          }
+          
+          // Разрешаем все mellchat.live и vercel.app домены
+          if (origin.includes('mellchat.live') || origin.includes('.vercel.app')) {
+            logger.info('WebSocket connection allowed (domain match):', { origin });
+            return true;
+          }
+          
+          logger.warn('WebSocket connection blocked:', { origin });
+          return false;
+        }
+        
+        // В development разрешаем все
+        return true;
+      }
+    });
     this.subscribers = new Map(); // connectionId -> Set(ws)
     this.lastActivity = new Map(); // connectionId -> timestamp
     this.adminSubscribers = new Set(); // WebSocket connections for admin panel
