@@ -172,8 +172,15 @@ body {
     height: -webkit-fill-available;
   }
   
-  /* Header с учетом safe area */
+  /* Header с учетом safe area - используем top вместо padding-top для sticky */
   .safe-area-header {
+    /* top уже установлен inline через style, здесь только дополнительный padding если нужно */
+    /* height учитывает safe area */
+    min-height: calc(env(safe-area-inset-top, 0px) + 48px);
+  }
+  
+  .safe-area-header > * {
+    /* Внутренний контент header */
     padding-top: env(safe-area-inset-top, 0px);
   }
   
