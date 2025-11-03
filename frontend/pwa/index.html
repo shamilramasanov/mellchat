@@ -74,9 +74,8 @@
           height: -webkit-fill-available;
         }
         
-        #root {
-          min-height: -webkit-fill-available;
-        }
+        /* НЕ добавляем min-height на #root - height: 100% уже достаточно */
+        /* #root использует padding для safe area, что корректно работает */
       }
       
       /* Prevent pull-to-refresh on iOS */
