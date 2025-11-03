@@ -11,30 +11,29 @@ import { TOAST_CONFIG } from './shared/utils/constants';
 
 // Register Service Worker (only in production)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', async () => {
-    // Сначала удаляем старые Service Workers (включая sw.js)
+  // Удаляем ВСЕ старые Service Workers сразу при загрузке скрипта (до load event)
+  (async () => {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
-        // Удаляем все старые регистрации, особенно sw.js
-        if (registration.active?.scriptURL?.includes('/sw.js')) {
-          await registration.unregister();
-          console.log('🗑️ Unregistered old Service Worker:', registration.active.scriptURL);
-        }
+        await registration.unregister();
+        console.log('🗑️ Unregistered Service Worker:', registration.active?.scriptURL || registration.scope);
       }
     } catch (error) {
       console.warn('Failed to unregister old Service Workers:', error);
     }
+  })();
 
+  window.addEventListener('load', async () => {
     // Проверяем доступность файла перед регистрацией
     const registerSW = async (swPath) => {
       try {
         // Сначала проверяем что файл - это JavaScript, не HTML
-        const response = await fetch(swPath, { method: 'GET' });
+        const response = await fetch(swPath, { method: 'GET', cache: 'no-cache' });
         const contentType = response.headers.get('content-type');
         const text = await response.text();
         
-        // Если файл начинается с HTML, это не Service Worker
+        // Если файл начинается с HTML, это не Service Worker - пропускаем
         if (text.trim().startsWith('<!') || !contentType?.includes('javascript')) {
           console.warn(`⚠️ Service Worker file ${swPath} is not JavaScript (content-type: ${contentType})`);
           return false;
