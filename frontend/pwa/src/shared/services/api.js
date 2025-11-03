@@ -202,7 +202,22 @@ export const authAPI = {
   logActivity: async (data) => {
     // Используем невербатильный запрос для избежания блокировки UI
     try {
-      await api.post('/admin/users/activity/log', data);
+      // Получаем sessionId если его нет в data
+      let sessionId = data.sessionId;
+      if (!sessionId) {
+        sessionId = localStorage.getItem(STORAGE_KEYS.GUEST_SESSION_ID);
+      }
+      
+      // Добавляем sessionId в запрос
+      const requestData = {
+        ...data,
+        sessionId: sessionId || undefined
+      };
+      
+      // Также отправляем в заголовке для совместимости
+      const headers = sessionId ? { 'x-session-id': sessionId } : {};
+      
+      await api.post('/admin/users/activity/log', requestData, { headers });
     } catch (error) {
       // Игнорируем ошибки логирования, чтобы не мешать пользователю
       console.debug('Activity log error (ignored):', error);

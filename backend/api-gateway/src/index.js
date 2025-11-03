@@ -342,22 +342,30 @@ app.post('/api/v1/admin/users/activity/log', (req, res, next) => {
   optionalAuth(req, res, async () => {
     try {
       const userActivityService = require('./services/userActivityService');
-      const { streamId, platform, channelName, action, metadata } = req.body;
+      const { streamId, platform, channelName, action, metadata, sessionId: bodySessionId } = req.body;
       
       if (!streamId || !platform || !action) {
         return res.status(400).json({ error: 'streamId, platform, and action are required' });
       }
       
+      // Получаем userId из авторизации (если есть)
       const userId = req.user?.userId || null;
-      const sessionId = req.headers['x-session-id'] || null;
       
-      if (!userId && !sessionId) {
-        return res.status(400).json({ error: 'Either userId or sessionId must be provided' });
+      // Получаем sessionId из тела запроса или заголовка
+      const sessionId = bodySessionId || req.headers['x-session-id'] || null;
+      
+      // Если нет ни userId, ни sessionId - создаем временный sessionId для анонимных пользователей
+      // Это нужно для случаев, когда логирование происходит до создания сессии
+      let finalSessionId = sessionId;
+      if (!userId && !finalSessionId) {
+        // Для анонимных пользователей без сессии используем временный идентификатор
+        finalSessionId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        logger.debug('Created temporary sessionId for anonymous activity log');
       }
       
       await userActivityService.logActivity({
         userId,
-        sessionId,
+        sessionId: finalSessionId,
         streamId,
         platform,
         channelName,
