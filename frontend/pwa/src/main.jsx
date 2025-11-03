@@ -10,7 +10,9 @@ import './styles/tailwind.css';
 import { TOAST_CONFIG } from './shared/utils/constants';
 
 // Register Service Worker (only in production)
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// ВРЕМЕННО ОТКЛЮЧЕНО - файлы возвращают HTML из-за проблем с Vercel rewrites
+// TODO: Включить обратно после исправления конфигурации Vercel
+if (false && 'serviceWorker' in navigator && import.meta.env.PROD) {
   // Удаляем ВСЕ старые Service Workers сразу при загрузке скрипта (до load event)
   (async () => {
     try {
@@ -62,6 +64,21 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
       await registerSW('/service-worker.js');
     }
   });
+}
+
+// Удаляем старые Service Workers при загрузке (даже если регистрация отключена)
+if ('serviceWorker' in navigator) {
+  (async () => {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        console.log('🗑️ Unregistered old Service Worker:', registration.active?.scriptURL || registration.scope);
+      }
+    } catch (error) {
+      // Ignore errors
+    }
+  })();
 }
 
 // iOS viewport height fix
