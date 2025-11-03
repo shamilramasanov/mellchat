@@ -49,15 +49,13 @@
 .newui * { border-color: var(--border); }
 .newui body, .newui .bg-background { background: var(--background); color: var(--foreground); }
 
-/* Safe area padding уже применен в #root, здесь НЕ добавляем */
-/* .newui должен точно соответствовать высоте #root */
+/* .newui - основной layout контейнер */
 .newui {
   width: 100%;
   height: 100%;
-  min-height: 0; /* Важно для flex - не устанавливаем min-height */
-  max-height: 100%; /* Не больше #root */
+  min-height: 0;
   overflow: hidden;
-  display: flex; /* Для правильного flex layout */
+  display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }

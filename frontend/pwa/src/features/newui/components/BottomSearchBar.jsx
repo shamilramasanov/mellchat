@@ -60,12 +60,7 @@ function BottomSearchBarBase({ searchQuery, onSearchChange, onAddStream, onSetti
   };
 
   return (
-    <div 
-      className="fixed left-0 right-0 bg-white border-t border-gray-300 p-3 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
-      style={{
-        bottom: 'env(safe-area-inset-bottom, 0px)'
-      }}
-    >
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 p-3 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
       <div className="flex items-center space-x-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-600" />
