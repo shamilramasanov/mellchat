@@ -22,21 +22,30 @@ const AdminLoginScreen = ({ onSuccess, onBack }) => {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Admin login attempt:', { username });
       const response = await adminAPI.login(username, password);
+      console.log('✅ Admin login response:', { success: response.success, hasToken: !!response.token });
 
       if (response.success && response.token) {
         // Сохраняем токен
         localStorage.setItem('admin_token', response.token);
         localStorage.setItem('admin_user', JSON.stringify(response.user));
+        console.log('💾 Admin token saved to localStorage');
         
-        if (onSuccess) {
-          onSuccess(response.token, response.user);
-        }
+        // Небольшая задержка перед вызовом onSuccess для обеспечения сохранения токена
+        setTimeout(() => {
+          if (onSuccess) {
+            console.log('📞 Calling onSuccess callback');
+            onSuccess(response.token, response.user);
+          }
+        }, 100);
       } else {
+        console.error('❌ Login failed:', response);
         setError(response.error || 'Ошибка входа');
       }
     } catch (err) {
-      console.error('Admin login error:', err);
+      console.error('❌ Admin login error:', err);
+      console.error('❌ Error response:', err.response?.data);
       setError(
         err.response?.data?.error || 
         err.message || 

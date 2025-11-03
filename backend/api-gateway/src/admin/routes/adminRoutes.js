@@ -184,8 +184,11 @@ router.post('/auth/login', addCorsHeaders, async (req, res) => {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
+    logger.info('Admin login attempt:', { username, expectedUsername: ADMIN_USER.username });
+
     // Проверяем пользователя
     if (username !== ADMIN_USER.username) {
+      logger.warn('Admin login failed - username mismatch:', { received: username, expected: ADMIN_USER.username });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -208,8 +211,11 @@ router.post('/auth/login', addCorsHeaders, async (req, res) => {
     }
     
     if (!isValidPassword) {
+      logger.warn('Admin login failed - invalid password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    logger.info('Admin login successful:', { username: ADMIN_USER.username });
 
     // Генерируем JWT токен
     const token = jwt.sign(
@@ -221,6 +227,8 @@ router.post('/auth/login', addCorsHeaders, async (req, res) => {
       process.env.JWT_SECRET || 'admin-secret-key',
       { expiresIn: '24h' }
     );
+
+    logger.info('Admin JWT token generated');
 
     res.json({
       success: true,

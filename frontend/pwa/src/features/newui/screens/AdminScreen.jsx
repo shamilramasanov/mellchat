@@ -80,8 +80,10 @@ const AdminScreen = ({ onBack }) => {
   }, [showLanguageMenu]);
 
   const handleLoginSuccess = (token, user) => {
+    console.log('🎉 Admin login success in AdminScreen:', { hasToken: !!token, user });
     setAdminUser(user);
     setIsAuthenticated(true);
+    console.log('✅ Admin authenticated state updated');
   };
 
   const handleLogout = () => {
