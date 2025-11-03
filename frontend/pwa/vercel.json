@@ -7,6 +7,22 @@
   "cleanUrls": false,
   "rewrites": [
     {
+      "source": "/sw-v3.js",
+      "destination": "/sw-v3.js"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/service-worker.js",
+      "destination": "/service-worker.js"
+    },
+    {
+      "source": "/registerSW.js",
+      "destination": "/registerSW.js"
+    },
+    {
       "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|webmanifest|txt|webp|woff|woff2|ttf|otf))",
       "destination": "/$1"
     },
