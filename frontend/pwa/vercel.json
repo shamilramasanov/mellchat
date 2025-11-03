@@ -7,7 +7,7 @@
   "cleanUrls": false,
   "rewrites": [
     {
-      "source": "/((?!sw-v3\\.js|sw\\.js|service-worker\\.js|registerSW\\.js|workbox-.*\\.js|assets/|icons/|.*\\.(svg|png|jpg|jpeg|gif|ico|json|webmanifest|txt|js|css)).*)",
+      "source": "/((?!sw-v3\\.js|sw\\.js|service-worker\\.js|registerSW\\.js|workbox-.*\\.js|assets/|icons/|.*\\.(svg|png|jpg|jpeg|gif|ico|json|webmanifest|txt|js|css|webp|woff|woff2|ttf|otf)).*)",
       "destination": "/index.html"
     }
   ],
