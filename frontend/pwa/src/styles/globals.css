@@ -149,6 +149,7 @@ body {
   /* Включаем smooth scrolling */
   scroll-behavior: smooth;
   
+  /* Высота viewport - только для body, не для элементов внутри #root */
   min-height: 100vh;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
