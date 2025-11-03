@@ -172,7 +172,17 @@ body {
     height: -webkit-fill-available;
   }
   
-  /* Header wrapper с учетом safe area */
+  /* Header с учетом safe area */
+  .safe-area-header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  /* Контент не должен перекрывать header */
+  .safe-area-content {
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--header-height, 48px));
+  }
+  
+  /* Header wrapper для совместимости */
   .header-wrapper {
     padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   }
