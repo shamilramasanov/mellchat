@@ -10,9 +10,7 @@ import './styles/tailwind.css';
 import { TOAST_CONFIG } from './shared/utils/constants';
 
 // Register Service Worker (only in production)
-// ВРЕМЕННО ОТКЛЮЧЕНО - файлы возвращают HTML из-за проблем с Vercel rewrites
-// TODO: Включить обратно после исправления конфигурации Vercel
-if (false && 'serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   // Удаляем ВСЕ старые Service Workers сразу при загрузке скрипта (до load event)
   (async () => {
     try {
