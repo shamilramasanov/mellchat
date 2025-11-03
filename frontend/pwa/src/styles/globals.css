@@ -126,11 +126,11 @@
   --filters-height: 140px;
   --content-padding: var(--spacing-lg);
   
-  /* iOS Safe Area */
-  --safe-area-top: env(safe-area-inset-top, 0);
-  --safe-area-bottom: env(safe-area-inset-bottom, 0);
-  --safe-area-left: env(safe-area-inset-left, 0);
-  --safe-area-right: env(safe-area-inset-right, 0);
+  /* iOS Safe Area - используем env() напрямую */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
 /* ===== Global Styles ===== */
@@ -149,8 +149,8 @@ body {
   /* Включаем smooth scrolling */
   scroll-behavior: smooth;
   
-  /* Safe area для мобильных устройств */
-  padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
+  /* Safe area для мобильных устройств - padding уже применен в index.html */
+  /* Дополнительный padding только если не установлен в index.html */
   min-height: 100vh;
   min-height: 100dvh; /* Используем динамический viewport height */
   min-height: -webkit-fill-available;
@@ -162,13 +162,19 @@ body {
     /* iOS Safari viewport height fix */
     min-height: -webkit-fill-available;
     height: -webkit-fill-available;
-    padding-left: max(var(--safe-area-left), 0);
-    padding-right: max(var(--safe-area-right), 0);
+    /* Safe area padding уже в index.html, здесь только для совместимости */
+    padding-left: max(env(safe-area-inset-left, 0px), 0px);
+    padding-right: max(env(safe-area-inset-right, 0px), 0px);
   }
   
   /* Fix for iOS PWA fullscreen mode */
   .app {
     height: -webkit-fill-available;
+  }
+  
+  /* Header wrapper с учетом safe area */
+  .header-wrapper {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   }
 }
 
