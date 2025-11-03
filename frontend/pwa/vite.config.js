@@ -112,7 +112,8 @@ export default defineConfig({
         // Force update Service Worker
         mode: 'production',
         // Force cache busting with new SW name
-        swDest: 'sw-v3.js'
+        // Output to dist directory (VitePWA automatically uses outDir from build config)
+        swDest: path.resolve(__dirname, 'dist/sw-v3.js')
       }
     })
   ],

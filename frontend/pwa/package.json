@@ -5,7 +5,7 @@
   "description": "MellChat - Multi-platform streaming chat aggregator",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp sw-v3.js dist/ 2>/dev/null || true",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
