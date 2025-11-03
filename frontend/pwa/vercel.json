@@ -7,21 +7,6 @@
   "cleanUrls": false,
   "rewrites": [
     {
-      "source": "/sw-v3.js",
-      "destination": "/sw-v3.js",
-      "check": true
-    },
-    {
-      "source": "/sw.js",
-      "destination": "/sw.js",
-      "check": true
-    },
-    {
-      "source": "/service-worker.js",
-      "destination": "/service-worker.js",
-      "check": true
-    },
-    {
       "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|webmanifest|txt|webp|woff|woff2|ttf|otf))",
       "destination": "/$1"
     },
