@@ -50,25 +50,24 @@
       
       /* Safe area применяется ОДИН РАЗ здесь в #root */
       #root {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
+        right: 0;
+        bottom: 0;
         width: 100%;
         height: 100%;
         margin: 0;
         padding-top: constant(safe-area-inset-top);
-        padding-top: env(safe-area-inset-top, 44px); /* 44px = высота статус-бара для старых iPhone */
+        padding-top: env(safe-area-inset-top);
         padding-bottom: constant(safe-area-inset-bottom);
-        padding-bottom: env(safe-area-inset-bottom, 34px); /* 34px = высота home indicator */
+        padding-bottom: env(safe-area-inset-bottom);
         padding-left: constant(safe-area-inset-left);
-        padding-left: env(safe-area-inset-left, 0px);
+        padding-left: env(safe-area-inset-left);
         padding-right: constant(safe-area-inset-right);
-        padding-right: env(safe-area-inset-right, 0px);
+        padding-right: env(safe-area-inset-right);
         overflow: hidden;
         box-sizing: border-box;
-        /* ВРЕМЕННО для отладки */
-        border: 4px solid #ff0000 !important;
-        background: rgba(255, 0, 0, 0.15) !important;
       }
       
       /* iOS Safari viewport fix */
@@ -76,18 +75,6 @@
         html, body {
           height: -webkit-fill-available;
           position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-        }
-        
-        #root {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
         }
       }
     </style>

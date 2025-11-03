@@ -140,7 +140,6 @@ body {
   font-weight: var(--font-weight-regular);
   color: var(--text-primary);
   background: #2a2a2a; /* Простой серый фон */
-  /* Убираем background-attachment: fixed */
   transition: background 0.3s ease, color 0.3s ease;
   
   /* iOS PWA - Fix scroll issues */
@@ -150,22 +149,11 @@ body {
   scroll-behavior: smooth;
   
   /* Высота viewport - только для body, не для элементов внутри #root */
-  min-height: 100vh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  /* iOS PWA: height управляется в index.html */
 }
 
 /* iOS Safari viewport height fix */
-@supports (-webkit-touch-callout: none) {
-  body {
-    min-height: -webkit-fill-available;
-    height: -webkit-fill-available;
-    /* Safe area padding уже применен в #root, здесь НЕ добавляем */
-  }
-  
-  /* УБИРАЕМ -webkit-fill-available из .app - это вызывает проблемы внутри #root */
-  /* .app теперь использует height: 100% относительно #root */
-}
+/* УДАЛЕНО: дублирование с index.html - viewport height там управляется */
 
 
 /* ===== Glass Effect Classes ===== */

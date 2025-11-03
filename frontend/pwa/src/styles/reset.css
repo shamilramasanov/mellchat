@@ -70,14 +70,7 @@ p, h1, h2, h3, h4, h5, h6 {
   overflow-wrap: break-word;
 }
 
-/* Root element */
-#root {
-  isolation: isolate;
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
+/* Root element - УДАЛЕНО: стили #root в index.html для iOS PWA */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
