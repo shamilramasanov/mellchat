@@ -655,7 +655,7 @@ export default function AppNewUI() {
   } else {
     // Main screen
     content = (
-      <div className="newui min-h-screen flex flex-col bg-gray-50">
+      <div className="newui flex flex-col bg-gray-50">
         <HeaderNewUI 
           onLogoClick={() => setCurrentScreen('recent-streams')} 
           onPersonalizationClick={() => {

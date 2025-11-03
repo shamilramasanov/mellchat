@@ -117,7 +117,7 @@ export function EmailAuthScreen({ onBack, onSuccess }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white">
       <div className="p-4">
         <div className="max-w-md mx-auto">
           <EmailInput

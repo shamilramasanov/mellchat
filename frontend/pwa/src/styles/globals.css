@@ -163,10 +163,8 @@ body {
     /* Safe area padding уже применен в #root, здесь НЕ добавляем */
   }
   
-  /* Fix for iOS PWA fullscreen mode */
-  .app {
-    height: -webkit-fill-available;
-  }
+  /* УБИРАЕМ -webkit-fill-available из .app - это вызывает проблемы внутри #root */
+  /* .app теперь использует height: 100% относительно #root */
 }
 
 
