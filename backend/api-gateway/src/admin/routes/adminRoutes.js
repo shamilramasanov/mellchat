@@ -496,20 +496,38 @@ router.post('/ai/chat', authenticateAdmin, async (req, res) => {
   try {
     const { message, conversationHistory = [] } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    if (!message || !message.trim()) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Message is required' 
+      });
     }
 
+    logger.info('Admin AI chat request:', { 
+      messageLength: message.length,
+      historyLength: conversationHistory.length,
+      hasGeminiKey: !!process.env.GEMINI_API_KEY
+    });
+
     if (!geminiService.isAvailable()) {
+      logger.warn('Gemini API not available - GEMINI_API_KEY not set');
       return res.status(503).json({ 
+        success: false,
         error: 'Gemini API не настроен. Установите GEMINI_API_KEY в переменных окружения.' 
       });
     }
 
     // Передаем databaseService для доступа к БД и флаг isAdmin
-    const databaseService = require('../../services/databaseService');
+    let databaseService = null;
+    try {
+      databaseService = require('../../services/databaseService');
+      logger.debug('Database service loaded successfully');
+    } catch (dbError) {
+      logger.warn('Failed to load database service, continuing without DB access:', dbError.message);
+      // Продолжаем без доступа к БД - AI все равно может отвечать на вопросы
+    }
     
-    const result = await geminiService.chat(message, conversationHistory, {
+    const result = await geminiService.chat(message.trim(), conversationHistory || [], {
       databaseService: databaseService,
       isAdmin: true // Админ имеет полные права, включая UPDATE
     });
@@ -519,19 +537,36 @@ router.post('/ai/chat', authenticateAdmin, async (req, res) => {
       ...result
     });
   } catch (error) {
-    logger.error('AI chat error:', error);
+    logger.error('AI chat error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
     
     // Обрабатываем таймауты отдельно
-    if (error.message && error.message.includes('timeout')) {
+    if (error.message && (error.message.includes('timeout') || error.message.includes('TIMEOUT'))) {
       return res.status(504).json({ 
+        success: false,
         error: 'AI запрос превысил время ожидания',
         message: 'Попробуйте упростить запрос или разбить его на части'
       });
     }
     
+    // Обрабатываем ошибки Gemini API
+    if (error.message && error.message.includes('Gemini API')) {
+      return res.status(503).json({ 
+        success: false,
+        error: 'Ошибка Gemini API',
+        message: error.message
+      });
+    }
+    
     res.status(500).json({ 
+      success: false,
       error: 'Failed to process AI request',
-      message: error.message 
+      message: error.message || 'Unknown error',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

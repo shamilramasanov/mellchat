@@ -14,10 +14,22 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   // Удаляем ВСЕ старые Service Workers сразу при загрузке скрипта (до load event)
   (async () => {
     try {
+      // Удаляем все старые SW, включая sw.js который больше не используется
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
-        await registration.unregister();
-        console.log('🗑️ Unregistered Service Worker:', registration.active?.scriptURL || registration.scope);
+        try {
+          const scriptURL = registration.active?.scriptURL || registration.scope;
+          // Особенно удаляем старый sw.js
+          if (scriptURL.includes('/sw.js') || registration.scope.includes('/sw.js')) {
+            await registration.unregister();
+            console.log('🗑️ Removed old sw.js Service Worker:', scriptURL);
+          } else {
+            await registration.unregister();
+            console.log('🗑️ Unregistered Service Worker:', scriptURL);
+          }
+        } catch (regError) {
+          console.warn('Failed to unregister specific SW:', regError);
+        }
       }
     } catch (error) {
       console.warn('Failed to unregister old Service Workers:', error);
@@ -91,13 +103,22 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 }
 
 // Удаляем старые Service Workers при загрузке (даже если регистрация отключена)
+// Это дополнительная очистка для гарантии удаления старых SW
 if ('serviceWorker' in navigator) {
   (async () => {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
-        await registration.unregister();
-        console.log('🗑️ Unregistered old Service Worker:', registration.active?.scriptURL || registration.scope);
+        try {
+          const scriptURL = registration.active?.scriptURL || registration.scope;
+          // Удаляем sw.js - он больше не используется
+          if (scriptURL.includes('/sw.js')) {
+            await registration.unregister();
+            console.log('🗑️ Removed old sw.js from cleanup:', scriptURL);
+          }
+        } catch (regError) {
+          // Игнорируем ошибки для отдельных регистраций
+        }
       }
     } catch (error) {
       // Ignore errors
