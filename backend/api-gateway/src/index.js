@@ -438,11 +438,19 @@ try {
 logger.info('Setting up admin routes...');
 try {
   app.use('/api/v1/admin', rateLimiters.admin, adminRoutes);
-  app.use('/api/v1/ai', rateLimiters.admin, aiRoutes);
   logger.info('✅ Admin routes configured');
-  logger.info('✅ AI routes configured');
 } catch (error) {
   logger.error('❌ Error setting up admin routes:', error);
+  throw error;
+}
+
+// AI routes - общий лимит, так как это публичные API
+logger.info('Setting up AI routes...');
+try {
+  app.use('/api/v1/ai', rateLimiters.general, aiRoutes);
+  logger.info('✅ AI routes configured');
+} catch (error) {
+  logger.error('❌ Error setting up AI routes:', error);
   throw error;
 }
 
