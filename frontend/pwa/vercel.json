@@ -7,7 +7,30 @@
   "cleanUrls": false,
   "rewrites": [
     {
-      "source": "/((?!sw-v3\\.js|sw\\.js|service-worker\\.js|registerSW\\.js|workbox-.*\\.js|assets/|icons/|.*\\.(svg|png|jpg|jpeg|gif|ico|json|webmanifest|txt|js|css|webp|woff|woff2|ttf|otf)).*)",
+      "source": "/sw-v3.js",
+      "destination": "/sw-v3.js",
+      "check": true
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js",
+      "check": true
+    },
+    {
+      "source": "/service-worker.js",
+      "destination": "/service-worker.js",
+      "check": true
+    },
+    {
+      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|webmanifest|txt|webp|woff|woff2|ttf|otf))",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(assets/.*|icons/.*)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
