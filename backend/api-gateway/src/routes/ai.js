@@ -284,6 +284,7 @@ router.post('/troubleshoot', addCorsHeaders, async (req, res) => {
 
 // AI фильтрация сообщений по запросу
 router.post('/filter-messages', addCorsHeaders, async (req, res) => {
+  logger.info('AI filter-messages route hit:', { method: req.method, path: req.path });
   try {
     const { messages, query, limit = 10 } = req.body;
     

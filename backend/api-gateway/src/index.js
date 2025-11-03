@@ -447,8 +447,14 @@ try {
 // AI routes - общий лимит, так как это публичные API
 logger.info('Setting up AI routes...');
 try {
+  if (!aiRoutes) {
+    throw new Error('aiRoutes is undefined - import failed');
+  }
   app.use('/api/v1/ai', rateLimiters.general, aiRoutes);
-  logger.info('✅ AI routes configured');
+  logger.info('✅ AI routes configured', { 
+    hasFilterMessagesRoute: true,
+    routePath: '/api/v1/ai/filter-messages'
+  });
 } catch (error) {
   logger.error('❌ Error setting up AI routes:', error);
   throw error;
