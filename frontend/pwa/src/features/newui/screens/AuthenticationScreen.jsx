@@ -51,7 +51,7 @@ export function AuthenticationScreen({ onBack, onSuccess }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white">
       {onBack && (
         <div className="p-4">
           <button onClick={onBack} className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white text-black text-base font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-400 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm min-h-[44px]">

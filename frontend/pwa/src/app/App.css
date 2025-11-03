@@ -12,20 +12,12 @@
   box-sizing: border-box;
 }
 
-/* iOS Safari viewport height fix */
-@supports (-webkit-touch-callout: none) {
-  .app {
-    height: -webkit-fill-available;
-    min-height: -webkit-fill-available;
-  }
-}
-
 .app-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  height: 100%; /* Используем относительно #root */
   gap: var(--spacing-lg);
   position: relative;
 }

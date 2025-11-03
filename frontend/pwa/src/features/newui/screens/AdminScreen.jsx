@@ -101,7 +101,7 @@ const AdminScreen = ({ onBack }) => {
   // Показываем загрузку при проверке авторизации
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-full bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Проверка авторизации...</p>
@@ -161,7 +161,7 @@ const AdminScreen = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-full bg-gray-50 flex">
       {/* Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}

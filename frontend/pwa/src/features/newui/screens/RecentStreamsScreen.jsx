@@ -45,7 +45,7 @@ export function RecentStreamsScreen({ streams, onBack, onStreamSelect, onStreamD
   const filteredClosed = filterStreams(closedStreams);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-gray-50">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-300">
         <div className="flex h-12 items-center justify-between px-3">
           <button onClick={onBack} className="inline-flex items-center justify-center gap-2 px-3 py-2 -ml-2 border border-gray-300 rounded-lg bg-white text-black text-base font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-400 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm min-h-[44px]" aria-label="Назад">
