@@ -112,6 +112,22 @@ export const adminAPI = {
   },
 
   /**
+   * Disconnect user from all streams
+   */
+  disconnectUser: async (userId, sessionId = null) => {
+    try {
+      const response = await api.post('/admin/users/disconnect', {
+        userId,
+        sessionId
+      }, getAuthConfig());
+      return response;
+    } catch (error) {
+      console.error('Failed to disconnect user:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get user activity statistics
    */
   getUserActivity: async (timeRange = '24h', userId = null, sessionId = null, platform = null) => {

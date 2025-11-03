@@ -1201,6 +1201,80 @@ router.get('/connections/list', authenticateAdmin, async (req, res) => {
   }
 });
 
+// POST /api/v1/admin/users/disconnect - Отключить пользователя от всех стримов
+router.post('/users/disconnect', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, sessionId } = req.body;
+    
+    if (!userId && !sessionId) {
+      return res.status(400).json({ error: 'userId or sessionId is required' });
+    }
+    
+    const wsHub = req.app.get('wsHub');
+    if (!wsHub || !wsHub.wss) {
+      return res.status(500).json({ error: 'WebSocket server not available' });
+    }
+    
+    let disconnectedCount = 0;
+    const disconnectedConnections = [];
+    
+    // Ищем все WebSocket соединения для этого пользователя
+    wsHub.wss.clients.forEach((ws) => {
+      let shouldDisconnect = false;
+      
+      // Проверяем по userId
+      if (userId && ws.userId === userId) {
+        shouldDisconnect = true;
+      }
+      
+      // Проверяем по sessionId если он сохранен в ws
+      if (sessionId && ws.sessionId === sessionId) {
+        shouldDisconnect = true;
+      }
+      
+      if (shouldDisconnect && ws.readyState === 1) { // WebSocket.OPEN = 1
+        // Получаем список стримов, от которых отключаем
+        const userConnections = Array.from(ws.userSessions || []);
+        
+        // Закрываем WebSocket соединение
+        try {
+          ws.close(1000, 'Disconnected by admin');
+          disconnectedCount++;
+          disconnectedConnections.push(...userConnections);
+        } catch (err) {
+          logger.error('Error closing WebSocket:', err);
+        }
+      }
+    });
+    
+    // Также проверяем по sessionId если нужно отключить гостевую сессию
+    if (sessionId) {
+      // Можно добавить дополнительную логику для гостевых сессий
+      // Например, хранить sessionId в ws.sessionId
+    }
+    
+    if (disconnectedCount === 0) {
+      return res.status(404).json({ 
+        error: 'User not found or not connected to any streams',
+        userId,
+        sessionId
+      });
+    }
+    
+    logger.info(`Admin disconnected user from streams:`, { userId, sessionId, disconnectedCount, connections: disconnectedConnections });
+    
+    res.json({
+      success: true,
+      message: `User disconnected from ${disconnectedCount} WebSocket connection(s)`,
+      disconnectedCount,
+      disconnectedConnections: [...new Set(disconnectedConnections)]
+    });
+  } catch (error) {
+    logger.error('Disconnect user error:', error);
+    res.status(500).json({ error: 'Failed to disconnect user' });
+  }
+});
+
 // Экспортируем blockedUsers для использования в других модулях
 router.blockedUsers = blockedUsers;
 

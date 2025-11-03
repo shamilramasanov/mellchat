@@ -11,17 +11,22 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  WifiOff,
+  MoreVertical
 } from 'lucide-react';
 import { useUsers } from '../../hooks/useAdminData';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { adminAPI } from '@shared/services/adminAPI';
+import toast from 'react-hot-toast';
 
 const UsersContent = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const { users, total, registered, guests, loading, error, lastUpdated, refresh } = useUsers(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [disconnectingUserId, setDisconnectingUserId] = useState(null);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -36,6 +41,24 @@ const UsersContent = () => {
       return formatDistanceToNow(date, { addSuffix: true, locale: ru });
     } catch {
       return timestamp;
+    }
+  };
+
+  const handleDisconnectUser = async (userId, sessionId = null) => {
+    if (!confirm(`Отключить пользователя от всех стримов?`)) {
+      return;
+    }
+
+    setDisconnectingUserId(userId);
+    try {
+      const response = await adminAPI.disconnectUser(userId, sessionId);
+      toast.success(response.message || 'Пользователь отключен от стримов');
+      // Обновляем список после отключения
+      await refresh();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Ошибка при отключении пользователя');
+    } finally {
+      setDisconnectingUserId(null);
     }
   };
 
@@ -194,6 +217,9 @@ const UsersContent = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t('admin.users.lastLogin')}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Действия
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -262,10 +288,30 @@ const UsersContent = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatTimestamp(user.lastLoginAt)}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <button
+                      onClick={() => handleDisconnectUser(user.id, user.sessionId)}
+                      disabled={disconnectingUserId === user.id}
+                      className="inline-flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Отключить от всех стримов"
+                    >
+                      {disconnectingUserId === user.id ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>Отключение...</span>
+                        </>
+                      ) : (
+                        <>
+                          <WifiOff className="h-3 w-3" />
+                          <span>Отключить</span>
+                        </>
+                      )}
+                    </button>
+                  </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                     {searchQuery ? t('admin.users.noUsersFound') : t('admin.users.noUsers')}
                   </td>
                 </tr>
